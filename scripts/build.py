@@ -1,5 +1,6 @@
 import os
 import subprocess
+from termcolor import colored
 
 def build_cpp_files(path):
     if not os.path.exists(path):
@@ -25,9 +26,9 @@ def build_cpp_files(path):
                 result = subprocess.run(command, capture_output=True, text=True)
 
                 if result.returncode == 0:
-                    print(f"Sucessfull built {js_output_file}")
+                    print(colored(f"Sucessfull built {js_output_file}", 'green'))
                 else:
-                    print(f"Error building {filename}:\n{result.stderr}") 
+                    print(colored(f"Error building {filename}:\n{result.stderr}", 'red')) 
             except FileNotFoundError:
                 print("Error not installed in path")
                 return 
