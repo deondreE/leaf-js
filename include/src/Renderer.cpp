@@ -1,5 +1,5 @@
 #include <SDL2/SDL.h>
-#include "core.h"
+#include "core/core.h"
 
 SDL_Window *window;
 SDL_Renderer *renderer;

@@ -20,8 +20,10 @@ namespace Leaf{
     }
 }
 
-EMSCRIPTEN_BINDINGS(mousehandle) {
-    class_<Leaf::MouseHandle>("MouseHandle")
-        .constructor<>()
-        .function("UpdateCursor", &Leaf::MouseHandle::UpdateCursor);
-}
+#ifdef __EMSCRIPTEN__
+    EMSCRIPTEN_BINDINGS(mousehandle) {
+        class_<Leaf::MouseHandle>("MouseHandle")
+            .constructor<>()
+            .function("UpdateCursor", &Leaf::MouseHandle::UpdateCursor);
+    }
+#endif
