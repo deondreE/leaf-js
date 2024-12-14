@@ -15,6 +15,7 @@ def build_cpp_files(path):
             command = [
                 "emcc",
                 "-lembind",
+                "-sUSE_SDL=2",
                 "-o", js_output_file,
                 cpp_file_path
             ]
