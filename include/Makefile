@@ -1,20 +1,35 @@
-INC_DIR := 
+# Directories
+INC_DIR := core 
 SRC_DIR := src
 OBJ_DIR := obj
 
-CC := g++ 
+# Compiler and flags
+CC := g++
 CPPFLAGS := -I$(INC_DIR) -MMD -MP
-CXXFLAGS := -Wall
+CXXFLAGS := -Wall -O2
 LDLIBS := -lSDL2
 
+# Source and object files
 SOURCES := $(wildcard $(SRC_DIR)/*.cpp)
 OBJS := $(SOURCES:$(SRC_DIR)/%.cpp=$(OBJ_DIR)/%.o)
-DEPS := $(wildcard $(OBJ_DIR)/*.d)
+DEPS := $(OBJS:.o=.d)
 
-.PHONY: clean
+# Target executable
+.PHONY: all clean
+
+all: main
 
 main: $(OBJS)
-	$(CC) $(LDFLAGS) $^ $(LDLIBS) -o $@
+	$(CC) $(CXXFLAGS) $(OBJS) $(LDLIBS) -o $@
 
-$(OBJS): $(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp
-	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -c $(OUTPUT_OPTION) $<
+# Rule to build object files
+$(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp
+	@mkdir -p $(OBJ_DIR)
+	$(CC) $(CPPFLAGS) $(CXXFLAGS) -c $< -o $@
+
+# Include dependency files
+-include $(DEPS)
+
+# Clean up
+clean:
+	rm -rf $(OBJ_DIR) main
