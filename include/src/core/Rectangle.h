@@ -2,15 +2,13 @@
 #include "core.h"
 
 class Rectangle {
-public:
-  Rectangle(
-    int x, int y, int w, int h,
-    SDL_Color Color = {0, 0, 0, 255})
-    : rect{x, y, w, h}, color{Color}{}
+ public:
+  Rectangle(int x, int y, int w, int h, SDL_Color Color = {0, 0, 0, 255})
+      : rect{x, y, w, h}, color{Color} {}
 
-  void SetColor(SDL_Color C){ color = C; }
+  void SetColor(SDL_Color C) { color = C; }
 
-  bool IsWithinBounds(int x, int y) const{
+  bool IsWithinBounds(int x, int y) const {
     // Too far left
     if (x < rect.x) return false;
     // Too far right
@@ -23,12 +21,12 @@ public:
     return true;
   }
 
-  virtual void Render(SDL_Renderer* renderer){
-    SDL_SetRenderDrawColor(renderer, color.r, color.g, color.b, color.a );
+  virtual void Render(SDL_Renderer* renderer) {
+    SDL_SetRenderDrawColor(renderer, color.r, color.g, color.b, color.a);
     SDL_RenderFillRect(renderer, &rect);
   }
 
-private:
+ private:
   SDL_Rect rect{0, 0, 0, 0};
   SDL_Color color{0, 0, 0, 0};
 };

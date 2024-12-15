@@ -1,0 +1,1 @@
+find . -name "*.cpp" -o -name "*.c" -o -name "*.h" | xargs clang-format -i -style=Google
