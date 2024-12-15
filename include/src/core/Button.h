@@ -3,7 +3,8 @@
 
 class Button : public Rectangle {
  public:
-  Button(int x, int y, int w, int h) : Rectangle{x, y, w, h, {0, 255, 0}} {}
+  Button(int x, int y, int w, int h, bool isEditable)
+      : Rectangle{x, y, w, h, {0, 255, 0}, isEditable} {}
 
   void HandleEvent(const SDL_Event& e) {
     if (e.type == SDL_MOUSEMOTION) {
