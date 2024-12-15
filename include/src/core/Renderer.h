@@ -14,29 +14,12 @@ namespace Leaf {
             void EventLoop();
 
             void Redraw();
+
+            SDL_Window* GetWindow( ) { return window; }
+            SDL_Renderer* GetRenderer() { return renderer; }
             
-            void run_main_loop() {
-                #ifdef __EMSCRIPTEN__
-                    emscripten_set_main_loop([this]() { this->EventLoop(); }, 0, true);
-                #else
-                    while(true)
-                    ;
-                #endif
-            }
+            
         private:
-            int main(void) {
-                SDL_Init(SDL_INIT_VIDEO);
-                SDL_CreateWindowAndRenderer(300, 300, 0, &window, &renderer);
-                
-                Redraw();
-                run_main_loop();
-
-                SDL_DestroyRenderer(renderer); 
-                SDL_DestroyWindow(window);
-
-                SDL_Quit();
-            }
-
             std::vector<SDL_Rect> gui;        
             SDL_Rect starting_rect;
 

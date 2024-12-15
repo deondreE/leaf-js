@@ -1,7 +1,6 @@
 
 #include "core/Renderer.h"
 
-
 void Leaf::Renderer::EventLoop()
 {
  SDL_Event event;
@@ -38,3 +37,12 @@ void Leaf::Renderer::Redraw()
     SDL_RenderFillRect(renderer, &starting_rect);
     SDL_RenderPresent(renderer);
 }
+
+#ifdef __EMSCRIPTEN__
+    EMSCRIPTEN_BINDINGS(renderer) {
+        class_<Leaf::Renderer>("Renderer")
+            .constructor<int, int, int, int>()
+            .function("Redraw", &Leaf::Renderer::Redraw)
+            .function("EventLoop", &Leaf::Renderer::Redraw);
+    }
+#endif
