@@ -2,6 +2,16 @@
     "files.associations": {
         "random": "cpp",
         "__locale": "cpp",
-        "vector": "cpp"
+        "vector": "cpp",
+        "__availability": "cpp",
+        "__config": "cpp",
+        "atomic": "cpp",
+        "bitset": "cpp",
+        "locale": "cpp",
+        "print": "cpp",
+        "algorithm": "cpp",
+        "*.tcc": "cpp",
+        "system_error": "cpp",
+        "thread": "cpp"
     }
 }

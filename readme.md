@@ -18,3 +18,7 @@ Solution: Have a provider wrapper / runtime, that can have event loop based on t
 -- Include: The c++ library itself called include beacuse it is included into react as a dependency.
 
 -- SRC: Typescript source for any provider actions / translating to typescript.
+
+## Current State
+
+![docs](docs/state.png)

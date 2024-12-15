@@ -1,4 +1,5 @@
-#include "core/Renderer.h"
+#include "core/UI.h"
+#include "core/Rectangle.h"
 
 struct context
 {
@@ -16,15 +17,15 @@ void mainloop(void *arg)
     // red background
     SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
     SDL_RenderClear(renderer);
-    
-    // moving blue rectangle
-    SDL_Rect r;
-    r.x = ctx->iteration % 255;
-    r.y = 50;
-    r.w = 50;
-    r.h = 50;
-    SDL_SetRenderDrawColor(renderer, 0, 0, 255, 255 );
-    SDL_RenderFillRect(renderer, &r );
+
+    UI ui;
+    SDL_Event event;
+    while(SDL_PollEvent(&event))
+    {
+        ui.HandleEvent(event);
+    }
+
+    ui.Render(ctx->renderer);
 
     SDL_RenderPresent(renderer);
 
@@ -36,7 +37,7 @@ int main()
     SDL_Init(SDL_INIT_VIDEO);
     SDL_Window *window;
     SDL_Renderer *renderer;
-    SDL_CreateWindowAndRenderer(255, 255, 0, &window, &renderer);
+    SDL_CreateWindowAndRenderer(1000, 1000, 0, &window, &renderer);
 
     context ctx;
     ctx.renderer = renderer;
