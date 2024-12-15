@@ -1,7 +1,7 @@
 #include <SDL2/SDL.h>
+#include <stdio.h>
 
 #include <vector>
-#include <stdio.h>
 
 #ifdef __EMSCRIPTEN__
 #include <emscripten.h>

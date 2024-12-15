@@ -16,10 +16,10 @@ void MouseHandle::UpdateCursor(SDL_Event event) {
 }
 }  // namespace Leaf
 
-#ifdef __EMSCRIPTEN__
-EMSCRIPTEN_BINDINGS(mousehandle) {
-  class_<Leaf::MouseHandle>("MouseHandle")
-      .constructor<>()
-      .function("UpdateCursor", &Leaf::MouseHandle::UpdateCursor);
-}
-#endif
+// #ifdef __EMSCRIPTEN__
+// EMSCRIPTEN_BINDINGS(mousehandle) {
+//   class_<Leaf::MouseHandle>("MouseHandle")
+//       .constructor<>()
+//       .function("UpdateCursor", &Leaf::MouseHandle::UpdateCursor);
+// }
+// #endif

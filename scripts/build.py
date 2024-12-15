@@ -46,7 +46,11 @@ def build_cpp_files(path):
             "-O2",
             *object_files,  # Expand the list of .o files
             "-o",
-            js_output_file
+            js_output_file,
+            "-s",
+            "MODULARIZE=1",
+            "-s",
+            "EXPORT_ES6=1"
         ]
 
         try:

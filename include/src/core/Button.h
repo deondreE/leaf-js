@@ -4,7 +4,7 @@
 class Button : public Rectangle {
  public:
   Button(int x, int y, int w, int h, bool isEditable)
-      : Rectangle{x, y, w, h, {0, 255, 0}, isEditable} {}
+      : Rectangle{x, y, w, h, isEditable} {}
 
   void HandleEvent(const SDL_Event& e) {
     if (e.type == SDL_MOUSEMOTION) {
@@ -21,9 +21,7 @@ class Button : public Rectangle {
  private:
   void HandleMouseMotion(const SDL_MouseMotionEvent& e) {
     if (IsWithinBounds(e.x, e.y)) {
-      SetColor({0, 0, 255});
     } else {
-      SetColor({0, 255, 0});
     }
   }
 

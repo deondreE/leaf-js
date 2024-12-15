@@ -12,6 +12,7 @@
         "algorithm": "cpp",
         "*.tcc": "cpp",
         "system_error": "cpp",
-        "thread": "cpp"
+        "thread": "cpp",
+        "functional": "cpp"
     }
 }
