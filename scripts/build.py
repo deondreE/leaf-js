@@ -47,10 +47,10 @@ def build_cpp_files(path):
             *object_files,  # Expand the list of .o files
             "-o",
             js_output_file,
-            "-s",
-            "MODULARIZE=1",
-            "-s",
-            "EXPORT_ES6=1"
+            # "-s",
+            # "MODULARIZE=1",
+            # "-s",
+            # "EXPORT_ES6=1"
         ]
 
         try:
