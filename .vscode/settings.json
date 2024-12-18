@@ -13,6 +13,7 @@
         "*.tcc": "cpp",
         "system_error": "cpp",
         "thread": "cpp",
-        "functional": "cpp"
+        "functional": "cpp",
+        "sstream": "cpp"
     }
 }

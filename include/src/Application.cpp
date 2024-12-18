@@ -8,12 +8,21 @@ struct context {
   bool isPanning;
   int lastMouseX, lastMouseY;
   float zoom;
+  Uint32 lastFrameTime;
+  float fps;
 };
 
 void mainloop(void* arg) {
   UI ui;
   context* ctx = static_cast<context*>(arg);
   SDL_Renderer* renderer = ctx->renderer;
+
+  // FPS calculation
+  Uint32 currentTime = SDL_GetTicks();
+  if (currentTime != ctx->lastFrameTime) {
+    ctx->fps = 1000.0f / (currentTime - ctx->lastFrameTime);
+    ctx->lastFrameTime = currentTime;
+  }
 
   SDL_Event event;
   while (SDL_PollEvent(&event)) {
