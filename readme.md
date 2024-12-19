@@ -10,7 +10,7 @@ Problem: Issues currently you require acccess to some type of Module to be able 
 
 Solution: Have a provider wrapper / runtime, that can have event loop based on the module the user wants to call at any given time. This provider will wrap the main app, and allows users to call functions that exist only in C++.
 
-> Note: Current Usage
+> Note: Currently doesn't work as intended C++ still need to support `shape=""`
 ```typescript
 // In it's current form the way you would use it is as follows.
 import React from "react";
