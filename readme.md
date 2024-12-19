@@ -13,25 +13,22 @@ Solution: Have a provider wrapper / runtime, that can have event loop based on t
 > Note: Current Usage
 ```typescript
 // In it's current form the way you would use it is as follows.
-import LeafModule from 'leaf-js'; 
-import { useEffect, useRef } from 'react';
+import React from "react";
+import Canvas from 'leaf-js';
 
-const Canvas = () => {
-  useEffect(() => {
-    LeafModule.then((ModuleInstance) => {
-      // This is where it depends on what you want to use.
-      var Test = new ModuleInstance["Rectangle"](10, 10, 10, 10, true);
-
-      Test.render();
-    }); 
-  });
-
+const App: React.FC = () => {
   return (
     <div>
-      <canvas id="canvas"></canvas>
+      <h1>WebAssembly Scene with React</h1>
+      <Canvas>
+        <div shape="triangle" />
+        <div shape="circle" />
+      </Canvas>
     </div>
-  )
+  );
 };
+
+export default App;
 ```
 
 <details><summary>Here is the way I would like it to work.</summary>
