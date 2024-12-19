@@ -6,12 +6,15 @@ class Button : public Rectangle {
   Button(int x, int y, int w, int h, bool isEditable)
       : Rectangle{x, y, w, h, isEditable} {}
 
-  void HandleEvent(const SDL_Event& e) {
-    if (e.type == SDL_MOUSEMOTION) {
-      HandleMouseMotion(e.motion);
-    } else if (e.type == SDL_MOUSEBUTTONDOWN) {
-      HandleMouseButton(e.button);
+  bool HandleEvent(SDL_Event* e) {
+    if (e->type == SDL_MOUSEMOTION) {
+      HandleMouseMotion(e->motion);
+      return true;
+    } else if (e->type == SDL_MOUSEBUTTONDOWN) {
+      HandleMouseButton(e->button);
+      return true;
     }
+    return false;
   }
 
  protected:

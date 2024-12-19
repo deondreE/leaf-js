@@ -47,6 +47,10 @@ def build_cpp_files(path):
             *object_files,  # Expand the list of .o files
             "-o",
             js_output_file,
+            "-s",
+            "ASSERTIONS=2",
+            "-s",
+            "SAFE_HEAP=1"
             # "-s",
             # "MODULARIZE=1",
             # "-s",

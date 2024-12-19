@@ -1,4 +1,7 @@
 #include "Button.h"
+#include "Circle.h"
+#include "Line.h"
+#include "Triangle.h"
 #include "core.h"
 
 namespace Leaf {
@@ -31,17 +34,27 @@ class UI {
  public:
   void GetState();
 
-  void HandleEvent(const SDL_Event& e) { MyButton.HandleEvent(e); };
+  bool HandleEvent(SDL_Event* e) {
+    MyButton.HandleEvent(e);
+    test.HandleResize(e, renderer);
+  };
 
   void Render(SDL_Renderer* renderer) {
     MyButton.Render(renderer);
     test.Render(renderer);
-    test.HandleResize(renderer);
+    circle.Render(renderer);
+    triangle.Render(renderer);
+    line.Render(renderer);
+    this->renderer = renderer;
   };
 
   Rectangle test{200, 200, 50, 50, true};
   Button MyButton{50, 50, 50, 50, false};
+  Triangle triangle{100, 160, 150, 160, 200, 220, {255, 0, 0, 255}};
+  Circle circle{400, 300, 100, {255, 0, 0, 255}};  // red circle.
+  Line line{10, 120, 12, 12, {0, 0, 255, 255}};
 
  private:
   Leaf::RenderState* currentState;
+  SDL_Renderer* renderer;
 };
