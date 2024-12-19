@@ -1,60 +1,37 @@
-#include "Button.h"
+#include <memory>
+
 #include "Circle.h"
-#include "Line.h"
+#include "Rectangle.h"
+#include "Scene.h"
 #include "Triangle.h"
 #include "core.h"
 
-namespace Leaf {
-
-struct Widget {
-  // @brief This could be your current `Rectangle` or `Button` defaults to
-  // null.
-  Rectangle* current;
-  // @brief A Button / rectangle can have things inside of it when it comes
-  // rendertime, button has text. There are ways that we translate these gui
-  // 'Layers'.
-  std::vector<Rectangle> Children;
-};
-
-struct Cursor {
-  int x, y;
-  // @brief this would be the current event that the mouse is triggering.
-  SDL_Event* event;
-};
-
-struct RenderState {
-  Cursor* Cursor;
-  bool update;
-  // @brief What there is to render. Is being used as a stack persay.
-  std::vector<Widget> widgets;
-};
-}  // namespace Leaf
-
 class UI {
  public:
-  void GetState();
+  UI() {
+    scene.addEntity(
+        std::make_shared<Circle>(400, 300, 50, SDL_Color{255, 0, 0, 255}));
+    scene.addEntity(std::make_shared<Rectangle>(200, 200, 100, 50, true));
+    scene.addEntity(std::make_shared<Triangle>(100, 100, 150, 150, 200, 100,
+                                               SDL_Color{0, 122, 0, 255}));
+  }
+
+  void GetState() {
+    // Example: Retrieve and process the current state of the scene or entities
+    // Implement as needed
+  }
 
   bool HandleEvent(SDL_Event* e) {
-    MyButton.HandleEvent(e);
-    test.HandleResize(e, renderer);
-  };
+    // Delegate event handling to the scene
+    // return scene.handleEvent(e);
+  }
 
   void Render(SDL_Renderer* renderer) {
-    MyButton.Render(renderer);
-    test.Render(renderer);
-    circle.Render(renderer);
-    triangle.Render(renderer);
-    line.Render(renderer);
-    this->renderer = renderer;
-  };
-
-  Rectangle test{200, 200, 50, 50, true};
-  Button MyButton{50, 50, 50, 50, false};
-  Triangle triangle{100, 160, 150, 160, 200, 220, {255, 0, 0, 255}};
-  Circle circle{400, 300, 100, {255, 0, 0, 255}};  // red circle.
-  Line line{10, 120, 12, 12, {0, 0, 255, 255}};
+    // Delegate rendering to the scene
+    scene.render(renderer);
+  }
 
  private:
-  Leaf::RenderState* currentState;
+  Scene scene;
   SDL_Renderer* renderer;
 };

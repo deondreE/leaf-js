@@ -1,12 +1,13 @@
 
+#include "Entity.h"
 #include "core.h"
 
-class Circle {
+class Circle : public Entity {
  public:
   Circle(int x, int y, int radius, SDL_Color color)
       : centerX(x), centerY(y), radius(radius), color(color) {}
 
-  void Render(SDL_Renderer* renderer) {
+  void render(SDL_Renderer* renderer) const override {
     SDL_SetRenderDrawColor(renderer, color.r, color.g, color.b, color.a);
 
     int x = radius;
@@ -30,12 +31,19 @@ class Circle {
     }
   }
 
+  void update(float deltaTime) override {}
+
+  void handleEvents(SDL_Event* event) override {
+    // Handle interactivity if needed (e.g., click detection)
+    return;
+  }
+
  private:
   int centerY, centerX;
   int radius;
   SDL_Color color;
 
-  void DrawHorizontalLine(SDL_Renderer* renderer, int x1, int x2, int y) {
+  void DrawHorizontalLine(SDL_Renderer* renderer, int x1, int x2, int y) const {
     SDL_RenderDrawLine(renderer, x1, y, x2, y);
   }
 };

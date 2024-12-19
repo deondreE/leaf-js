@@ -1,3 +1,4 @@
+#include "core/Entity.h"
 #include "core/Rectangle.h"
 #include "core/UI.h"
 
