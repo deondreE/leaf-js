@@ -5,8 +5,19 @@
   "description": "A performant 3d javascript library",
   "main": "index.ts",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview"
   },
   "author": "deondreE",
-  "license": "MIT"
+  "license": "MIT",
+  "devDependencies": {
+    "@webgpu/types": "^0.1.52",
+    "typescript": "^5.7.3",
+    "vite": "^6.0.7",
+    "vite-raw-plugin": "^1.0.2"
+  },
+  "dependencies": {
+    "wgpu-matrix": "^3.3.0"
+  }
 }
