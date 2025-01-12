@@ -17,7 +17,6 @@ class Renderer {
         }
         const device = await adapter.requestDevice();
     
-        // Setup resize observer.
         const canvas = document.querySelector<HTMLCanvasElement>('#webgpu-canvas');
         assert(canvas != null);
         const observer = new ResizeObserver(() => {
