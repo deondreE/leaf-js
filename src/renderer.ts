@@ -1,4 +1,4 @@
-import { mat4, vec3 } from "wgpu-matrix";
+import { Mat4, mat4, vec3 } from "wgpu-matrix";
 import { cubeVertexArray, cubeVertexCount } from "./meshes/cube";
 import Pipeline from "./pipeline";
 import { Model } from "./types/scene.types";
@@ -10,16 +10,28 @@ class Renderer {
     canvas: HTMLCanvasElement;
     device: GPUDevice;
     ctx: GPUCanvasContext;
-    presentationFormat: any;
-    uniformBuffer: any;
-    renderPassDescripter: any;
-    passEncodeer: any;
-    vertexBuffer: any;
-    currentPipeline: any;
-    uniformBindGroup: any;
+    presentationFormat: GPUTextureFormat;
+    renderPassDescripter: GPURenderPassDescriptor;
+    passEncodeer: GPURenderPassEncoder;
+    vertexBuffer: GPUBuffer;
+    uniformBuffer: GPUBuffer;
+    currentPipeline: GPURenderPipeline;
+    depthTexture: GPUTexture; 
+    uniformBindGroup: GPUBindGroup;
+
+    // Animation
+    aspect: number;
+    projectionMatrix: Mat4;
+    modelViewProjectionMatrix: Mat4;
 
     constructor({ models }) {
         this.models = models;
+
+        this.canvas = document.querySelector<HTMLCanvasElement>('#webgpu-canvas');
+        this.aspect = this.canvas.width / this.canvas.height;
+        this.projectionMatrix = mat4.perspective((2 * Math.PI) / 5, this.aspect, 1, 100.0);
+        this.modelViewProjectionMatrix = mat4.create();
+        this.frame.bind(this);
     }
 
     async init() {
@@ -41,11 +53,7 @@ class Renderer {
         const canvas = document.querySelector<HTMLCanvasElement>('#webgpu-canvas');
         assert(canvas != null);
         this.canvas = canvas;
-        const observer = new ResizeObserver(() => {
-            canvas.width = canvas.clientWidth;
-            canvas.height = canvas.clientHeight;
-        });
-        observer.observe(canvas);
+        
         const context = canvas.getContext('webgpu') as GPUCanvasContext;
         assert(context != null);
         this.ctx = context;
@@ -56,26 +64,70 @@ class Renderer {
 
         const presenstationFormat = navigator.gpu.getPreferredCanvasFormat();
         this.presentationFormat = presenstationFormat;
-        context.configure({
+        this.ctx.configure({
             device,
-            format: presenstationFormat,
-            alphaMode: 'opaque',
+            format: presenstationFormat
         });
+
+        this.updateDepthTexture();
+        const observer = new ResizeObserver(() => {
+            canvas.width = canvas.clientWidth * devicePixelRatio;
+            canvas.height = canvas.clientHeight * devicePixelRatio;
+            this.updateDepthTexture();
+        });
+        observer.observe(canvas);
     }
 
     render() {
         assert(this.canvas != null);
         this.models.forEach((model) => {
             this.drawModel(model);
-            requestAnimationFrame(this.frame);
+            requestAnimationFrame(this.frame.bind(this));
         });
     }
 
-    private getTransformationMatrix() {
-        const aspect = this.canvas.width / this.canvas.height;
-        const projectionMatrix = mat4.perspective((2 * Math.PI) / 5, aspect, 1, 100.0);
-        const modelViewProjectionMatrix = mat4.create();
+    updateDepthTexture() {
+        if (this.depthTexture) {
+            this.depthTexture.destroy();
+        }
+    
+        this.depthTexture = this.device.createTexture({
+            size: [this.canvas.width, this.canvas.height],
+            format: 'depth24plus',
+            usage: GPUTextureUsage.RENDER_ATTACHMENT,
+        });
+    
+        if (this.renderPassDescripter) {
+            this.renderPassDescripter.depthStencilAttachment.view = this.depthTexture.createView();
+        }
+    }
 
+    frame = () => {
+        const transformationMatrix = this.getTransformationMatrix();
+        this.device.queue.writeBuffer(
+            this.uniformBuffer,
+            0,
+            transformationMatrix.buffer,
+            transformationMatrix.byteOffset,
+            transformationMatrix.byteLength
+        );
+        this.renderPassDescripter.colorAttachments[0].view = this.ctx
+            .getCurrentTexture()
+            .createView();
+
+        const commandEncoder = this.device.createCommandEncoder();
+        const passEncoder = commandEncoder.beginRenderPass(this.renderPassDescripter);
+        passEncoder.setPipeline(this.currentPipeline);
+        passEncoder.setBindGroup(0, this.uniformBindGroup);
+        passEncoder.setVertexBuffer(0, this.vertexBuffer);
+        passEncoder.draw(cubeVertexCount);
+        passEncoder.end();
+        this.device.queue.submit([commandEncoder.finish()]);
+
+        requestAnimationFrame(this.frame);
+    }
+
+    private getTransformationMatrix() {
         const viewMatrix = mat4.identity();
         mat4.translate(viewMatrix, vec3.fromValues(0, 0, -4), viewMatrix);
         const now = Date.now() / 1000;
@@ -86,9 +138,9 @@ class Renderer {
             viewMatrix
         );
 
-        mat4.multiply(projectionMatrix, viewMatrix, modelViewProjectionMatrix);
+        mat4.multiply(this.projectionMatrix, viewMatrix, this.modelViewProjectionMatrix);
 
-        return modelViewProjectionMatrix;
+        return this.modelViewProjectionMatrix;
     }
 
     private drawModel(model: Model) {
@@ -144,35 +196,10 @@ class Renderer {
         this.vertexBuffer = this.device.createBuffer({
             size: cubeVertexArray.byteLength,
             usage: GPUBufferUsage.VERTEX,
-            mappedAtCreation: true
+            mappedAtCreation: true,
         });
-
-
-    }
-
-    frame() {
-        const transformationMatrix = this.getTransformationMatrix();
-        this.device.queue.writeBuffer(
-            this.uniformBuffer,
-            0,
-            transformationMatrix.buffer,
-            transformationMatrix.byteOffset,
-            transformationMatrix.byteLength
-        );
-        this.renderPassDescripter.colorAttachments[0].view = this.ctx
-            .getCurrentTexture()
-            .createView();
-
-        const commandEncoder = this.device.createCommandEncoder();
-        const passEncoder = commandEncoder.beginRenderPass(this.renderPassDescripter);
-        passEncoder.setPipeline(this.currentPipeline);
-        passEncoder.setBindGroup(0, this.uniformBindGroup);
-        passEncoder.setVertexBuffer(0, this.vertexBuffer);
-        passEncoder.draw(cubeVertexCount);
-        passEncoder.end();
-        this.device.queue.submit([commandEncoder.finish()]);
-
-        requestAnimationFrame(this.frame);
+        new Float32Array(this.vertexBuffer.getMappedRange()).set(cubeVertexArray);
+        this.vertexBuffer.unmap();
     }
 };
 
