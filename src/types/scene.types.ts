@@ -21,6 +21,7 @@ interface Scene {
 /** Definition of a model inside of a scene. */
 interface Model {
     type: "square" | "circle" | "custom";
+    def: "2D" | "3D";
     id: number;
     name: string;
     position: Vec2;

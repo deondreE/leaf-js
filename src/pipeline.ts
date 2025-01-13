@@ -1,6 +1,5 @@
-import { Vec3 } from "./types/math.types";
 import basicVert from './shaders/basic.vert.wgsl';
-import colorVert from './shaders/color.frag.wgsl';
+import textureFrag from './shaders/texture.frag.wgsl';
 
 import {
     cubeVertexArray,
@@ -50,7 +49,7 @@ class Pipeline {
            },
            fragment: {
             module: device.createShaderModule({
-                code: colorVert,
+                code: textureFrag,
             }),
             targets: [
                 {

@@ -16,10 +16,8 @@ class Renderer {
     vertexBuffer: GPUBuffer;
     uniformBuffer: GPUBuffer;
     currentPipeline: GPURenderPipeline;
-    depthTexture: GPUTexture; 
+    depthTexture: GPUTexture;
     uniformBindGroup: GPUBindGroup;
-
-    // Animation
     aspect: number;
     projectionMatrix: Mat4;
     modelViewProjectionMatrix: Mat4;
@@ -49,11 +47,16 @@ class Renderer {
         const device = await adapter.requestDevice();
         assert(device != null);
         this.device = device;
+        const uniformBufferSize = 4 * 16; // 4x4 matrix
+        this.uniformBuffer = this.device.createBuffer({
+            size: uniformBufferSize,
+            usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+        });
 
         const canvas = document.querySelector<HTMLCanvasElement>('#webgpu-canvas');
         assert(canvas != null);
         this.canvas = canvas;
-        
+
         const context = canvas.getContext('webgpu') as GPUCanvasContext;
         assert(context != null);
         this.ctx = context;
@@ -90,20 +93,20 @@ class Renderer {
         if (this.depthTexture) {
             this.depthTexture.destroy();
         }
-    
+
         this.depthTexture = this.device.createTexture({
             size: [this.canvas.width, this.canvas.height],
             format: 'depth24plus',
             usage: GPUTextureUsage.RENDER_ATTACHMENT,
         });
-    
+
         if (this.renderPassDescripter) {
             this.renderPassDescripter.depthStencilAttachment.view = this.depthTexture.createView();
         }
     }
 
     frame = () => {
-        const transformationMatrix = this.getTransformationMatrix();
+        const transformationMatrix = this.getTransformationMatrix('3D');
         this.device.queue.writeBuffer(
             this.uniformBuffer,
             0,
@@ -112,8 +115,8 @@ class Renderer {
             transformationMatrix.byteLength
         );
         this.renderPassDescripter.colorAttachments[0].view = this.ctx
-            .getCurrentTexture()
-            .createView();
+        .getCurrentTexture()
+        .createView();
 
         const commandEncoder = this.device.createCommandEncoder();
         const passEncoder = commandEncoder.beginRenderPass(this.renderPassDescripter);
@@ -127,23 +130,32 @@ class Renderer {
         requestAnimationFrame(this.frame);
     }
 
-    private getTransformationMatrix() {
-        const viewMatrix = mat4.identity();
-        mat4.translate(viewMatrix, vec3.fromValues(0, 0, -4), viewMatrix);
-        const now = Date.now() / 1000;
-        mat4.rotate(
-            viewMatrix,
-            vec3.fromValues(Math.sin(now), Math.cos(now), 0),
-            1,
-            viewMatrix
-        );
+    private getTransformationMatrix(def: string) {
+        if (def === '2D') {
+            const orthoMatrix = mat4.ortho(-1, 1, -1, 1, -1, 1);
+            const viewMatrix = mat4.identity();
+            const now = Date.now() / 1000;
+            mat4.multiply(orthoMatrix, viewMatrix, this.modelViewProjectionMatrix);
+        } else {
+            const viewMatrix = mat4.identity();
+            mat4.translate(viewMatrix, vec3.fromValues(0, 0, -4), viewMatrix);
+            const now = Date.now() / 1000;
+            mat4.rotate(
+                viewMatrix,
+                vec3.fromValues(Math.sin(now), Math.cos(now), 0),
+                1,
+                viewMatrix
+            );
 
-        mat4.multiply(this.projectionMatrix, viewMatrix, this.modelViewProjectionMatrix);
+            mat4.multiply(this.projectionMatrix, viewMatrix, this.modelViewProjectionMatrix);
+        }
+
+
 
         return this.modelViewProjectionMatrix;
     }
 
-    private drawModel(model: Model) {
+    private async drawModel(model: Model) {
         console.log(`Rendering model: ${model.name}`);
         const pipeline = new Pipeline({
             type: model.type,
@@ -151,29 +163,57 @@ class Renderer {
         });
         this.currentPipeline = pipeline.generateModelPipeline(this.device, this.presentationFormat);
 
+        // cube texture
+        let cubeTexture: GPUTexture;
+        {
+            const response = await fetch('../assets/textures/png.png');
+            const imageBitmap = await createImageBitmap(await response.blob());
+
+            cubeTexture = this.device.createTexture({
+                size: [imageBitmap.width, imageBitmap.height, 1],
+                format: 'rgba8unorm',
+                usage:
+                    GPUTextureUsage.TEXTURE_BINDING |
+                    GPUTextureUsage.COPY_DST |
+                    GPUTextureUsage.RENDER_ATTACHMENT,
+            });
+            this.device.queue.copyExternalImageToTexture(
+                { source: imageBitmap },
+                { texture: cubeTexture },
+                [imageBitmap.width, imageBitmap.height]
+            );
+        }
+
+        const sampler = this.device.createSampler({
+            magFilter: 'linear',
+            minFilter: 'linear',
+        });
+
         const depthTexture = this.device.createTexture({
             size: [this.canvas.width, this.canvas.height],
             format: 'depth24plus',
             usage: GPUTextureUsage.RENDER_ATTACHMENT,
         });
 
-        const uniformBufferSize = 4 * 16; // 4x4 matrix;
-        this.uniformBuffer = this.device.createBuffer({
-            size: uniformBufferSize,
-            usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
-        });
-
         this.uniformBindGroup = this.device.createBindGroup({
             layout: this.currentPipeline.getBindGroupLayout(0),
             entries: [
-                {
-                    binding: 0,
-                    resource: {
-                        buffer: this.uniformBuffer,
-                    }
-                }
-            ]
-        });
+              {
+                binding: 0,
+                resource: {
+                  buffer: this.uniformBuffer,
+                },
+              },
+              {
+                binding: 1,
+                resource: sampler,
+              },
+              {
+                binding: 2,
+                resource: cubeTexture.createView(),
+              },
+            ],
+          });
 
         this.renderPassDescripter = {
             colorAttachments: [
