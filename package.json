@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "type": "module",
   "description": "A performant 3d javascript library",
-  "main": "index.ts",
+  "main": "src/index.ts",
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",

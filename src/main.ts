@@ -1,28 +1,41 @@
+import Renderer from './renderer';
 import './style.css'
-import init from './test-triangle';
-import { assert } from './utils/util';
+import { Model } from './types/scene.types';
 
-(async () => {
-  if (navigator.gpu === undefined) {
-    const h = document.querySelector('#title') as HTMLElement;
-    h.innerText = 'WebGPU is not supported in this browser.';
-    return;
-  }
-  const adapter = await navigator.gpu.requestAdapter();
-  if (adapter === null) {
-    const h = document.querySelector('#title') as HTMLElement;
-    h.innerText = 'No adapter is available for WebGPU.';
-    return;
-  }
-  const device = await adapter.requestDevice();
+async function start() {
+  const models: Model[] = [
+    {
+      name: "Square Model",
+      type: "square", // Type can be "square", "circle", or "custom"
+      size: { w: 100, h: 100 },
+      id: 0,
+      position: undefined,
+      verticies: undefined,
+      shaders: [],
+      startAnimation: false,
+      applyTransformation: function (type: 'scale' | 'rotate' | 'translate', value: { x: number; y: number; z: number; }): void {
+        throw new Error('Function not implemented.');
+      }
+    },
+    {
+      name: "Square Model",
+      type: "square", // Type can be "square", "circle", or "custom"
+      size: { w: 100, h: 100 },
+      id: 0,
+      position: undefined,
+      verticies: undefined,
+      shaders: [],
+      startAnimation: false,
+      applyTransformation: function (type: 'scale' | 'rotate' | 'translate', value: { x: number; y: number; z: number; }): void {
+        throw new Error('Function not implemented.');
+      }
+    },
+  ];
+  
+  const renderer = new Renderer({ models });
+  await renderer.init();  // Initializes WebGPU and sets up the canvas
 
-  const canvas = document.querySelector<HTMLCanvasElement>('#webgpu-canvas');
-  assert(canvas !== null);
-  const observer = new ResizeObserver(() => {
-    canvas.width = canvas.clientWidth;
-    canvas.height = canvas.clientHeight;
-  });
-  observer.observe(canvas);
-  const context = canvas.getContext('webgpu') as GPUCanvasContext;  
-  init(context, device);  // Remove me!
-})();
+  renderer.render(); 
+}
+
+start();
