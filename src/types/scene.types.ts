@@ -23,6 +23,9 @@ interface Vec2 {
 
 /** Definition of a model inside of a scene. */
 interface Model {
+    vertexBuffer: GPUBuffer;
+    textureUrl: string;
+    pipelineConfig: any;
     vertexCount: GPUSize32;
     uniformBuffer: GPUBuffer;
     type: "square" | "circle" | "custom";

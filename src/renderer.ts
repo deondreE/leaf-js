@@ -1,14 +1,26 @@
 import {Model} from "./types/scene.types.ts";
+import PipelineManager from './PipelineManager.ts';
 
 class Renderer {
     private pipelineManager: PipelineManager;
     private textureManager: TextureManager;
     private depthTexture: GPUTexture;
     private device: GPUDevice;
+    ctx: any;
 
     constructor(private canvas: HTMLCanvasElement, private models: Model[]) {
         const context = canvas.getContext('webgpu') as GPUCanvasContext;
-        device = navigator.gpu.requestAdapter().requestDevice();
+        let device: GPUDevice;
+        (async () => {
+            const adapter = await navigator.gpu.requestAdapter();
+            if (!adapter) {
+                console.error("WebGPU is not supported on this browser.");
+                return;
+            }
+            this.device = await adapter.requestDevice();
+            device = this.device;
+        })();
+       
         const format = navigator.gpu.getPreferredCanvasFormat();
 
         context.configure({ device, format });

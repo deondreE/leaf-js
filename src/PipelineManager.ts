@@ -13,3 +13,4 @@ class PipelineManager {
         return this.pipelines.get(type)!;
     }
 }
+export default PipelineManager;
