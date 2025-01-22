@@ -8,6 +8,35 @@
   <body>
     <h1 id="title">Thanks to WEBGPU Guides for the CUBE MATRIX!</h1>
     <canvas id="webgpu-canvas" />
-    <script type="module" src="/src/main.ts"></script>
   </body>
+  <script lang="ts" type="module">
+    import Renderer from './src/Renderer.ts';
+    async function main() {
+            const canvas = document.getElementById('webgpu-canvas');
+            if (!canvas || !(canvas instanceof HTMLCanvasElement)) {
+                console.error('Canvas element not found');
+                return;
+            }
+
+            // Define your models
+            const models = [
+                {
+                    type: 'basic', // Example type
+                    pipelineConfig: { /* Pipeline-specific configuration */ },
+                    textureUrl: './assets/textures/png.png', // Path to the texture
+                    uniformBuffer: new Float32Array([ /* Example data */ ]),
+                    vertexBuffer: new Float32Array([ /* Example vertex data */ ]),
+                    vertexCount: 6, // Number of vertices
+                },
+                // Add more models as needed
+            ];
+
+            // Create the renderer and start rendering
+            const renderer = new Renderer(canvas, models);
+            await renderer.init();
+            renderer.render();
+        }
+
+        main().catch(err => console.error(err));
+  </script>
 </html>

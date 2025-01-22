@@ -27,3 +27,5 @@ class TextureManager {
         return texture;
     }
 }
+
+export default TextureManager;

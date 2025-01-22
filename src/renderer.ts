@@ -1,5 +1,7 @@
 import {Model} from "./types/scene.types.ts";
 import PipelineManager from './PipelineManager.ts';
+import { assert } from "./utils/util.ts";
+import TextureManager from "./TextureManager.ts";
 
 class Renderer {
     private pipelineManager: PipelineManager;
@@ -8,32 +10,39 @@ class Renderer {
     private device: GPUDevice;
     ctx: any;
 
-    constructor(private canvas: HTMLCanvasElement, private models: Model[]) {
-        const context = canvas.getContext('webgpu') as GPUCanvasContext;
-        let device: GPUDevice;
-        (async () => {
-            const adapter = await navigator.gpu.requestAdapter();
-            if (!adapter) {
-                console.error("WebGPU is not supported on this browser.");
-                return;
-            }
-            this.device = await adapter.requestDevice();
-            device = this.device;
-        })();
-       
+    constructor(private canvas: HTMLCanvasElement, private models: Model[], private modelType: string) {}
+
+    async init() {
+        const context = this.canvas.getContext('webgpu') as GPUCanvasContext;
+        if (!context) {
+            throw new Error("WebGPU context is not supported.");
+        }
+        this.ctx = context;
+
+        const adapter = await navigator.gpu.requestAdapter();
+        if (!adapter) {
+            throw new Error("Unable to get GPU adapter. WebGPU might not be supported.");
+        }
+
+        this.device = await adapter.requestDevice();
         const format = navigator.gpu.getPreferredCanvasFormat();
 
-        context.configure({ device, format });
-        this.pipelineManager = new PipelineManager(device, format);
-        this.textureManager = new TextureManager(device);
+        this.ctx.configure({
+            device: this.device,
+            format,
+        });
+
+        this.pipelineManager = new PipelineManager(this.device, format);
+        this.textureManager = new TextureManager(this.device);
 
         this.depthTexture = this.createDepthTexture();
+
         const observer = new ResizeObserver(() => {
-            canvas.width = canvas.clientWidth * window.devicePixelRatio;
-            canvas.height = canvas.clientHeight * window.devicePixelRatio;
+            this.canvas.width = this.canvas.clientWidth * window.devicePixelRatio;
+            this.canvas.height = this.canvas.clientHeight * window.devicePixelRatio;
             this.depthTexture = this.createDepthTexture();
         });
-        observer.observe(canvas);
+        observer.observe(this.canvas);
     }
 
     /** The currrent depth texture changes based on the amount of verticies inside of a given model, ie: points of contact in light. */
@@ -46,6 +55,9 @@ class Renderer {
     }
 
     async drawModel(model: Model) {
+        if (!this.device || !this.pipelineManager || !this.textureManager || !this.ctx) {
+            throw new Error("Renderer is not fully initialized. Call initialize() first.");
+        }
         const pipeline = this.pipelineManager.getPipeline(model.type, model.pipelineConfig);
         const texture = await this.textureManager.loadTexture(model.textureUrl);
 
@@ -88,10 +100,15 @@ class Renderer {
     }
 
     render() {
+        if (!this.pipelineManager) {
+            console.warn("Renderer is not initialized yet. Delaying render call.");
+            return;
+        }
         for (const model of this.models) {
             this.drawModel(model);
         }
-        // NOTE: this just syncs with canvas, I still want full support for the canvas api.
         requestAnimationFrame(() => this.render());
     }
 }
+
+export default Renderer;

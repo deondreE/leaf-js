@@ -1,4 +1,8 @@
-interface PipelineConfig {
+import defaultVertex from './shaders/basic.vert.wgsl';
+import defaultFrag from './shaders/texture.frag.wgsl';
+
+
+export interface PipelineConfig {
     vertexShader: string;
     fragmentShader: string;
     vertexBuffers: GPUVertexBufferLayout[];
@@ -23,12 +27,12 @@ class Pipeline {
         this.pipeline = device.createRenderPipeline({
             layout: 'auto',
             vertex: {
-                module: device.createShaderModule({ code: config.vertexShader }),
+                module: device.createShaderModule({ code: defaultVertex }),
                 buffers: config.vertexBuffers,
             },
             fragment: {
-                module: device.createShaderModule({ code: config.fragmentShader }),
-                targets: config.targets,
+                module: device.createShaderModule({ code: defaultFrag }),
+                targets: config.targets || [{ format: "bgra8unorm" }],
             },
             primitive: config.primitive || {
                 topology: 'triangle-list',
