@@ -18,7 +18,8 @@ class Pipeline {
         this.size = size;
     }
 
-    generateModelPipeline(device: GPUDevice, config: GPUTextureFormat): GPURenderPipeline {
+    /** This creates a new generateModelPipeline  */
+    generateModelPipeline(device: GPUDevice, config: PipelineConfig): GPURenderPipeline {
         this.pipeline = device.createRenderPipeline({
             layout: 'auto',
             vertex: {

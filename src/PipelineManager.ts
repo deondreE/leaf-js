@@ -1,5 +1,9 @@
 import Pipeline from "./pipeline.ts";
 
+/** The PipelineManager updates a map based on pipelines that need to be rendered
+ *  Soon this will add a queue to each of the given pipeline.
+ *  
+ */
 class PipelineManager {
     private pipelines: Map<string, GPURenderPipeline> = new Map();
 

@@ -28,24 +28,21 @@ class Renderer {
         this.textureManager = new TextureManager(device);
 
         this.depthTexture = this.createDepthTexture();
-        this.setupResizeObserver(canvas);
-    }
-
-    private createDepthTexture(): GPUTexture {
-        return this.device.createTexture({
-            size: [this.canvas.width, this.canvas.height],
-            format: 'depth24plus',
-            usage: GPUTextureUsage.RENDER_ATTACHMENT,
-        });
-    }
-
-    private setupResizeObserver(canvas: HTMLCanvasElement) {
         const observer = new ResizeObserver(() => {
             canvas.width = canvas.clientWidth * window.devicePixelRatio;
             canvas.height = canvas.clientHeight * window.devicePixelRatio;
             this.depthTexture = this.createDepthTexture();
         });
         observer.observe(canvas);
+    }
+
+    /** The currrent depth texture changes based on the amount of verticies inside of a given model, ie: points of contact in light. */
+    private createDepthTexture(): GPUTexture {
+        return this.device.createTexture({
+            size: [this.canvas.width, this.canvas.height],
+            format: 'depth24plus',
+            usage: GPUTextureUsage.RENDER_ATTACHMENT,
+        });
     }
 
     async drawModel(model: Model) {
@@ -79,6 +76,8 @@ class Renderer {
             },
         });
 
+        // NOTE: 2d models still have vertex buffers.
+        // NOTE: These will be defined inside your render pipeline.
         passEncoder.setPipeline(pipeline);
         passEncoder.setBindGroup(0, bindGroup);
         passEncoder.setVertexBuffer(0, model.vertexBuffer);
@@ -92,6 +91,7 @@ class Renderer {
         for (const model of this.models) {
             this.drawModel(model);
         }
+        // NOTE: this just syncs with canvas, I still want full support for the canvas api.
         requestAnimationFrame(() => this.render());
     }
 }
