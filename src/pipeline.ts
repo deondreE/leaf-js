@@ -24,8 +24,25 @@ class Pipeline {
 
     /** This creates a new generateModelPipeline  */
     generateModelPipeline(device: GPUDevice, config: PipelineConfig): GPURenderPipeline {
+        const bindGroupLayout = device.createBindGroupLayout({
+            label: "DefaultBindGroupLayout",
+            entries: [
+                {
+                    binding: 0,
+                    visibility: GPUShaderStage.FRAGMENT,
+                    texture: {sampleType: 'float'}
+                }
+            ]
+        });
+
+        const pipelineLayout = device.createPipelineLayout({
+            label: "pipelineDefaultLayout",
+            bindGroupLayouts: [bindGroupLayout],
+        });
+
         this.pipeline = device.createRenderPipeline({
-            layout: 'auto',
+            label: 'pipeline',
+            layout: pipelineLayout,
             vertex: {
                 module: device.createShaderModule({ code: defaultVertex }),
                 buffers: config.vertexBuffers,

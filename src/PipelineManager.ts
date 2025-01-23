@@ -7,7 +7,7 @@ import Pipeline from "./pipeline.ts";
 class PipelineManager {
     private pipelines: Map<string, GPURenderPipeline> = new Map();
 
-    constructor(private device: GPUDevice, private format: GPUTextureFormat) {}
+    constructor(private device: GPUDevice, private format: any) {}
 
     getPipeline(type: string, config: any): GPURenderPipeline {
         if (!this.pipelines.has(type)) {

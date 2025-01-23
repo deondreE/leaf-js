@@ -54,6 +54,63 @@ class Renderer {
         });
     }
 
+    genUniformBufferData(): Float32Array {
+        const data = new Float32Array(16); 
+        data[0] = 1;
+        return data;
+    }
+
+    genVertexBufferData(): Float32Array {
+        return new Float32Array([
+            // Positions           | Normals
+            -1, -1,  1,   0,  0,  1, // Front face
+             1, -1,  1,   0,  0,  1, 
+             1,  1,  1,   0,  0,  1, 
+            -1,  1,  1,   0,  0,  1, 
+
+            -1, -1, -1,   0,  0, -1, // Back face
+             1, -1, -1,   0,  0, -1, 
+             1,  1, -1,   0,  0, -1, 
+            -1,  1, -1,   0,  0, -1,
+
+            -1,  1,  1,   0,  1,  0, // Top face
+             1,  1,  1,   0,  1,  0,
+             1,  1, -1,   0,  1,  0,
+            -1,  1, -1,   0,  1,  0,
+
+            -1, -1,  1,   0, -1,  0, // Bottom face
+             1, -1,  1,   0, -1,  0,
+             1, -1, -1,   0, -1,  0,
+            -1, -1, -1,   0, -1,  0,
+
+             1, -1,  1,   1,  0,  0, // Right face
+             1,  1,  1,   1,  0,  0,
+             1,  1, -1,   1,  0,  0,
+             1, -1, -1,   1,  0,  0,
+
+            -1, -1,  1,  -1,  0,  0, // Left face
+            -1,  1,  1,  -1,  0,  0,
+            -1,  1, -1,  -1,  0,  0,
+            -1, -1, -1,  -1,  0,  0,
+        ]);
+    }
+
+    private createVertexBuffer(data: Float32Array): GPUBuffer {
+        return this.device.createBuffer({
+            size: data.byteLength,
+            usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
+            mappedAtCreation: true,
+        });
+    }
+
+    createUniformBuffer(data: Float32Array): GPUBuffer {
+        return this.device.createBuffer({
+            size: data.byteLength,
+            usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+            mappedAtCreation: true
+        });
+    }
+
     async drawModel(model: Model) {
         if (!this.device || !this.pipelineManager || !this.textureManager || !this.ctx) {
             throw new Error("Renderer is not fully initialized. Call initialize() first.");
@@ -64,7 +121,7 @@ class Renderer {
         const bindGroup = this.device.createBindGroup({
             layout: pipeline.getBindGroupLayout(0),
             entries: [
-                { binding: 0, resource: { buffer: model.uniformBuffer } },
+                { binding: 0, resource: { buffer: this.createUniformBuffer(this.genUniformBufferData())  } },
                 { binding: 1, resource: this.device.createSampler() },
                 { binding: 2, resource: texture.createView() },
             ],
@@ -92,7 +149,8 @@ class Renderer {
         // NOTE: These will be defined inside your render pipeline.
         passEncoder.setPipeline(pipeline);
         passEncoder.setBindGroup(0, bindGroup);
-        passEncoder.setVertexBuffer(0, model.vertexBuffer);
+        // TODO: Fix this.
+        passEncoder.setVertexBuffer(0, this.createVertexBuffer(this.genVertexBufferData()));
         passEncoder.draw(model.vertexCount);
         passEncoder.end();
 
