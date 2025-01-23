@@ -55,7 +55,7 @@ class Renderer {
     }
 
     genUniformBufferData(): Float32Array {
-        const data = new Float32Array(16); 
+        const data = new Float32Array(32);
         data[0] = 1;
         return data;
     }
@@ -115,20 +115,51 @@ class Renderer {
         if (!this.device || !this.pipelineManager || !this.textureManager || !this.ctx) {
             throw new Error("Renderer is not fully initialized. Call initialize() first.");
         }
+    
         const pipeline = this.pipelineManager.getPipeline(model.type, model.pipelineConfig);
         const texture = await this.textureManager.loadTexture(model.textureUrl);
-
+    
+        // Layouts
+        const uniformBufferLayout = {
+            binding: 0,
+            visibility: GPUShaderStage.VERTEX,
+            buffer: { type: "uniform" }
+        };
+    
+        const samplerLayout = {
+            binding: 1,
+            visibility: GPUShaderStage.FRAGMENT,
+            sampler: { type: "filtering" }, // Adjust as needed
+        };
+    
+        const textureLayout = {
+            binding: 2,
+            visibility: GPUShaderStage.FRAGMENT,
+            texture: { sampleType: "float" },
+        };
+    
+        const bindGroupLayout = this.device.createBindGroupLayout({
+            // @ts-ignore
+            entries: [uniformBufferLayout, samplerLayout, textureLayout]
+        });
+    
+        const uniformBuffer = this.device.createBuffer({
+            size: 64, // Size of the uniform buffer in bytes
+            usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+        });
+    
         const bindGroup = this.device.createBindGroup({
-            layout: pipeline.getBindGroupLayout(0),
+            layout: bindGroupLayout,
             entries: [
-                { binding: 0, resource: { buffer: this.createUniformBuffer(this.genUniformBufferData())  } },
+                { binding: 0, resource: { buffer: uniformBuffer } },
                 { binding: 1, resource: this.device.createSampler() },
                 { binding: 2, resource: texture.createView() },
             ],
         });
-
+    
         const commandEncoder = this.device.createCommandEncoder();
         const passEncoder = commandEncoder.beginRenderPass({
+            label: "Default Encoder",
             colorAttachments: [
                 {
                     view: this.ctx.getCurrentTexture().createView(),
@@ -144,18 +175,23 @@ class Renderer {
                 depthStoreOp: 'store',
             },
         });
-
-        // NOTE: 2d models still have vertex buffers.
-        // NOTE: These will be defined inside your render pipeline.
+    
+        // Set the pipeline and bind group
         passEncoder.setPipeline(pipeline);
         passEncoder.setBindGroup(0, bindGroup);
-        // TODO: Fix this.
+    
+        // Set the vertex buffer (ensure this function is correctly creating the buffer)
         passEncoder.setVertexBuffer(0, this.createVertexBuffer(this.genVertexBufferData()));
+    
+        // Draw the model
         passEncoder.draw(model.vertexCount);
+    
         passEncoder.end();
-
+    
+        // Submit the command buffer
         this.device.queue.submit([commandEncoder.finish()]);
     }
+    
 
     render() {
         if (!this.pipelineManager) {

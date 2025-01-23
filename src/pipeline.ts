@@ -25,31 +25,30 @@ class Pipeline {
     /** This creates a new generateModelPipeline  */
     generateModelPipeline(device: GPUDevice, config: PipelineConfig): GPURenderPipeline {
         const bindGroupLayout = device.createBindGroupLayout({
-            label: "DefaultBindGroupLayout",
             entries: [
-                {
-                    binding: 0,
-                    visibility: GPUShaderStage.FRAGMENT,
-                    texture: {sampleType: 'float'}
-                }
-            ]
+                { binding: 0, visibility: GPUShaderStage.FRAGMENT, sampler: { type: "filtering" } },
+                { binding: 1, visibility: GPUShaderStage.FRAGMENT, texture: { sampleType: "float" } },
+            ],
         });
-
+    
         const pipelineLayout = device.createPipelineLayout({
             label: "pipelineDefaultLayout",
             bindGroupLayouts: [bindGroupLayout],
         });
-
+    
+        // Ensure that the vertexBuffers layout is correctly defined
         this.pipeline = device.createRenderPipeline({
-            label: 'pipeline',
+            label: 'Testing',
             layout: pipelineLayout,
             vertex: {
                 module: device.createShaderModule({ code: defaultVertex }),
-                buffers: config.vertexBuffers,
+                buffers: config.vertexBuffers, // Use the correctly defined vertexBuffers layout
+                entryPoint: "main",
             },
             fragment: {
                 module: device.createShaderModule({ code: defaultFrag }),
                 targets: config.targets || [{ format: "bgra8unorm" }],
+                entryPoint: "main",
             },
             primitive: config.primitive || {
                 topology: 'triangle-list',
@@ -61,7 +60,7 @@ class Pipeline {
                 format: 'depth24plus',
             },
         });
-
+    
         return this.pipeline;
     }
 }
