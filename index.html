@@ -1,41 +1,16 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>WebGPU Typescript Starter</title>
-  </head>
-  <body>
-    <h1 id="title">Thanks to WEBGPU Guides for the CUBE MATRIX!</h1>
-    <canvas width="1000" height="1000" id="webgpu-canvas"></canvas>
-  </body>
-  <script lang="ts" type="module">
-    import Renderer from './src/Renderer.ts';
-    async function main() {
-            const canvas = document.getElementById('webgpu-canvas');
-            if (!canvas || !(canvas instanceof HTMLCanvasElement)) {
-                console.error('Canvas element not found');
-                return;
-            }
-
-            // Define your models
-            const models = [
-                {
-                    type: 'basic', // Example type
-                    pipelineConfig: { /* Pipeline-specific configuration */ },
-                    textureUrl: './assets/textures/png.png', // Path to the texture
-                    uniformBuffer: null,
-                    vertexBuffer:null,
-                    vertexCount: 6, // Number of vertices
-                },
-            ];
-
-            // Create the renderer and start rendering
-            const renderer = new Renderer(canvas, models);
-            await renderer.init();
-            renderer.render();
-        }
-
-        main().catch(err => console.error(err));
-  </script>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Water Simulation with WebGPU</title>
+    <style>
+        body { margin: 0; }
+        canvas { display: block; }
+    </style>
+</head>
+<body>
+    <canvas id="canvas"></canvas>
+    <script src="./water_simulation.js"></script>
+</body>
 </html>
