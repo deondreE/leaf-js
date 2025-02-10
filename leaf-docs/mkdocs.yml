@@ -1,0 +1,5 @@
+site_name: Leaf docs
+theme:
+  palette:
+    primary: indigo
+  name: material
