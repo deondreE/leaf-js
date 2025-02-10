@@ -4,6 +4,10 @@ import Pipeline from "./pipeline";
 import { Model } from "./types/scene.types";
 import { assert } from "./utils/util";
 
+interface RenderDescriptor {
+    canvasSelector?: string,
+    models: Model[],
+}
 // HUGGGE TODO: Make this not just work for cubes.
 class Renderer {
     models: Model[];
@@ -24,58 +28,52 @@ class Renderer {
     projectionMatrix: Mat4;
     modelViewProjectionMatrix: Mat4;
 
-    constructor({ models }) {
+    constructor({ models, canvasSelector = "#webgpu-canvas" }: RenderDescriptor) {
+        assert(navigator.gpu !== undefined, "WebGPU is not supported in this browser");
         this.models = models;
 
-        this.canvas = document.querySelector<HTMLCanvasElement>('#webgpu-canvas');
-        this.aspect = this.canvas.width / this.canvas.height;
+        this.canvas = document.querySelector<HTMLCanvasElement>(canvasSelector);
+        assert(this.canvas !== null, "No canvas found");
+        this.aspect = this.canvas.width / this.canvas.height; //todo needs to resize.
         this.projectionMatrix = mat4.perspective((2 * Math.PI) / 5, this.aspect, 1, 100.0);
         this.modelViewProjectionMatrix = mat4.create();
         this.frame.bind(this);
     }
 
     async init() {
-        if (navigator.gpu === undefined) {
-            const h = document.querySelector('#title') as HTMLElement;
-            h.innerHTML = 'WebGPU is not supported in this browser';
-            return;
-        }
+        
         const adapter = await navigator.gpu.requestAdapter();
+        assert(adapter !== null, "No WebGPU adapter available");
         if (adapter === null) {
             const h = document.querySelector('#title') as HTMLElement;
             h.innerHTML = 'No adapter is availible for WebGPU';
             return;
         }
-        const device = await adapter.requestDevice();
-        assert(device != null);
-        this.device = device;
-
-        const canvas = document.querySelector<HTMLCanvasElement>('#webgpu-canvas');
-        assert(canvas != null);
-        this.canvas = canvas;
         
-        const context = canvas.getContext('webgpu') as GPUCanvasContext;
+        this.device = await adapter.requestDevice();
+        
+        const context = this.canvas.getContext('webgpu') as GPUCanvasContext;
         assert(context != null);
         this.ctx = context;
 
         const devicePixelRatio = window.devicePixelRatio;
-        canvas.width = canvas.clientWidth * devicePixelRatio;
-        canvas.height = canvas.clientHeight * devicePixelRatio;
+        this.canvas.width = this.canvas.clientWidth * devicePixelRatio;
+        this.canvas.height = this.canvas.clientHeight * devicePixelRatio;
 
         const presenstationFormat = navigator.gpu.getPreferredCanvasFormat();
         this.presentationFormat = presenstationFormat;
         this.ctx.configure({
-            device,
+            device: this.device,
             format: presenstationFormat
         });
 
         this.updateDepthTexture();
         const observer = new ResizeObserver(() => {
-            canvas.width = canvas.clientWidth * devicePixelRatio;
-            canvas.height = canvas.clientHeight * devicePixelRatio;
+            this.canvas.width = this.canvas.clientWidth * devicePixelRatio;
+            this.canvas.height = this.canvas.clientHeight * devicePixelRatio;
             this.updateDepthTexture();
         });
-        observer.observe(canvas);
+        observer.observe(this.canvas);
     }
 
     render() {
@@ -117,7 +115,7 @@ class Renderer {
 
         const commandEncoder = this.device.createCommandEncoder();
         const passEncoder = commandEncoder.beginRenderPass(this.renderPassDescripter);
-        passEncoder.setPipeline(this.currentPipeline);
+        passEncoder.setPipeline(this.currentPipeline); //setting the last models pipeline essentially
         passEncoder.setBindGroup(0, this.uniformBindGroup);
         passEncoder.setVertexBuffer(0, this.vertexBuffer);
         passEncoder.draw(cubeVertexCount);
@@ -149,6 +147,7 @@ class Renderer {
             type: model.type,
             size: model.size,
         });
+        //each model overrites the pipeline.
         this.currentPipeline = pipeline.generateModelPipeline(this.device, this.presentationFormat);
 
         const depthTexture = this.device.createTexture({
