@@ -1,37 +1,28 @@
-import { Vec2 } from "./math.types";
+import { Mat4 } from "wgpu-matrix";
 
-/** Definition of an animation applied to a model */
-interface Animation {
-    name: string;   
-    type: 'rotation' | 'translation' | 'scale';
-    duration: string;
-
-    start(): void;
-    update(dt: number): void;
-    stop(): void;
-};
+export enum ModelType {
+  TRIANGLE,
+  QUAD,
+  CUBE,
+  CAPSULE,
+}
 
 interface Scene {
-    name: string;
-    models: Model[];
-    subscenes?: Scene[];
-    animations?: Animation[];
+  name: string;
+  view: Mat4;
+  children: Model[];
 }
 
 /** Definition of a model inside of a scene. */
 interface Model {
-    type: "square" | "circle" | "custom";
-    id: number;
-    name: string;
-    position: Vec2;
-    size: { w: number, h: number },
-    verticies: Float32Array;
-    shaders: string[],
-    modelFile?: string;
-    startAnimation: boolean;
+  type: {
+    [type in ModelType]: string;
+  };
+  name: string;
+  size: { w: number; h: number };
+  verticies: Float32Array;
+  transforms: Float32Array;
+  sourceFile?: string;
+}
 
-    /** Apply transformation: Scale, Rotation, Transform. */
-    applyTransformation(type: 'scale' | 'rotate' | 'translate', value: { x: number, y: number, z: number }): void;  
-};
-
-export type { Model, Animation, Scene };
+export type { Model, Scene };

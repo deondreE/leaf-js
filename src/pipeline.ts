@@ -1,4 +1,3 @@
-import { Vec3 } from "./types/math.types";
 import basicVert from './shaders/basic.vert.wgsl';
 import colorVert from './shaders/color.frag.wgsl';
 
