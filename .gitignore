@@ -4,4 +4,11 @@ obj*
 vendor*
 Makefile
 *.make
+
+scene.json
 test.json*
+
+*.sln
+*.vcxproj
+*.vcxproj.user
+.vs
