@@ -3,15 +3,19 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>WebGPU Typescript Starter</title>
+    <title>Testbed</title>
+    <link rel="stylesheet" href="src/style.css"/>
   </head>
   <body>
     <h1 id="title">test</h1>
     <canvas id="game-canvas" width="500" height="300"></canvas>
-    <!-- <canvas id="webgpu-canvas"></canvas> -->
-    <canvas is="l-profiler" target-id="game-canvas" width="500" height="100"></canvas>
-    <button onclick="document.getElementById('profiler-canvas').pause()">Pause</button>
-    <button onclick="document.getElementById('profiler-canvas').resume()">Resume</button>
+    <div class="profiler-container">
+      <div class="b">
+        <button onclick="document.getElementById('profiler-canvas').pause()">Pause</button>
+        <button onclick="document.getElementById('profiler-canvas').resume()">Resume</button>
+      </div>
+      <canvas is="l-profiler" target-id="game-canvas" width="500" height="200"></canvas>
+    </div>
     <script type="module" src="/src/index.ts"></script>
   </body>
   <script>
