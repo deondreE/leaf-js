@@ -19,3 +19,7 @@ WebGL was designed in an era when OpenGL was the dominant rendering API. However
 For even greater performance, Leaf supports integration with WebAssembly (WASM), enabling near-native execution speeds. Since all web-based frameworks are ultimately constrained by the virtual GPU access granted by Chrome and other browsers, Leaf’s use of WebGPU ensures the best possible performance within these limits.
 
 Additionally, Leaf utilizes WGSL, a shader language designed specifically for WebGPU. WGSL offers significant performance improvements over GLSL, optimizing shader execution for web environments. This results in lower latency, better memory efficiency, and improved compatibility with modern GPU architectures.
+
+## Leafjs Build
+
+Check the reference on how leaf actually works under the hood, it will also show you where and how to run leaf.
