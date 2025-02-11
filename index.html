@@ -7,7 +7,24 @@
   </head>
   <body>
     <h1 id="title">test</h1>
-    <canvas id="webgpu-canvas"></canvas>
-    <script type="module" src="/src/main.ts"></script>
+    <canvas id="game-canvas" width="500" height="300"></canvas>
+    <!-- <canvas id="webgpu-canvas"></canvas> -->
+    <canvas is="l-profiler" target-id="game-canvas" width="500" height="100"></canvas>
+    <button onclick="document.getElementById('profiler-canvas').pause()">Pause</button>
+    <button onclick="document.getElementById('profiler-canvas').resume()">Resume</button>
+    <script type="module" src="/src/index.ts"></script>
   </body>
+  <script>
+    const canvas = document.getElementById("game-canvas");
+    const ctx = canvas.getContext("2d");
+
+    function renderFrame() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = "red";
+      ctx.fillRect(Math.random() * canvas.width, Math.random() * canvas.height, 50, 50);
+      requestAnimationFrame(renderFrame);
+    }
+
+    renderFrame();
+  </script>
 </html>
