@@ -1,19 +1,19 @@
 {
   "name": "leaf-js",
-  "version": "1.0.0",
+  "version": "0.0.0",
   "type": "module",
   "description": "A performant 3d javascript library",
   "main": "src/index.ts",
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build",
-    "preview": "vite preview",
+    "build": "parcel index.html",
     "format": "prettier --write ."
   },
   "author": "deondreE",
   "license": "MIT",
   "devDependencies": {
     "@webgpu/types": "^0.1.52",
+    "parcel": "^2.13.3",
     "prettier": "^3.5.0",
     "typescript": "^5.7.3",
     "vite": "^6.0.7",

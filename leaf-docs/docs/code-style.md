@@ -7,6 +7,9 @@ Go to the docs first -> Ai use is fine to illustrate prof of context. -> NO USE 
 
 ## Code Style
 
+I tend to lean twoards the way google writes cpp.
+[CPP](https://google.github.io/styleguide/cppguide.html)
+
 CPP->Zig:
  - Snake case unless it is a class. `typedef`, `struct`  
  - Classes are camel case. 
