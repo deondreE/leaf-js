@@ -27,23 +27,3 @@ project "Lib"
    filter "configurations:Release"
       defines { "NDEBUG" }
       optimize "On"
-
-   filter "configurations:Testing"
-      defines { "TESTING" }
-      symbols "On"
-
-      libdirs {
-         "vendor/googletest/lib"
-      }
-
-      links {
-         "gtest",
-         "gtest_main",
-         "pthread"
-      }
-   
-   filter "files:src/test/*.cpp"
-      kind "ConsoleApp"
-      files {
-         "src/test/**.cpp"
-      }
