@@ -191,7 +191,7 @@ export class Profiler extends HTMLCanvasElement {
 
   pause() {
     this.paused = true;
-    this.renderGraph();
+    this.render();
   }
 
   resume() {
