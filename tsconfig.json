@@ -3,11 +3,7 @@
     "target": "ES2020",
     "useDefineForClassFields": true,
     "module": "ESNext",
-    "lib": [
-      "ES2020",
-      "DOM",
-      "DOM.Iterable"
-    ],
+    "lib": ["ES2020", "DOM", "DOM.Iterable"],
     "skipLibCheck": true,
     "allowJs": true,
     /* Bundler mode */
@@ -20,16 +16,8 @@
     "strict": false,
     "noFallthroughCasesInSwitch": true,
     /* types */
-    "typeRoots": [
-      "./node_modules/@webgpu/types",
-      "./node_modules/tweakpane/dist/type/"
-    ],
+    "typeRoots": ["./node_modules/@webgpu/types", "./node_modules/tweakpane/dist/type/"]
   },
-  "include": [
-    "src/**/*.ts"
-  ],
-  "exclude": [
-    "**/node_modules/**",
-    "**/dist/**"
-  ]
+  "include": ["src/**/*.ts"],
+  "exclude": ["**/node_modules/**", "**/dist/**"]
 }

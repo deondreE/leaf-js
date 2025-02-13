@@ -1,10 +1,10 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Testbed</title>
-    <link rel="stylesheet" href="src/style.css"/>
+    <link rel="stylesheet" href="src/style.css" />
   </head>
   <body>
     <h1 id="title">test</h1>
@@ -19,12 +19,12 @@
     <script type="module" src="/src/index.ts"></script>
   </body>
   <script>
-    const canvas = document.getElementById("game-canvas");
-    const ctx = canvas.getContext("2d");
+    const canvas = document.getElementById('game-canvas');
+    const ctx = canvas.getContext('2d');
 
     function renderFrame() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-      ctx.fillStyle = "red";
+      ctx.fillStyle = 'red';
       ctx.fillRect(Math.random() * canvas.width, Math.random() * canvas.height, 50, 50);
       requestAnimationFrame(renderFrame);
     }

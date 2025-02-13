@@ -12,3 +12,8 @@ test.json*
 *.vcxproj
 *.vcxproj.user
 .vs
+
+# Model files
+*.obj
+*.fbx
+*.mtl

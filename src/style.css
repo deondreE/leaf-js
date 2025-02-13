@@ -32,20 +32,20 @@ body {
 }
 
 .profiler-container button:hover {
-    background-color: #0056b3;
+  background-color: #0056b3;
 }
 
 .profiler-container button:active {
-    background-color: #004085;
+  background-color: #004085;
 }
 
 .profiler-container button:disabled {
-    background-color: #cccccc;
-    cursor: not-allowed;
+  background-color: #cccccc;
+  cursor: not-allowed;
 }
 
 h1 {
   position: absolute;
-  color:#ccc;
+  color: #ccc;
   margin: 30px 30px;
 }

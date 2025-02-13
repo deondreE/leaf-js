@@ -1,4 +1,4 @@
-import { Mat4 } from "wgpu-matrix";
+import { Mat4 } from 'wgpu-matrix';
 
 export enum ModelType {
   TRIANGLE,

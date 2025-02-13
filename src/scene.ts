@@ -1,10 +1,10 @@
-import Renderer from "./renderer";
-import type { Model } from "./types/scene.types";
-import { assert } from "./utils/util";
+import Renderer from './renderer';
+import type { Model } from './types/scene.types';
+import { assert } from './utils/util';
 
 /** A Scene is defined as a collection of objects renderd in a single pass. */
 class Scene {
-  name: string | "" = "";
+  name: string | '' = '';
   children: Model[] = [];
   renderer: Renderer | null = null;
 
@@ -20,17 +20,17 @@ class Scene {
     assert(this.checkStatic() == true);
     // Make sure awake is called first.
     setTimeout(() => {
-        this.awake();
+      this.awake();
     }, 1000);
 
-    console.log("Loading current scene into the canvas context.");
+    console.log('Loading current scene into the canvas context.');
     this.renderer = new Renderer({ models: this.children });
     this.renderer.init();
 
     this.renderer.render();
   }
 
-  /** Update is called everyframe based on deltatime. 
+  /** Update is called everyframe based on deltatime.
    * @param dt is the time in between frames.
    */
   update(dt: number) {}
@@ -40,8 +40,7 @@ class Scene {
     return true;
   }
 
-  private export() {
-  }
+  private export() {}
 }
 
 export default Scene;

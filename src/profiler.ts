@@ -6,7 +6,7 @@ export interface LProfilerProps {
  * Profiler is a web component built for understanding the performance of the canvas specifically.
  * */
 export class Profiler extends HTMLCanvasElement {
-  static observedAttributes = ["target-id", "width", "height"];
+  static observedAttributes = ['target-id', 'width', 'height'];
   targetCanvas: HTMLCanvasElement | null = null;
   ctx: CanvasRenderingContext2D | null = null;
   frameTimes: number[] = [];
@@ -14,43 +14,37 @@ export class Profiler extends HTMLCanvasElement {
   lastFrameNumber: number = performance.now();
   tracking = false;
   paused = false;
-  type: "2d" | "gpu" = "2d";
+  type: '2d' | 'gpu' = '2d';
 
   constructor() {
     super();
   }
 
   connectedCallback() {
-    this.id = "profiler-canvas";
-    this.ctx = this.getContext("2d");
+    this.id = 'profiler-canvas';
+    this.ctx = this.getContext('2d');
     this.updateTarget();
     requestAnimationFrame(() => this.trackFrame());
   }
 
   disconnectedCallback() {
-    console.log("Profiler canvas removed.");
+    console.log('Profiler canvas removed.');
   }
 
   adoptedCallback() {
-    console.log("Profiler canvas moved to a new document.");
+    console.log('Profiler canvas moved to a new document.');
   }
 
-  attributeChangedCallback(
-    name: string,
-    oldValue: string | null,
-    newValue: string | null
-  ) {
-    if (name === "target-id") {
+  attributeChangedCallback(name: string, oldValue: string | null, newValue: string | null) {
+    if (name === 'target-id') {
       this.updateTarget();
     }
   }
 
   updateTarget() {
-    const targetId = this.getAttribute("target-id");
+    const targetId = this.getAttribute('target-id');
     if (targetId) {
-      this.targetCanvas = document.getElementById(
-        targetId
-      ) as HTMLCanvasElement;
+      this.targetCanvas = document.getElementById(targetId) as HTMLCanvasElement;
     }
     if (this.targetCanvas) {
       console.log(`Profiler Monitoring: ${targetId}`);
@@ -64,11 +58,11 @@ export class Profiler extends HTMLCanvasElement {
     if (!this.targetCanvas) return;
 
     const targetCtx =
-      this.targetCanvas.getContext("2d") ||
-      this.targetCanvas.getContext("webgl") ||
-      this.targetCanvas.getContext("webgpu");
+      this.targetCanvas.getContext('2d') ||
+      this.targetCanvas.getContext('webgl') ||
+      this.targetCanvas.getContext('webgpu');
     if (!targetCtx) {
-      console.warn("Profiler: Unable to hook into canvas context.");
+      console.warn('Profiler: Unable to hook into canvas context.');
       return;
     }
 
@@ -144,13 +138,13 @@ export class Profiler extends HTMLCanvasElement {
     const ctx = this.ctx;
     ctx.clearRect(0, 0, this.width, this.height);
 
-    ctx.fillStyle = "black";
+    ctx.fillStyle = 'black';
     ctx.fillRect(0, 0, this.width, this.height);
 
     const maxFrameTime = Math.max(...this.frameTimes, 16.67);
     const scaleY = this.height / (maxFrameTime * 1.2);
 
-    ctx.strokeStyle = this.paused ? "gray" : "lime";
+    ctx.strokeStyle = this.paused ? 'gray' : 'lime';
     ctx.beginPath();
 
     for (let i = 0; i < this.frameTimes.length; ++i) {
@@ -161,7 +155,7 @@ export class Profiler extends HTMLCanvasElement {
     ctx.stroke();
 
     if (this.memoryUsage.length > 0) {
-      ctx.strokeStyle = "orange";
+      ctx.strokeStyle = 'orange';
       ctx.beginPath();
       const maxMemory = Math.max(...this.memoryUsage, 10);
       const scaleYMem = this.height / (maxMemory * 1.2);
@@ -174,16 +168,12 @@ export class Profiler extends HTMLCanvasElement {
       ctx.stroke();
     }
 
-    ctx.fillStyle = "green";
-    ctx.font = "12px Arial";
-    ctx.fillText(
-      this.paused ? "PAUSED" : `Max Frame Time: ${maxFrameTime.toFixed(2)}ms`,
-      10,
-      15
-    );
+    ctx.fillStyle = 'green';
+    ctx.font = '12px Arial';
+    ctx.fillText(this.paused ? 'PAUSED' : `Max Frame Time: ${maxFrameTime.toFixed(2)}ms`, 10, 15);
 
     if (this.memoryUsage.length > 0) {
-      ctx.fillStyle = "orange";
+      ctx.fillStyle = 'orange';
       const latestMemory = this.memoryUsage[this.memoryUsage.length - 1];
       ctx.fillText(`Memory Usage: ${latestMemory} MB`, 10, 30);
     }
@@ -200,4 +190,4 @@ export class Profiler extends HTMLCanvasElement {
   }
 }
 
-customElements.define("l-profiler", Profiler, { extends: "canvas" });
+customElements.define('l-profiler', Profiler, { extends: 'canvas' });

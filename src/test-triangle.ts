@@ -2,10 +2,7 @@
 import triangleVertWGSL from './shaders/triangle.vert.wgsl';
 import fragWGSL from './shaders/red.frag.wgsl';
 
-export default function init(
-  context: GPUCanvasContext,
-  device: GPUDevice
-): void {
+export default function init(context: GPUCanvasContext, device: GPUDevice): void {
   const presentationFormat = navigator.gpu.getPreferredCanvasFormat();
   context.configure({
     device,
