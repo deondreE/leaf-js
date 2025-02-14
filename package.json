@@ -7,17 +7,21 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "format": "prettier --write ."
   },
   "author": "deondreE",
   "license": "MIT",
   "devDependencies": {
+    "@types/node": "^22.13.2",
     "@webgpu/types": "^0.1.52",
+    "prettier": "^3.5.0",
     "typescript": "^5.7.3",
     "vite": "^6.0.7",
     "vite-raw-plugin": "^1.0.2"
   },
   "dependencies": {
+    "gl-matrix": "^3.4.3",
     "wgpu-matrix": "^3.3.0"
   }
 }

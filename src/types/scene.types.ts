@@ -13,10 +13,9 @@ interface Animation {
 };
 
 interface Scene {
-    name: string;
-    models: Model[];
-    subscenes?: Scene[];
-    animations?: Animation[];
+  name: string;
+  view: Mat4;
+  children: Model[];
 }
 
 /** Definition of a model inside of a scene. */
@@ -35,4 +34,4 @@ interface Model {
     applyTransformation(type: 'scale' | 'rotate' | 'translate', value: { x: number, y: number, z: number }): void;  
 };
 
-export type { Model, Animation, Scene };
+export type { Model, Scene };

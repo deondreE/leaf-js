@@ -1,13 +1,105 @@
-<!DOCTYPE html>
+<!-- <!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>WebGPU Typescript Starter</title>
+    <title>Testbed</title>
+    <link rel="stylesheet" href="src/style.css" />
   </head>
   <body>
-    <h1 id="title">test</h1>
-    <canvas is="leaf-js" src="functionName | filename.extion | futureproof (. notation)" static></canvas>
-    <script type="module" src="/src/main.ts" defer></script>
+    <h1 id="title">Testing Profiler</h1>
+    <canvas id="game-canvas" width="500" height="300"></canvas>
+    <div class="profiler-container">
+      <div class="b">
+        <button onclick="document.getElementById('profiler-canvas').pause()">Pause</button>
+        <button onclick="document.getElementById('profiler-canvas').resume()">Resume</button>
+        <button onclick="document.getElementById('profiler-canvas').BB()">
+          Toggle Bounding Boxes
+        </button>
+      </div>
+      <canvas is="l-profiler" target-id="game-canvas" width="500" height="200"></canvas>
+    </div>
+    <script type="module" src="/src/index.ts"></script>
+  </body>
+  <script>
+    const canvas = document.getElementById('game-canvas');
+    const ctx = canvas.getContext('2d');
+    const objectCountEl = document.getElementById('object-count');
+    const fpsEl = document.getElementById('fps');
+
+    const objects = [];
+    const maxObjects = 10;
+    let lastFrameTime = performance.now();
+    let frameCount = 0;
+
+    function addObject() {
+      const size = 50;
+      objects.push({
+        x: Math.random() * (canvas.width - size),
+        y: Math.random() * (canvas.height - size),
+        width: size,
+        height: size,
+        color: `hsl(${Math.random() * 360}, 80%, 60%)`,
+      });
+      if (objects.length > maxObjects) objects.shift();
+    }
+
+    function renderFrame() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      objects.forEach((obj) => {
+        // Draw object
+        ctx.fillStyle = obj.color;
+        ctx.fillRect(obj.x, obj.y, obj.width, obj.height);
+      });
+
+      addObject();
+      requestAnimationFrame(renderFrame);
+    }
+
+    renderFrame();
+  </script>
+</html> -->
+
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>WebGPU Example</title>
+    <style>
+      body {
+        font-family: sans-serif;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        margin-top: 20px;
+      }
+
+      canvas {
+        border: 1px solid black;
+      }
+
+      #controls {
+        margin-top: 10px;
+      }
+
+      button {
+        margin: 5px;
+        padding: 8px 12px;
+        cursor: pointer;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>WebGPU Scene</h1>
+
+    <canvas id="webgpu-canvas" width="640" height="480"></canvas>
+
+    <div id="controls">
+      <button id="toggle-cube">Toggle Cube</button>
+      <button id="toggle-quad">Toggle Quad</button>
+      <button id="toggle-capsule">Toggle Capsule</button>
+    </div>
+
+    <script type="module" src="test.ts"></script>
   </body>
 </html>
