@@ -1,6 +1,10 @@
+import { assert } from './utils/util';
+
 export interface LProfilerProps {
   targetId?: string;
 }
+
+// TODO: add profiling for visualizing bounding boxes.
 
 /*
  * Profiler is a web component built for understanding the performance of the canvas specifically.
@@ -14,7 +18,9 @@ export class Profiler extends HTMLCanvasElement {
   lastFrameNumber: number = performance.now();
   tracking = false;
   paused = false;
+  showBoundingBoxes = true;
   type: '2d' | 'gpu' = '2d';
+  boundingBoxes: { x: number; y: number; width: number; height: number }[] = [];
 
   constructor() {
     super();
@@ -66,9 +72,6 @@ export class Profiler extends HTMLCanvasElement {
       return;
     }
 
-    const originalDrawImage = targetCtx.drawImage;
-    const originalClearRect = targetCtx.clearRect;
-
     const start = performance.now();
     let frameCount = 0;
 
@@ -95,19 +98,26 @@ export class Profiler extends HTMLCanvasElement {
 
     monitorFrame();
 
-    targetCtx.drawImage = (...args: any[]) => {
-      originalDrawImage.apply(targetCtx, args);
+    const originalDrawImage = targetCtx.drawImage;
+    const originalClearRect = targetCtx.clearRect;
+    targetCtx.drawImage = function (...args) { 
+      originalDrawImage.apply(this, args);
       this.trackFrame();
-    };
+  };
 
     targetCtx.clearRect = (...args: any[]) => {
       originalClearRect.apply(targetCtx, args);
       this.trackFrame();
     };
+
+    requestAnimationFrame(() => this.trackFrame());
   }
 
   trackMemory() {
+    // FIXME: perfomance.memroy is techinically being deprecated.
+    // @ts-ignore
     if (performance.memory) {
+      // @ts-ignore
       const memInfo = performance.memory;
       const usedMemoryMB = memInfo.usedJSHeapSize;
 
@@ -177,6 +187,29 @@ export class Profiler extends HTMLCanvasElement {
       const latestMemory = this.memoryUsage[this.memoryUsage.length - 1];
       ctx.fillText(`Memory Usage: ${latestMemory} MB`, 10, 30);
     }
+
+    if (this.showBoundingBoxes) {
+      this.renderBoundingBoxes();
+    }
+  }
+
+  renderBoundingBoxes() {
+    const targetCanvasCTX = this.targetCanvas.getContext('2d') as CanvasRenderingContext2D | null;
+    if (!targetCanvasCTX || !this.showBoundingBoxes) {
+      console.log('borky');
+    }
+
+    targetCanvasCTX.strokeStyle = 'black';
+    targetCanvasCTX.lineWidth = 4;
+
+    for (const box of this.boundingBoxes) {
+      targetCanvasCTX.strokeRect(box.x, box.y, box.width, box.height);
+    }
+  }
+
+  BB() {
+    this.showBoundingBoxes = !this.showBoundingBoxes;
+    this.render();
   }
 
   pause() {
