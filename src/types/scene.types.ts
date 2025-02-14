@@ -1,11 +1,16 @@
-import { Mat4 } from 'wgpu-matrix';
+import { Vec3 } from "wgpu-matrix";
 
-export enum ModelType {
-  TRIANGLE,
-  QUAD,
-  CUBE,
-  CAPSULE,
-}
+
+/** Definition of an animation applied to a model */
+interface Animation {
+    name: string;   
+    type: 'rotation' | 'translation' | 'scale';
+    duration: string;
+
+    start(): void;
+    update(dt: number): void;
+    stop(): void;
+};
 
 interface Scene {
   name: string;
@@ -15,14 +20,18 @@ interface Scene {
 
 /** Definition of a model inside of a scene. */
 interface Model {
-  type: {
-    [type in ModelType]: string;
-  };
-  name: string;
-  size: { w: number; h: number };
-  verticies: Float32Array;
-  transforms: Float32Array;
-  sourceFile?: string;
-}
+    type: "square" | "circle" | "custom";
+    id: number;
+    name: string;
+    position: Vec3;
+    size: { w: number, h: number },
+    verticies: Float32Array;
+    shaders: string[],
+    modelFile?: string;
+    startAnimation: boolean;
+
+    /** Apply transformation: Scale, Rotation, Transform. */
+    applyTransformation(type: 'scale' | 'rotate' | 'translate', value: { x: number, y: number, z: number }): void;  
+};
 
 export type { Model, Scene };

@@ -1,6 +1,6 @@
 import Renderer from './renderer';
 import type { Model } from './types/scene.types';
-import { assert } from './utils/util';
+import { assert } from './utils';
 
 // NOTE: you can define a large pipeline, and there is a clean step that removes most of the unused garbage.
 

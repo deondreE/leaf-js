@@ -49,3 +49,8 @@ h1 {
   color: #ccc;
   margin: 30px 30px;
 }
+canvas, leaf-js {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
