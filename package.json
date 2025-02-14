@@ -21,6 +21,7 @@
     "vite-raw-plugin": "^1.0.2"
   },
   "dependencies": {
+    "gl-matrix": "^3.4.3",
     "wgpu-matrix": "^3.3.0"
   }
 }

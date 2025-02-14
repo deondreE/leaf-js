@@ -1,4 +1,4 @@
-<!doctype html>
+<!-- <!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
@@ -31,4 +31,47 @@
 
     renderFrame();
   </script>
+</html> -->
+
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>WebGPU Example</title>
+    <style>
+      body {
+        font-family: sans-serif;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        margin-top: 20px;
+      }
+
+      canvas {
+        border: 1px solid black;
+      }
+
+      #controls {
+        margin-top: 10px;
+      }
+
+      button {
+        margin: 5px;
+        padding: 8px 12px;
+        cursor: pointer;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>WebGPU Scene</h1>
+
+    <canvas id="webgpu-canvas" width="640" height="480"></canvas>
+
+    <div id="controls">
+      <button id="toggle-cube">Toggle Cube</button>
+      <button id="toggle-quad">Toggle Quad</button>
+      <button id="toggle-capsule">Toggle Capsule</button>
+    </div>
+
+    <script type="module" src="test.ts"></script>
+  </body>
 </html>
