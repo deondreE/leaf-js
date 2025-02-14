@@ -54,3 +54,9 @@ canvas, leaf-js {
   height: 100%;
   display: block;
 }
+
+h1 {
+  position: absolute;
+  color:#ccc;
+  margin: 30px 30px;
+}
