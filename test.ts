@@ -5,7 +5,7 @@ import {
   cubeColorOffset,
   cubeUVOffset,
   cubeVertexCount,
-} from "./src/meshes/cube"; // Adjust the path
+} from './src/meshes/cube'; // Adjust the path
 import {
   quadVertexArray,
   quadVertexSize,
@@ -13,7 +13,7 @@ import {
   quadColorOffset,
   quadUVOffset,
   quadVertexCount,
-} from "./src/meshes/quad"; // Adjust the path
+} from './src/meshes/quad'; // Adjust the path
 import {
   capsuleVertexArray,
   capsuleIndexArray,
@@ -23,29 +23,29 @@ import {
   capsuleUVOffset,
   capsuleVertexCount,
   capsuleIndexCount,
-} from "./src/meshes/capsule"; // Adjust the path
+} from './src/meshes/capsule'; // Adjust the path
 
-import { mat4, quat } from "gl-matrix"; // Import gl-matrix
+import { mat4, quat } from 'gl-matrix'; // Import gl-matrix
 
 async function renderScene() {
   if (!navigator.gpu) {
-    console.error("WebGPU is not supported.");
+    console.error('WebGPU is not supported.');
     return;
   }
 
   const adapter = await navigator.gpu.requestAdapter();
   if (!adapter) {
-    console.error("No WebGPU adapter available.");
+    console.error('No WebGPU adapter available.');
     return;
   }
 
   const device = await adapter.requestDevice();
 
-  const canvas = document.getElementById("webgpu-canvas") as HTMLCanvasElement; // Replace with your canvas ID
-  const context = canvas.getContext("webgpu") as GPUCanvasContext;
+  const canvas = document.getElementById('webgpu-canvas') as HTMLCanvasElement; // Replace with your canvas ID
+  const context = canvas.getContext('webgpu') as GPUCanvasContext;
 
   if (!context) {
-    console.error("Failed to get WebGPU context.");
+    console.error('Failed to get WebGPU context.');
     return;
   }
 
@@ -54,7 +54,7 @@ async function renderScene() {
   context.configure({
     device: device,
     format: presentationFormat,
-    alphaMode: "opaque",
+    alphaMode: 'opaque',
   });
 
   // --- Buffer Creation ---
@@ -82,9 +82,7 @@ async function renderScene() {
     usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
     mappedAtCreation: true,
   });
-  new Float32Array(capsuleVertexBuffer.getMappedRange()).set(
-    capsuleVertexArray
-  );
+  new Float32Array(capsuleVertexBuffer.getMappedRange()).set(capsuleVertexArray);
   capsuleVertexBuffer.unmap();
 
   const capsuleIndexBuffer = device.createBuffer({
@@ -162,7 +160,7 @@ async function renderScene() {
               binding: 0,
               visibility: GPUShaderStage.VERTEX,
               buffer: {
-                type: "uniform",
+                type: 'uniform',
               },
             },
           ],
@@ -171,7 +169,7 @@ async function renderScene() {
     }),
     vertex: {
       module: shaderModule,
-      entryPoint: "vertexMain",
+      entryPoint: 'vertexMain',
       buffers: [
         {
           arrayStride: cubeVertexSize,
@@ -179,17 +177,17 @@ async function renderScene() {
             {
               shaderLocation: 0,
               offset: cubePositionOffset,
-              format: "float32x4",
+              format: 'float32x4',
             },
             {
               shaderLocation: 1,
               offset: cubeColorOffset,
-              format: "float32x4",
+              format: 'float32x4',
             },
             {
               shaderLocation: 2,
               offset: cubeUVOffset,
-              format: "float32x2",
+              format: 'float32x2',
             },
           ],
         },
@@ -197,7 +195,7 @@ async function renderScene() {
     },
     fragment: {
       module: shaderModule,
-      entryPoint: "fragmentMain",
+      entryPoint: 'fragmentMain',
       targets: [
         {
           format: presentationFormat,
@@ -205,13 +203,13 @@ async function renderScene() {
       ],
     },
     primitive: {
-      topology: "triangle-list",
-      cullMode: "back", // Enable backface culling
+      topology: 'triangle-list',
+      cullMode: 'back', // Enable backface culling
     },
     depthStencil: {
-      format: "depth32float", // Use a depth format that suits your needs
+      format: 'depth32float', // Use a depth format that suits your needs
       depthWriteEnabled: true,
-      depthCompare: "less",
+      depthCompare: 'less',
     },
   });
 
@@ -225,7 +223,7 @@ async function renderScene() {
               binding: 0,
               visibility: GPUShaderStage.VERTEX,
               buffer: {
-                type: "uniform",
+                type: 'uniform',
               },
             },
           ],
@@ -234,7 +232,7 @@ async function renderScene() {
     }),
     vertex: {
       module: shaderModule,
-      entryPoint: "vertexMain",
+      entryPoint: 'vertexMain',
       buffers: [
         {
           arrayStride: quadVertexSize,
@@ -242,17 +240,17 @@ async function renderScene() {
             {
               shaderLocation: 0,
               offset: quadPositionOffset,
-              format: "float32x4",
+              format: 'float32x4',
             },
             {
               shaderLocation: 1,
               offset: quadColorOffset,
-              format: "float32x4",
+              format: 'float32x4',
             },
             {
               shaderLocation: 2,
               offset: quadUVOffset,
-              format: "float32x2",
+              format: 'float32x2',
             },
           ],
         },
@@ -260,7 +258,7 @@ async function renderScene() {
     },
     fragment: {
       module: shaderModule,
-      entryPoint: "fragmentMain",
+      entryPoint: 'fragmentMain',
       targets: [
         {
           format: presentationFormat,
@@ -268,13 +266,13 @@ async function renderScene() {
       ],
     },
     primitive: {
-      topology: "triangle-list",
-      cullMode: "back", // Enable backface culling
+      topology: 'triangle-list',
+      cullMode: 'back', // Enable backface culling
     },
     depthStencil: {
-      format: "depth32float", // Use a depth format that suits your needs
+      format: 'depth32float', // Use a depth format that suits your needs
       depthWriteEnabled: true,
-      depthCompare: "less",
+      depthCompare: 'less',
     },
   });
 
@@ -288,7 +286,7 @@ async function renderScene() {
               binding: 0,
               visibility: GPUShaderStage.VERTEX,
               buffer: {
-                type: "uniform",
+                type: 'uniform',
               },
             },
           ],
@@ -297,7 +295,7 @@ async function renderScene() {
     }),
     vertex: {
       module: shaderModule,
-      entryPoint: "vertexMain",
+      entryPoint: 'vertexMain',
       buffers: [
         {
           arrayStride: capsuleVertexSize,
@@ -305,17 +303,17 @@ async function renderScene() {
             {
               shaderLocation: 0,
               offset: capsulePositionOffset,
-              format: "float32x4",
+              format: 'float32x4',
             },
             {
               shaderLocation: 1,
               offset: capsuleColorOffset,
-              format: "float32x4",
+              format: 'float32x4',
             },
             {
               shaderLocation: 2,
               offset: capsuleUVOffset,
-              format: "float32x2",
+              format: 'float32x2',
             },
           ],
         },
@@ -323,7 +321,7 @@ async function renderScene() {
     },
     fragment: {
       module: shaderModule,
-      entryPoint: "fragmentMain",
+      entryPoint: 'fragmentMain',
       targets: [
         {
           format: presentationFormat,
@@ -331,13 +329,13 @@ async function renderScene() {
       ],
     },
     primitive: {
-      topology: "triangle-list",
-      cullMode: "back", // Enable backface culling
+      topology: 'triangle-list',
+      cullMode: 'none', // Enable backface culling
     },
     depthStencil: {
-      format: "depth32float", // Use a depth format that suits your needs
+      format: 'depth32float', // Use a depth format that suits your needs
       depthWriteEnabled: true,
-      depthCompare: "less",
+      depthCompare: 'less',
     },
   });
 
@@ -349,7 +347,7 @@ async function renderScene() {
         binding: 0,
         visibility: GPUShaderStage.VERTEX,
         buffer: {
-          type: "uniform",
+          type: 'uniform',
         },
       },
     ],
@@ -370,7 +368,7 @@ async function renderScene() {
   // Create depth buffer
   const depthTexture = device.createTexture({
     size: [canvas.width, canvas.height],
-    format: "depth32float",
+    format: 'depth32float',
     usage: GPUTextureUsage.RENDER_ATTACHMENT,
   });
 
@@ -393,23 +391,23 @@ async function renderScene() {
   }
 
   // Add event listeners to buttons (assuming you have buttons with these IDs)
-  const cubeButton = document.getElementById("toggle-cube");
+  const cubeButton = document.getElementById('toggle-cube');
   if (cubeButton) {
-    cubeButton.addEventListener("click", toggleCube);
+    cubeButton.addEventListener('click', toggleCube);
   } else {
     console.warn("Button with id 'toggle-cube' not found.");
   }
 
-  const quadButton = document.getElementById("toggle-quad");
+  const quadButton = document.getElementById('toggle-quad');
   if (quadButton) {
-    quadButton.addEventListener("click", toggleQuad);
+    quadButton.addEventListener('click', toggleQuad);
   } else {
     console.warn("Button with id 'toggle-quad' not found.");
   }
 
-  const capsuleButton = document.getElementById("toggle-capsule");
+  const capsuleButton = document.getElementById('toggle-capsule');
   if (capsuleButton) {
-    capsuleButton.addEventListener("click", toggleCapsule);
+    capsuleButton.addEventListener('click', toggleCapsule);
   } else {
     console.warn("Button with id 'toggle-capsule' not found.");
   }
@@ -426,15 +424,15 @@ async function renderScene() {
         {
           view: textureView,
           clearValue: { r: 0.0, g: 0.0, b: 0.0, a: 1.0 },
-          loadOp: "clear",
-          storeOp: "store",
+          loadOp: 'clear',
+          storeOp: 'store',
         },
       ],
       depthStencilAttachment: {
         view: depthTexture.createView(),
         depthClearValue: 1.0,
-        depthLoadOp: "clear",
-        depthStoreOp: "store",
+        depthLoadOp: 'clear',
+        depthStoreOp: 'store',
       },
     };
 
@@ -486,7 +484,7 @@ async function renderScene() {
 
       passEncoder.setPipeline(capsulePipeline);
       passEncoder.setVertexBuffer(0, capsuleVertexBuffer);
-      passEncoder.setIndexBuffer(capsuleIndexBuffer, "uint16");
+      passEncoder.setIndexBuffer(capsuleIndexBuffer, 'uint16');
       passEncoder.setBindGroup(0, bindGroup);
       passEncoder.drawIndexed(capsuleIndexCount, 1, 0, 0, 0);
     }

@@ -100,10 +100,10 @@ export class Profiler extends HTMLCanvasElement {
 
     const originalDrawImage = targetCtx.drawImage;
     const originalClearRect = targetCtx.clearRect;
-    targetCtx.drawImage = function (...args) { 
+    targetCtx.drawImage = function (...args) {
       originalDrawImage.apply(this, args);
       this.trackFrame();
-  };
+    };
 
     targetCtx.clearRect = (...args: any[]) => {
       originalClearRect.apply(targetCtx, args);

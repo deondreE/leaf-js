@@ -28,6 +28,9 @@ struct awaiter {
 	bool await_ready() const noexcept {
 		return delay.count() <= 0;
 	}
+	// AWAKE -> C++ faster 
+	// START
+	// UPDATE
 
 	// FIXME: Emcc does not have direct access to the systems threads.
 	// TODO: support emscripten, so that this can be called inside of webbased applications.

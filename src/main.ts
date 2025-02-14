@@ -1,9 +1,9 @@
 import Renderer from './renderer';
-import './style.css'
+import './style.css';
 import './leaf';
 import { Model } from './types/scene.types';
 
-console.log("Main loaded");
+console.log('Main loaded');
 /*
 async function start() {
   const models: Model[] = [
