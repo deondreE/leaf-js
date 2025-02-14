@@ -1,7 +1,10 @@
 import Renderer from './renderer';
 import './style.css'
+import './leaf';
 import { Model } from './types/scene.types';
 
+console.log("Main loaded");
+/*
 async function start() {
   const models: Model[] = [
     {
@@ -32,10 +35,9 @@ async function start() {
     },
   ];
   
-  const renderer = new Renderer({ models });
-  await renderer.init();  // Initializes WebGPU and sets up the canvas
+  const renderer = await Renderer.init({})  // Initializes WebGPU and sets up the canvas
 
   renderer.render(); 
 }
 
-start();
+start();*/

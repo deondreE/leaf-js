@@ -1,4 +1,4 @@
-import Renderer from "./renderer";
+import Renderer from "./renderer.old";
 import type { Model } from "./types/scene.types";
 
 /** A Scene is defined as a collection of objects renderd in a single pass. */

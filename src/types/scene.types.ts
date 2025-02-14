@@ -1,4 +1,5 @@
-import { Vec2 } from "./math.types";
+import { Vec3 } from "wgpu-matrix";
+
 
 /** Definition of an animation applied to a model */
 interface Animation {
@@ -23,7 +24,7 @@ interface Model {
     type: "square" | "circle" | "custom";
     id: number;
     name: string;
-    position: Vec2;
+    position: Vec3;
     size: { w: number, h: number },
     verticies: Float32Array;
     shaders: string[],
