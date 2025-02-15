@@ -17,3 +17,10 @@ test.json*
 *.obj
 *.fbx
 *.mtl
+
+# 2D files
+*.aseprite
+*.png
+*.jpg
+*.jpeg
+*.gif
