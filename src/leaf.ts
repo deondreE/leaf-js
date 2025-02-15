@@ -8,7 +8,6 @@ class Leaf extends HTMLCanvasElement {
   renderer: Renderer | null = null;
 
   constructor() {
-    console.log('Starting');
     super();
   }
 
