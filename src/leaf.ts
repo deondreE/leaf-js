@@ -1,30 +1,58 @@
+import { loadAseprite } from "./parsers/aseprite";
 import Renderer from "./renderer";
 
-console.log("Loading leaf");
+
+
 class Leaf extends HTMLCanvasElement {
 	/**
 		 * Here we can define properties we pay attention to
 		 * 
 		 * these are just examples for now
 		 */
-	static observedAttributes = ["type", "width", "height"];
-	type: "2d" | "3d"
+	static observedAttributes = ["src"];
+	is3D: boolean = true;
 	renderer: Renderer
 	constructor(){
-		console.log("Starting");
+		
 		super();
 	}
-	connectedCallback(){
-		console.log("Connected");
-		this.id = "webgpu-canvas";
-		if(!this.renderer) this.initRenderer();
-		console.log("Time to initialize the canvas")
+	/**
+	 * Just a convenience method to handle bool attributes
+	 * @param attrName 
+	 */
+	private getBoolAttribute(attrName: string): boolean {
+		const attr = this.getAttribute(attrName);
+		return attr !== null && attr.toLowerCase() !== "false";
+	}
+	/**
+	 * Always returns true unless prop is defined and is false
+	 * @param attrName 
+	 * @returns 
+	 */
+	private getOptimisticBoolAttribute(attrName): boolean {
+		return this.getAttribute(attrName) !== "false"; 
 	}
 
-	async initRenderer() {
-		this.renderer = await Renderer.init({canvas: this});
-		this.renderer.render();
+	/**
+	 * Parser will be made more dynamic this is just to test the parser
+	 */
+	parseAseprite(){
+		const src = this.getAttribute("src");
+		loadAseprite(src);
 	}
+	connectedCallback(){
+		this.is3D = this.getOptimisticBoolAttribute("is3D");
+		//improvement opportunity 
+		if(!this.hasAttribute("src")) return console.warn("leaf canvases rely on src attribute to populate");
+		this.parseAseprite();
+		if(!this.renderer) {
+			queueMicrotask(async () => {
+				this.renderer = await Renderer.init({canvas: this});
+				this.renderer.render();
+			});
+		}
+	}
+
 
 	disconectedCallback(){
 		console.log("Time to deinitialize the canvas");

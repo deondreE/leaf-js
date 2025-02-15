@@ -230,7 +230,9 @@ export default class Renderer implements RenderDescriptor {
 
 		canvas = canvas ?? document.createElement("canvas");
 		const context: GPUCanvasContext = canvas.getContext("webgpu");
+		console.log("web-gpu", context, canvas);
 		assert(!!context);
+		
 		context.configure({device, format});
 		//moving to the initializer because for now once a pipeline is set it should live the lifetime of the renderer (with few exceptions)
 		//todo this should have a singleton with a simplified configuration. 

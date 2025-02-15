@@ -1,3 +1,6 @@
+export interface Aseprite {
+  header: AseHeader;
+}
 /*
 Parsing ASE. 
 
@@ -13,16 +16,18 @@ export interface AseHeader {
   height: number; //word
   colorDepth: number; // 8 | 16 | 32 (word)
   flags: number; //dword
-  //read past speed (word)
-  //read past the next dword *2
+  speed: number;
   paletteEntry: number; //this is a byte
   //read past the next 3 bytes
+  colorCount: number //word 0===256 in old sprites...?
   pixelWidth: number; //byte
   pixelHeight: number; //byte
   x: number; //short
   y: number; //short
-  gridCell: number; // word (described as grid with but each cell is square so this represents the size of a cell)
+  gridWidth: number; // word (described as grid with but each cell is square so this represents the size of a cell)
+  gridHeight:number;
   //read the next 84 bytes
+  
 }
 
 export interface AseFrame {
@@ -118,44 +123,76 @@ export class Aseprite {
 }
 
 class AsepriteView {
-	private buffer: ArrayBuffer;
-	private view: DataView;
-	private offset: number = 0;
-	private constructor(buffer: ArrayBuffer) {
-		this.buffer = buffer;
-		this.view = new DataView(buffer);
-	}
+  private buffer: ArrayBuffer;
+  private view: DataView;
+  private offset: number = 0;
+  private constructor(buffer: ArrayBuffer) {
+    this.buffer = buffer;
+    this.view = new DataView(buffer);
+  }
 
-	readByte(): number {
-		const value = this.view.getUint8(this.offset);
-		this.offset += 1;
-		return value;
-	}
+  readByte(skip: number = 0): number {
+    const value = this.view.getUint8(this.offset);
+    this.offset += 1 + skip;
+    return value;
+  }
 
-	readWord(): number {
-		const value = this.view.getUint16(this.offset, true);
-		this.offset += 2;
-		return value;
-	}
+  readWord(skip: number = 0): number {
+    const value = this.view.getUint16(this.offset, true);
+    this.offset += 2 + skip;
+    return value;
+  }
 
-	readShort(): number {
-		const value = this.view.getInt16(this.offset, true);
-		this.offset += 2;
-		return value;
-	}
+  readShort(skip: number = 0): number {
+    const value = this.view.getInt16(this.offset, true);
+    this.offset += 2 + skip;
+    return value;
+  }
 
-	readDword(): number {
-		const value = this.view.getUint32(this.offset, true);
-		this.offset += 4;
-		return value;
-	}
+  readDword(skip: number = 0): number {
+    const value = this.view.getUint32(this.offset, true);
+    this.offset += 4 + skip;
+    return value;
+  }
 
-	readString(): string {
-		const length = this.readWord();
-		const bytes = new Uint8Array(this.buffer.slice(this.offset, this.offset+length));
-		this.offset += length;
-		return new TextDecoder().decode(bytes);
+  readString(skip: number = 0): string {
+    const length = this.readWord();
+    const bytes = new Uint8Array(this.buffer.slice(this.offset, this.offset + length));
+    this.offset += length + skip;
+    return new TextDecoder().decode(bytes);
+  }
+
+  static parse(buffer: ArrayBuffer) {
+    const v = new AsepriteView(buffer);
+    const header: AseHeader = {
+      size: v.readDword(),
+      magic: v.readWord(),
+      frames: v.readWord(),
+      width: v.readWord(),
+      height: v.readWord(),
+      colorDepth: v.readWord(),
+      flags: v.readDword(),
+      speed: v.readWord(8),
+      paletteEntry: v.readByte(3),
+	  colorCount: v.readWord(),
+      pixelWidth: v.readByte(),
+      pixelHeight: v.readByte(),
+      x: v.readShort(),
+      y: v.readShort(),
+      gridWidth: v.readWord(),
+	  gridHeight: v.readWord(84),
+    };
+	const frames: AseFrame[] = []
+	for(let i = 0; i<header.frames; i++){
+		console.log("loading frame", i);
 	}
+    console.log(header, v.offset);
+  }
 }
 
-//export default AsepriteView.parse; idk if this would be valid I would assume it would lose its context. 
+export const loadAseprite = (url: string) => {
+  return fetch(url)
+    .then((r) => r.arrayBuffer())
+    .then(AsepriteView.parse);
+};
+//export default AsepriteView.parse; idk if this would be valid I would assume it would lose its context.
