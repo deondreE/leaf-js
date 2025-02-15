@@ -33,3 +33,5 @@ export const DEFAULT_DEPTH_STENCIL: GPUDepthStencilState = {
   depthCompare: 'less',
   format: 'depth32float',
 };
+
+export type SUPPORTED_FILETYPES = ".obj" | ".fbx" | ".asesprite";
