@@ -8,7 +8,8 @@
     "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
-    "format": "prettier --write ."
+    "format": "prettier --write .", 
+    "test": "vitest"
   },
   "author": "deondreE",
   "license": "MIT",
@@ -22,6 +23,7 @@
   },
   "dependencies": {
     "gl-matrix": "^3.4.3",
+    "vitest": "^3.0.5",
     "wgpu-matrix": "^3.3.0"
   }
 }
