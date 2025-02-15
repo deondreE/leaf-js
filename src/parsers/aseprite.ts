@@ -30,5 +30,22 @@ export interface AseFrame{
 export interface AseFrameChunk {
 	size: number; //dword
 	type: number; //todo map to enum
+}
+
+export enum AseChunkType {
+	oldPalette1 = 0x0004, //should only be used if newPalette does not also exist.
+	oldPalette2 = 0x0011, //ignore if newPallet exists
+	layer = 0x2004,
+	cel = 0x2005,
+	celExtra = 0x2006,
+	colorProfile = 0x2007,
+	external = 0x2008,
+	mask = 0x2016, //deprecated
+	pth = 0x2017, //never used
+	tags = 0x2018,
+	palette = 0x2019, //newPalette
+	userData = 0x2020, //data to be appended 
+	slice = 0x2022, //slice frame
+	tileset = 0x2023, //tileset chunk
 	
 }
