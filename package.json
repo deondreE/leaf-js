@@ -3,26 +3,33 @@
   "version": "1.0.0",
   "type": "module",
   "description": "A performant 3d javascript library",
-  "main": "src/index.ts",
+  "main": "dist/remove_later.cjs.js",
+  "module": "dist/remove_later.esm.js",
+  "types": "dist/remove_later.d.ts",
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build",
+    "build": "rollup -c",
     "preview": "vite preview",
-    "format": "prettier --write .", 
+    "format": "prettier --write .",
     "test": "vitest"
   },
   "author": "deondreE",
   "license": "MIT",
   "devDependencies": {
+    "@rollup/plugin-commonjs": "^28.0.2",
+    "@rollup/plugin-node-resolve": "^16.0.0",
     "@types/node": "^22.13.2",
-    "@webgpu/types": "^0.1.52",
+    "@webgpu/types": "^0.1.54",
     "prettier": "^3.5.0",
+    "rollup": "^4.34.7",
+    "rollup-plugin-typescript3": "^3.0.5",
     "typescript": "^5.7.3",
     "vite": "^6.0.7",
     "vite-raw-plugin": "^1.0.2"
   },
   "dependencies": {
     "gl-matrix": "^3.4.3",
+    "rollup-plugin-typescript2": "^0.36.0",
     "vitest": "^3.0.5",
     "wgpu-matrix": "^3.3.0"
   }

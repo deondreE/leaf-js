@@ -17,3 +17,6 @@ test.json*
 *.obj
 *.fbx
 *.mtl
+
+*.egg-info
+dist
