@@ -30,7 +30,7 @@ export type AseFrame = {
 	chunks: AseChunk[];
 }
 
-export type AseChunk = AseLegacyPalette | AseColorProfile | AseICCProfile | AsePath | AseColorPalette | AseTags | AseUserData;
+export type AseChunk = AseLegacyPalette | AseLayer | AseCel | AseCelExtra | AseColorProfile | AseICCProfile | AseExternalAssets | AseMask | AsePath | AseTags | AseColorPalette | AseUserData | AseSlice | AseTileset;
 
 export type AseChunkType = AseChunk['chunkType'];
 
@@ -95,7 +95,9 @@ export type AseLinkedCel = {
 } & AseCelBase;
 
 export type AseCelTilemap = {
+	celType: 3;
 	tileMapSize: AsePair;
+	tileBpt: number;
 	bitmask: AseQuad;
 	tiles: Uint8Array;
 } & AseCelBase;
@@ -201,16 +203,33 @@ export type AseUserData = {
 	properties?: AsePropertyMap
 }
 
+export type AseSlice = {
+	chunkType: 0x2022;
+	flags: number;
+	name: string;
+	slices: AseSliceElement[];
+}
+
+export type AseSliceElement = {
+	frameIndex: number;
+	location: AsePair; //long
+	size: AsePair; //dword
+	center?: AsePair; //long
+	centerSize?: AsePair; //dword
+	pivot?: AsePair; //long
+}
+
 export type AseTileset = {
 	chunkType: 0x2023;
 	tilesetId: number;
 	tilesetFlags: number; //bitwise flag
 	tilesetSize: AsePair;
+	tilesLength: number;
 	tilesetBaseIndex: number;
 	tilesetName: string
 	externalChunkId?: number;
 	externalId?: number;
-	includedTileset?: Uint8Array;
+	pixels?: Uint8Array;
 }
 export type AsePair = [number, number];
 export type AseTriplet = [number, number, number];
