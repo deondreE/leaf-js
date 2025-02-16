@@ -72,6 +72,34 @@ export type AseLayer = {
 	name: string;
 	tileIndex: number;
 }
+
+export type AseCel = AseImageCel;
+
+export type AseCelBase = {
+	chunkType: 0x2005;
+	layerIndex: number;
+	layerPosition: AsePair;
+	alpha: number;
+	zIndex: number;
+}
+
+export type AseImageCel = {
+	celType: 0 | 2;
+	pixelSize: AsePair;
+	pixels: Uint8Array
+} & AseCelBase;
+
+export type AseLinkedCel = {
+	celType: 1;
+	position: number;
+} & AseCelBase;
+
+export type AseCelTilemap = {
+	tileMapSize: AsePair;
+	bitmask: AseQuad;
+	tiles: Uint8Array;
+}
+
 export type AsePath = {
 	chunkType: 0x2017
 }
@@ -145,3 +173,4 @@ export type AseUserData = {
 export type AsePair = [number, number];
 export type AseTriplet = [number, number, number];
 export type AseQuad = [number, number, number, number];
+export type AsePixel = AseQuad | AsePair | number;

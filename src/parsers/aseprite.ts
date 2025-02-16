@@ -1,6 +1,6 @@
 import { assert } from '../utils';
-import { AseChunk, AseChunkType, AseColorPalette, AseColorPaletteEntry, AseColorProfile, AseFrame, AseHeader, AseICCProfile, AseLayer, AseLayerBlendMode, AseLayerFlags, AseLayerType, AseLegacyPalette, AsePair, AsePropertyArray, AsePropertyMap, AsePropertyTypes, AseQuad, AseTag, AseTags, AseTriplet, AseUserData } from './aseprite.types';
-
+import { AseChunk, AseChunkType, AseColorPalette, AseColorPaletteEntry, AseColorProfile, AseFrame, AseHeader, AseICCProfile, AseLayer, AseLayerBlendMode, AseLayerFlags, AseLayerType, AseLegacyPalette, AsePair, AsePixel, AsePropertyArray, AsePropertyMap, AsePropertyTypes, AseQuad, AseTag, AseTags, AseTriplet, AseUserData } from './aseprite.types';
+import pako from "pako";
 export class Aseprite {
   private buffer: ArrayBuffer;
   private view: DataView;
@@ -17,11 +17,16 @@ class AsepriteView {
   private view: DataView;
   private offset: number = 0;
   private decoder: TextDecoder = new TextDecoder();
+  private pixelFormat: 0 | 1 | 2 = 0;
   private constructor(buffer: ArrayBuffer) {
     this.buffer = buffer;
     this.view = new DataView(buffer);
   }
 
+  inflateArray(len: number, skip: number = 0): Uint8Array {
+	const arr = this.readUint8Array(len, skip);
+	return pako.inflate(arr);
+  }
   readByte(skip: number = 0): number {
     const value = this.view.getUint8(this.offset);
     this.offset += 1 + skip;
@@ -80,6 +85,14 @@ class AsepriteView {
     const raw = this.view.getBigInt64(this.offset, true);
     this.offset += 16 + skip;
     return raw;
+  }
+
+  readPixel(skip: number = 0): AsePixel {
+	switch (this.pixelFormat){
+		case 0: return this.readByteQuad(skip);
+		case 1: return this.readBytePair(skip);
+		case 2: return this.readByte(skip);
+	}
   }
 
   /*
@@ -293,6 +306,8 @@ class AsepriteView {
 		tileIndex
 	}
   }
+
+  
   readChunk(): AseChunk {
 	const chunkSize = this.readDword();
 	const chunkType = this.readWord() as AseChunkType;
