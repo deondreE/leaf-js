@@ -1,5 +1,5 @@
 import { assert } from "../utils";
-import { AseChunkType, AseColorProfile, AseFrame, AseFrameChunk, AseHeader } from "./aseprite.types";
+import { AseChunkType, AseColorProfile, AseFrame, AseFrameChunk, AseHeader, AsePoint, AseRect } from "./aseprite.types";
 
 
 export class Aseprite {
@@ -46,117 +46,61 @@ class AsepriteView {
     return value;
   }
 
+  readLong(skip: number = 0): number {
+	const value = this.view.getInt32(this.offset, true);
+	this.offset += 4 + skip;
+	return value;
+  }
+
+  readFixed(skip: number = 0):number{
+	const raw = this.view.getInt32(this.offset, true);
+	this.offset += 4 + skip;
+	return raw / 65536;
+  }
+
+  readFloat(skip: number = 0):number{
+	const raw = this.view.getFloat32(this.offset, true);
+	this.offset += 4 + skip;
+	return raw;
+  }
+
+  readDouble(skip: number = 0):number{
+	const raw = this.view.getFloat64(this.offset, true);
+	this.offset += 8 + skip;
+	return raw;
+  }
+
+  readQword(skip: number = 0): bigint {
+	const raw = this.view.getBigUint64(this.offset, true);
+	this.offset += 16 + skip;
+	return raw;
+  }
+
+  readLong64(skip: number = 0): bigint {
+	const raw = this.view.getBigInt64(this.offset, true);
+	this.offset += 16 + skip;
+	return raw;
+  }
+
+  //spec defines bytes[l] as a read type however this should be split into the necessary specialized types. 
+
+  readUint8Array(len: number, skip: number = 0): Uint8Array {
+	const raw = new Uint8Array(this.buffer.slice(this.offset, this.offset + len));
+	this.offset += len + skip;
+	return raw;
+  }
+
   readString(skip: number = 0): string {
     const length = this.readWord();
     const bytes = new Uint8Array(this.buffer.slice(this.offset, this.offset + length));
     this.offset += length + skip;
     return new TextDecoder().decode(bytes);
   }
-  readFixed(skip: number = 0){
-	const raw = this.view.getInt32(this.offset, true);
-	this.offset += 4 + skip;
-	return raw / 65536;
-  }
-  readColorProfile(len){
-	const profile: AseColorProfile = {
-		profileType: this.readWord(),
-		profileFlags: this.readWord(),
-		gamma: this.readFixed(),
-	}
-	this.offset += len - 14
-	console.log(profile, this.offset);
-	return profile
-  }
-  readICCProfile(){
-	//https://www.color.org/ICC1V42.pdf
-	throw new Error("ICC profiles not yet supported");
-  }
-  readChunk(): AseFrameChunk<{}>{
-	const chunkHeader: AseFrameChunk<{}> = {
-		size: this.readDword(),
-		type: this.readWord(),
-	}
-	switch(chunkHeader.type){
-		case AseChunkType.oldPalette1:
-			console.log("Old palette 1");
-			break;
-		case AseChunkType.oldPalette2:
-			console.log("Old palette 2");
-			break;
-		case AseChunkType.layer:
-			console.log("layer");
-			break;
-		case AseChunkType.cel:
-			console.log("cell");
-			break;
-		case AseChunkType.celExtra:
-			console.log("cel extra");
-			break;
-		case AseChunkType.colorProfile:
-			console.log("Color profile", chunkHeader);
-			return {...chunkHeader, ...this.readColorProfile(chunkHeader.size)};
-			break;
-		case AseChunkType.external:
-			console.log("Externals");
-			break;
-		case AseChunkType.mask:
-			console.log("Mask");
-			break;
-		case AseChunkType.pth:
-			console.log("Path");
-			break;
-		case AseChunkType.tags:
-			console.log("Tags");
-			break;
-		case AseChunkType.palette:
-			console.log("Palette");
-			break;
-		case AseChunkType.userData:
-			console.log("User data");
-			break;
-		case AseChunkType.slice:
-			console.log("Slice");
-			break;
-		case AseChunkType.tileset:
-			console.log("Tileset");
-			break;
-	}
-	this.offset += chunkHeader.size-6;
-	//if it made it here the offset is wrong
-	console.log("Got chunk", chunkHeader);
-	return chunkHeader;
-  }
 
-  readChunks(len: number) {
-	console.log("Reading chunks", len);
-	while (len > 0){
-		const chunk = this.readChunk();
-		console.log("Got chunk", chunk);
-		len -= chunk.size;
-	}
-	this.readChunk();
 
-  }
   
   
-  readFrames(len: number){
-	this.readFrame();
-  }
-
-  readFrame() {
-	const frame: AseFrame = {
-		size: this.readDword(),
-		magic: this.readWord(2),
-		//chunksOld: this.readWord(),
-		duration: this.readWord(2),
-		chunkSize: this.readDword(),
-		chunks: []
-	}
-	this.readChunks(frame.size);
-	assert(frame.magic === 0xF1FA, "Magic mismatch")
-	console.log("Frame", frame);
-  }
-
+  
   readHeader(): AseHeader {
 	const header: AseHeader = {
 		size: this.readDword(),
@@ -203,7 +147,7 @@ class AsepriteView {
     };
 	//assert(header.magic === 0xA5E0, `Header magic mismatch ${header.magic} ${0xA5E0}`);
 	console.log(header, v.offset);
-	v.readFrame();
+	//v.readFrame();
 	console.log(header, v.offset);
     
   }

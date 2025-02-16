@@ -56,15 +56,14 @@ export enum AseChunkType {
   tileset = 0x2023, //tileset chunk
 }
 
-export type AseFrameChunk {
+export type AseFrameChunk = AseColorProfile | AseChunkUserData | AseLayerChunk | AseCelChunk | AseCelExtraChunk | AseExternalChunk | AseMaskChunk | AsePathChunk;
 
-}
 export type AseFrameChunkBase = {
   size: number; //dword
 };
 
 export type AseColorProfile = {
-  type: AseChunkType.colorProfile;
+  type: typeof AseChunkType.colorProfile;
   profileType: number; //0 no profile, 1 = sRGB, 2 = internal
   profileFlags: number; //1 = use special fixed gamma
   gamma: number; //fixed
@@ -73,6 +72,13 @@ export type AseColorProfile = {
   profileLength?: number;
 } & AseFrameChunkBase;
 
+export type AseChunkUserData = {
+  type: typeof AseChunkType.userData;
+  userDataFlags: number; //1 = has text, 2 = has color, 4; assuming bitwise comparison allows for 3 = has text and color 5 = has properties * text and 6 has props and color and 7 has props color and text
+  text?: string; //STRING
+  color?: Uint8Array; //color this should be [4]Uint8.
+  properties?: Record<string, any>;
+} & AseFrameChunkBase;
 
 /*
   Chunk data.
@@ -88,15 +94,28 @@ export type AseColorProfile = {
   */
 export type AseLegacyPaletteChunkItem = Uint8Array;
 export type AseLegacyPaletteChunk = {
+  type: typeof AseChunkType.oldPalette1 | typeof AseChunkType.oldPalette2;
   paletteSize: number;
   items: AseLegacyPaletteChunkItem[];
-};
+} & AseFrameChunkBase;
 
+export type AsePaletteChunkItem = {
+	red: number; //byte
+	green: number; //byte
+	blue: number; //byte
+	alpha: number; //byte
+	colorName: string; //string
+}
 export type AsePaletteChunk = {
   paletteSize: number;
+  firstIndex: number;
+  lastIndex: number;
+  //skip 8 bytes
+
 };
 
 export type AseLayerChunk = {
+  type: typeof AseChunkType.layer;
   flags: number; //word 1=visible 2=editable 4=lockmovement 8=background 16=prefer-linked-cels 32=The layer should be displayed collapsed 64=The layer is a reference layer
   layerType: number; //word 0=Normal (image) 1=group 2=tilemap
   layer: number; //word numeric indication of layer depths
@@ -107,22 +126,98 @@ export type AseLayerChunk = {
   //[3]byte
   name: string; //string
   tilesetIndex?: number; //dword - tileset index (only applicable to groups)
-};
+} & AseFrameChunkBase;
 
-export type AseCelChunk = {
-  layerIndex: number; //word
+export type AseCelChunkBase = {
+	type: typeof AseChunkType.cel;
+	layerIndex: number; //word
   x: number; //short
   y: number; //short
   alpha: number; //byte
-  celType: number; //word 0-raw image (deprecated) 1-linked cel 2-CompressedImage 3- Compressed Tilemap
   zIndex: number; //short 0 - default ordering +N - show this cell nlayers later -N show this cell N layers back.
-  //skip [5]bytes
+  //skip 5 bits
+} & AseFrameChunkBase;
+
+export type AseCelImage = {
+	celType: 0 | 2;
+	width: number; //word
+	height: number; //word
+	pixels: AsePixel[]
+} & AseCelChunkBase;
+
+export type AseLinkedCel = {
+	celType: 1;
+	frameIndex: number; //word
+} & AseCelChunkBase;
+
+export type AseCelTileMap = {
+	celType: 3;
+	width: number; //word
+	height: number; //word
+	tileSize: number; //word should always be 32bits
+	tileIdMask: number; //DWord
+	tileXFlip: number; //DWord
+	tileYFlip: number; //DWord
+	tileDiagFlip: number; //Dword
+	//byte[10] reserved
+	tiles: number[]; //This should be a fixed type 
+} & AseCelChunkBase;
+
+export type AseCelChunk = AseCelImage | AseLinkedCel | AseCelTileMap;
+
+export type AseCelExtraChunk = {
+	type: typeof AseChunkType.celExtra;
+	flags: number; //DWord 1=precise bounds
+	x: number; //fixed
+	y: number; //fixed
+	width: number; //fixed
+	height: number; //fixed
+	//skip 16 bytes
+} & AseFrameChunkBase;
+
+
+
+export type AseMaskChunk = {
+	x: number; //short
+	y: number; //short
+	width: number; //word
+	height: number; //word
+	//skip 8 bytes
+	name: string; //string
+	bitmap: boolean[]; //size = height*((width+7)/8)
+} & AseFrameChunkBase;
+
+export type AsePathChunk = {
+	type: typeof AseChunkType.pth;
+} & AseFrameChunkBase;
+
+
+export type AseTag = {
+	from: number; //word
+	to: number; //word
+	direction: number; //byte 0 forward 1 revers 2 ping-pong 3 ping-pong reverse
+	repeat: number; //word 0 infinite 1 plays once (ping pong single direction) 2 (plays twice (ping-pong it plays once total))
+	//skip 6 bytes
+	tagColor: Uint8Array; //3 bytes
+	//skip byte
+	tagName: string;
+}
+export type AseTagsChunk = {
+	type: typeof AseChunkType.tags
+	tags: AseTag[]
+} & AseFrameChunkBase;
+
+export type AseExternalChunkEntry = {
+	entryId: number; //dword
+	type: number; //byte 0 = palette 1 = tileset 2 = extension name for properties 3 = extension name for tile managment (can exists one pers sprite)
+	//skip 7 bytes
+	externalId: string; //string
 };
 
-export type AseCelChunkRawImage = AseCelChunk & {
-  width: number; //word
-  height: number; //word
-};
+export type AseExternalChunk = {
+	type: typeof AseChunkType.external;
+	entries: AseExternalChunkEntry;
+} & AseFrameChunkBase
 
 export type ICCProfile = {
   size: number; //DWord
@@ -144,31 +239,33 @@ export type ICCProfile = {
   //skip 28 bytes
 };
 
+
+
+export type AsePoint = Uint8Array; //len 2
+export type AseRect = Uint8Array; //len 4
+export type AsePixel = Uint8Array; //len 1, 2, or 4
+export type AseTile = number; //8,16,or32bit
+export type AseUUID = string; //will be read as string this could just be a uint8 array
 export enum AseUserDataPropertyType {
-	mixed  = 0x0000,
-	bool   = 0x0001,
-	int8   = 0x0002,
-	uint8  = 0x0003,
-	int16  = 0x0004,
-	uint16 = 0x0005,
-	int32  = 0x0006,
-	uint32 = 0x0007,
-	int64  = 0x0008,
-	uint64 = 0x0009,
-	fixed  = 0x000A,
-	float  = 0x000B,
-	double = 0x000C,
-	string = 0x000D,
-	point  = 0x000E,
-	size   = 0x000F,
-	rect   = 0x0010,
-	vector = 0x0011,
-	map    = 0x0012,
-	uuid   = 0x0013
+  mixed = 0x0000,
+  bool = 0x0001,
+  int8 = 0x0002,
+  uint8 = 0x0003,
+  int16 = 0x0004,
+  uint16 = 0x0005,
+  int32 = 0x0006,
+  uint32 = 0x0007,
+  int64 = 0x0008,
+  uint64 = 0x0009,
+  fixed = 0x000a,
+  float = 0x000b,
+  double = 0x000c,
+  string = 0x000d,
+  point = 0x000e,
+  size = 0x000f,
+  rect = 0x0010,
+  vector = 0x0011,
+  map = 0x0012,
+  uuid = 0x0013,
 }
-export type AseChunkUserData = {
-	userDataFlags: number, //1 = has text, 2 = has color, 4; assuming bitwise comparison allows for 3 = has text and color 5 = has properties * text and 6 has props and color and 7 has props color and text
-	text?: string //STRING
-	color?: Uint8Array //color this should be [4]Uint8. 
-	properties?: Record<string, 
-}
+
