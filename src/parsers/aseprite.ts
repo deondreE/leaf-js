@@ -1,5 +1,5 @@
 import { assert } from '../utils';
-import { AseChunk, AseChunkType, AseColorPalette, AseColorPaletteEntry, AseColorProfile, AseFrame, AseHeader, AseICCProfile, AseLayer, AseLayerBlendMode, AseLayerFlags, AseLayerType, AseLegacyPalette, AsePair, AsePixel, AsePropertyArray, AsePropertyMap, AsePropertyTypes, AseQuad, AseTag, AseTags, AseTriplet, AseUserData } from './aseprite.types';
+import { AseCel, AseCelBase, AseCelExtra, AseChunk, AseChunkType, AseColorPalette, AseColorPaletteEntry, AseColorProfile, AseExternalAsset, AseExternalAssets, AseFrame, AseHeader, AseICCProfile, AseImageCel, AseLayer, AseLayerBlendMode, AseLayerFlags, AseLayerType, AseLegacyPalette, AseMask, AsePair, AsePixel, AsePropertyArray, AsePropertyMap, AsePropertyTypes, AseQuad, AseSlice, AseSliceElement, AseTag, AseTags, AseTileset, AseTriplet, AseUserData } from './aseprite.types';
 import pako from "pako";
 export class Aseprite {
   private buffer: ArrayBuffer;
@@ -17,7 +17,7 @@ class AsepriteView {
   private view: DataView;
   private offset: number = 0;
   private decoder: TextDecoder = new TextDecoder();
-  private pixelFormat: 0 | 1 | 2 = 0;
+  private pixelFormat: 1 | 2 | 3 | 4 = 4;
   private constructor(buffer: ArrayBuffer) {
     this.buffer = buffer;
     this.view = new DataView(buffer);
@@ -89,8 +89,8 @@ class AsepriteView {
 
   readPixel(skip: number = 0): AsePixel {
 	switch (this.pixelFormat){
-		case 0: return this.readByteQuad(skip);
-		case 1: return this.readBytePair(skip);
+		case 1: return this.readByteQuad(skip);
+		case 2: return this.readBytePair(skip);
 		case 2: return this.readByte(skip);
 	}
   }
@@ -109,6 +109,10 @@ class AsepriteView {
 
   readWordPair(skip: number = 0): AsePair {
     return this.readPair(this.readWord, skip);
+  }
+
+  readDwordPair(skip: number = 0): AsePair{
+	return this.readPair(this.readDword, skip);
   }
 
   readShortPair(skip: number = 0): AsePair {
@@ -133,12 +137,22 @@ class AsepriteView {
     return [fn(), fn(), fn(), fn(skip)];
   }
 
+  
   readByteQuad(skip: number = 0): AseQuad {
 	return this.readQuad(this.readByte, skip);
   }
 
+
+  readDwordQuad(skip: number = 0): AseQuad {
+	return this.readQuad(this.readDword, skip);
+  }
+
   readLongQuad(skip: number = 0): AseQuad {
 	return this.readQuad(this.readLong, skip);
+  }
+
+  readFixedQuad(skip: number = 0): AseQuad {
+	return this.readQuad(this.readFixed, skip);
   }
   //spec defines bytes[l] as a read type however this should be split into the necessary specialized types.
 
@@ -172,8 +186,11 @@ class AsepriteView {
       gridSize: this.readWordPair(84),
     };
     assert(header.magic === 0xa5e0, 'Are you sure this is an aseprite file');
+	this.pixelFormat = header.colorDepth/8 as 1 | 2 | 3 | 4;
     return header;
   }
+
+  
   readLegacyPalette(chunkType: AseLegacyPalette["chunkType"]): AseLegacyPalette {
 	const len = this.readWord();
 	const colors: AseTriplet[] = [];
@@ -290,11 +307,9 @@ class AsepriteView {
 	const layerChildLevel = this.readWord();
 	const layerSize = this.readWordPair();
 	const blendMode = this.readWord() as AseLayerBlendMode;
-	const alpha = this.readByte();
+	const alpha = this.readByte(3);
 	const name = this.readString();
-	const tileIndex = layerType === 2 ? this.readDword():-1;
-
-	return {
+	const layer: AseLayer = {
 		chunkType: 0x2004,
 		flags,
 		layerType,
@@ -303,23 +318,141 @@ class AsepriteView {
 		blendMode,
 		alpha,
 		name,
-		tileIndex
-	}
+		tileIndex: -1
+	};
+	if(layerType === 2) layer.tileIndex = this.readDword();
+	return layer;
+  }
+  
+  readMask(): AseMask {
+	const position = this.readShortPair();
+	const size = this.readWordPair(8);
+	const name = this.readString();
+	const bitmap = this.readUint8Array(size[1]*((size[0]+7)/8))
+	return { chunkType: 0x2016, position, size, name, bitmap};
   }
 
+  readExternal(): AseExternalAssets {
+	const len = this.readDword(8);
+	const assets = new Array<AseExternalAsset>(len).fill(null);
+	for(let i = 0; i<len; i++){
+		assets[i] = {
+			assetId: this.readDword(),
+			assetType: this.readByte(7) as 0 | 1 | 2 | 3,
+			assetPath: this.readString()
+		};
+	}
+	return {chunkType: 0x2008, assets}
+  }
   
+  readSlice(): AseSlice {
+	const len = this.readDword();
+	const flags = this.readDword(4);
+	const name = this.readString();
+	const is9Patch = (flags & 1) === 1;
+	const hasPivotInfo = (flags & 2) == 2;
+	const slices = new Array<AseSliceElement>(len).fill(null);
+	for(let i = 0; i<len; i++){
+		slices[i] = {
+			frameIndex: this.readDword(),
+			location: this.readLongPair(),
+			size: this.readDwordPair()	
+		}
+		if(is9Patch) {
+			slices[i].center = this.readLongPair();
+			slices[i].centerSize = this.readDwordPair();
+		}
+		if(hasPivotInfo){
+			slices[i].pivot = this.readLongPair();
+		}
+	}
+	return {chunkType: 0x2022, flags,  slices, name};
+  }
+
+  readTileset(): AseTileset {
+	
+	const tilesetId = this.readDword();
+	const tilesetFlags = this.readDword();
+	const tilesLength = this.readDword();
+	const tilesetSize = this.readWordPair();
+	const tilesetBaseIndex = this.readShort(14);
+	const tilesetName = this.readString();
+	
+	const tileset: AseTileset = {
+		chunkType: 0x2023, 
+		tilesetId, 
+		tilesetBaseIndex, 
+		tilesetFlags, 
+		tilesLength,
+		tilesetName, 
+		tilesetSize,
+		
+	};
+
+	if((tilesetFlags & 1) ===1) {
+		tileset.externalChunkId = this.readDword();
+		tileset.externalId = this.readDword();
+	}
+
+	if((tilesetFlags & 2) === 2){
+		tileset.pixels = this.inflateArray(this.readDword());
+	}
+	return tileset;
+  }
+  readCel(chunkSize:number): AseCel {
+	const chunkType = 0x2005;
+	const layerIndex = this.readWord();
+	const layerPosition = this.readShortPair();
+	const alpha = this.readByte();
+	const celType = this.readWord() as 0 | 1 | 2 | 3;
+	const zIndex = this.readShort(5);
+	const base: AseCelBase = {chunkType, layerIndex, layerPosition, alpha, zIndex};
+	if(celType === 0) { //switch shares constants. 
+		const pixelSize = this.readWordPair();
+		const pixels = this.readUint8Array(chunkSize - 26);
+		return {celType, pixelSize, pixels, ...base};
+	} else if(celType === 1){
+		return {celType, position: this.readWord(), ...base};
+	} else if (celType === 2){
+		const pixelSize = this.readWordPair();
+		const pixels = this.inflateArray(chunkSize - 26);
+		return {celType, pixelSize, pixels, ...base}
+	} else if (celType === 3){
+		const tileMapSize = this.readWordPair();
+		const tileBpt = this.readWord();
+		const bitmask = this.readDwordQuad(10);
+		const tiles = this.readUint8Array(tileMapSize[0]*tileMapSize[1]*tileBpt);
+		return {celType, tileMapSize, tileBpt, bitmask, tiles, ...base};
+	}
+  }
+  readCelExtra(): AseCelExtra {
+	return {
+		chunkType: 0x2006,
+		flags: this.readDword(),
+		preciseRect: this.readFixedQuad(16)
+	}
+  }
   readChunk(): AseChunk {
 	const chunkSize = this.readDword();
 	const chunkType = this.readWord() as AseChunkType;
+	console.log(chunkSize, chunkType.toString(16));
 	switch(chunkType){
 		case 0x0004: 
 		case 0x0011: return this.readLegacyPalette(chunkType);
+		case 0x2004: return this.readLayer();
+		case 0x2005: return this.readCel(chunkSize);
+		case 0x2006: return this.readCelExtra();
 		case 0x2007: return this.readColorProfile();
+		case 0x2008: return this.readExternal();
+		case 0x2016: return this.readMask();
+		case 0x2017: return {chunkType};
 		case 0x2018: return this.readTags();	
 		case 0x2019: return this.readColorPalette();
 		case 0x2020: return this.readUserData();
+		case 0x2022: return this.readSlice();
+		case 0x2023: return this.readTileset();
 		default:
-			console.log(`Chunk 0x${chunkType.toString(16)}`)
+			console.log(`Unsupported Chunk 0x${(chunkType as number).toString(16)}`)
 			return {chunkType:0x2017};
 	}
 	
@@ -335,7 +468,7 @@ class AsepriteView {
 	var chunks = new Array(chunkSizeNew).fill(null);
 	for(let i = 0; i<chunkSizeNew;i++){
 		chunks[i] = this.readChunk();
-		if(chunks[i].chunkType !== 0x2017) console.log("Chunk", chunks[i])
+		if(chunks[i] && chunks[i].chunkType !== 0x2017) console.log("Chunk", chunks[i].chunkType.toString(16), chunks[i])
 	}
 	console.log("Chunks", chunks);
 	return {duration, chunks};
@@ -345,8 +478,11 @@ class AsepriteView {
     const header: AseHeader = v.readHeader();
     //assert(header.magic === 0xA5E0, `Header magic mismatch ${header.magic} ${0xA5E0}`);
     console.log(header, v.offset);
-    const frame = v.readFrame();
-    console.log(header, frame, v.offset);
+	const frames = new Array<AseFrame>(header.frames).fill(null);
+	for(let i = 0; i<header.frames; i++){
+		frames[i] = v.readFrame();
+	}
+    console.log(header, frames, v.offset);
   }
 }
 
