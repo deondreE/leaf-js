@@ -73,7 +73,7 @@ export type AseLayer = {
 	tileIndex: number;
 }
 
-export type AseCel = AseImageCel;
+export type AseCel = AseImageCel | AseLinkedCel | AseCelTilemap;
 
 export type AseCelBase = {
 	chunkType: 0x2005;
@@ -98,10 +98,12 @@ export type AseCelTilemap = {
 	tileMapSize: AsePair;
 	bitmask: AseQuad;
 	tiles: Uint8Array;
-}
+} & AseCelBase;
 
-export type AsePath = {
-	chunkType: 0x2017
+export type AseCelExtra = {
+	chunkType: 0x2006;
+	flags: number;
+	preciseRect: AseQuad;
 }
 
 export type AseColorProfileBase = {
@@ -118,22 +120,41 @@ export type AseICCProfile = {
 	icc: Uint8Array;
 } & AseColorProfileBase;
 
-export type AseColorPaletteEntry = {
-	color: AseQuad;
-	name?: string
+export type AseExternalAsset = {
+	assetId: number;
+	assetType: 0 | 1 | 2 | 3;
+	assetPath: string; //only relative paths are accepted this may be problematic if third party library extension.id's are needed to render
 }
-export type AseColorPalette = {
-	chunkType: 0x2019;
-	firstIndex: number;
-	lastIndex: number;
-	colors: AseColorPaletteEntry[];
+
+export type AseExternalAssets = {
+	chunkType: 0x2008;
+	assets: AseExternalAsset[];
 }
+
+export type AseMask = { /* deprecated but parsed for possible future support of legacy aseprite */
+	chunkType: 0x2016;
+	position: AsePair;
+	size: AsePair;
+	name: string;
+	bitmap: Uint8Array;
+}
+
+export type AsePath = {
+	chunkType: 0x2017
+}
+
+export type AseTags = {
+	chunkType: 0x2018;
+	tags: AseTag[]
+}
+
 export enum AseLoopDirection {
 	forward = 0,
 	reverse = 1,
 	pingPong = 2,
 	pingPongReverse = 3
 }
+
 export type AseTag = {
 	range: AsePair;
 	direction: AseLoopDirection;
@@ -142,10 +163,19 @@ export type AseTag = {
 	tagName: string
 }
 
-export type AseTags = {
-	chunkType: 0x2018;
-	tags: AseTag[]
+export type AseColorPalette = {
+	chunkType: 0x2019;
+	firstIndex: number;
+	lastIndex: number;
+	colors: AseColorPaletteEntry[];
 }
+
+export type AseColorPaletteEntry = {
+	color: AseQuad;
+	name?: string
+}
+
+
 
 export type AsePropertyTypers = 0x0001 | 0x0002 | 0x0003 | 0x0004 | 0x0005 | 0x0006 | 0x0008 | 0x0009 | 0x000A | 0x000B | 0x000C | 0x000D | 0x000E | 0x000F | 0x0010 | 0x0011 | 0x0012 | 0x0013;
 
@@ -169,6 +199,18 @@ export type AseUserData = {
 	text?: string,
 	color?: AseQuad,
 	properties?: AsePropertyMap
+}
+
+export type AseTileset = {
+	chunkType: 0x2023;
+	tilesetId: number;
+	tilesetFlags: number; //bitwise flag
+	tilesetSize: AsePair;
+	tilesetBaseIndex: number;
+	tilesetName: string
+	externalChunkId?: number;
+	externalId?: number;
+	includedTileset?: Uint8Array;
 }
 export type AsePair = [number, number];
 export type AseTriplet = [number, number, number];
