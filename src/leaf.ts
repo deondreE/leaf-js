@@ -27,8 +27,8 @@ class Leaf extends HTMLCanvasElement {
     if (!this.renderer && this.is3D) {
       this.id = 'webgpu-canvas';
       // FIXME: Recognize context.
-      if (this.hasAttribute("src")) {
-        const src = this.getAttribute("src");
+      if (this.hasAttribute('src')) {
+        const src = this.getAttribute('src');
       }
 
       queueMicrotask(async () => {

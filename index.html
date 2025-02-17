@@ -105,34 +105,34 @@
   </body>
 </html> -->
 
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Document</title>
-</head>
-<body>
-  <canvas id="canvas" src="t.obj" is3D width="640" height="640"></canvas>
-</body>
-<!-- <script type="module" src="./src/main.ts"></script> -->
- <script lang="ts" type="module">
-  import WebGPUOBJParser from './src/parsers/obj';
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body>
+    <canvas id="canvas" src="t.obj" is3D width="640" height="640"></canvas>
+  </body>
+  <!-- <script type="module" src="./src/main.ts"></script> -->
+  <script lang="ts" type="module">
+    import WebGPUOBJParser from './src/parsers/obj';
 
-  const canvas = document.querySelector("canvas");
+    const canvas = document.querySelector('canvas');
     const adapter = await navigator.gpu.requestAdapter();
     const device = await adapter.requestDevice();
-    const context = canvas.getContext("webgpu");
+    const context = canvas.getContext('webgpu');
 
     const format = navigator.gpu.getPreferredCanvasFormat();
     context.configure({ device, format });
 
     const objParser = new WebGPUOBJParser(device);
-    const data = await fetch("t.obj").then((data) => data=data.text());
+    const data = await fetch('k.obj').then((data) => (data = data.text()));
     await objParser.loadOBJ(data);
 
     const shaderModule = device.createShaderModule({
-        code: `
+      code: `
             struct VertexInput {
                 @location(0) position: vec3<f32>,
                 @location(1) normal: vec3<f32>,
@@ -164,12 +164,13 @@
 
     const commandEncoder = device.createCommandEncoder();
     const passEncoder = commandEncoder.beginRenderPass({
-        colorAttachments: [{ view: context.getCurrentTexture().createView(), loadOp: "clear", storeOp: "store" }],
+      colorAttachments: [
+        { view: context.getCurrentTexture().createView(), loadOp: 'clear', storeOp: 'store' },
+      ],
     });
 
     objParser.render(passEncoder);
     passEncoder.end();
     device.queue.submit([commandEncoder.finish()]);
-
- </script>
+  </script>
 </html>
