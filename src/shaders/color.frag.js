@@ -1,3 +1,4 @@
+const colorVert = `
 @fragment
 fn main(
   @location(0) fragUV: vec2f,
@@ -5,3 +6,6 @@ fn main(
 ) -> @location(0) vec4f {
   return fragPosition;
 }
+`;
+
+export default colorVert;

@@ -1,3 +1,5 @@
+
+const basicVert = `
 struct Uniforms {
   modelViewProjectionMatrix : mat4x4f,
 }
@@ -20,3 +22,6 @@ fn main(
   output.fragPosition = 0.5 * (position + vec4(1.0, 1.0, 1.0, 1.0));
   return output;
 }
+`;
+
+export default basicVert;

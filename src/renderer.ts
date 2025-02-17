@@ -1,7 +1,7 @@
 import { mat4, Mat4, vec3 } from 'wgpu-matrix';
-import { assert } from './utils';
-import basicVert from './shaders/basic.vert.wgsl';
-import colorVert from './shaders/color.frag.wgsl';
+import { assert } from './utils/index';
+import basicVert from './shaders/basic.vert.js';
+import colorVert from './shaders/color.frag.js';
 import {
   DEFAULT_DEPTH_STENCIL,
   DEFAULT_PIPELINE_BUFFERS,
