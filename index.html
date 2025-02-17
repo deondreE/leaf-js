@@ -113,7 +113,63 @@
   <title>Document</title>
 </head>
 <body>
-  <canvas is="leaf-js" src="test" is3D width="640" height="640"></canvas>
+  <canvas id="canvas" src="t.obj" is3D width="640" height="640"></canvas>
 </body>
-<script type="module" src="./src/main.ts"></script>
+<!-- <script type="module" src="./src/main.ts"></script> -->
+ <script lang="ts" type="module">
+  import WebGPUOBJParser from './src/parsers/obj';
+
+  const canvas = document.querySelector("canvas");
+    const adapter = await navigator.gpu.requestAdapter();
+    const device = await adapter.requestDevice();
+    const context = canvas.getContext("webgpu");
+
+    const format = navigator.gpu.getPreferredCanvasFormat();
+    context.configure({ device, format });
+
+    const objParser = new WebGPUOBJParser(device);
+    const data = await fetch("t.obj").then((data) => data=data.text());
+    await objParser.loadOBJ(data);
+
+    const shaderModule = device.createShaderModule({
+        code: `
+            struct VertexInput {
+                @location(0) position: vec3<f32>,
+                @location(1) normal: vec3<f32>,
+                @location(2) texCoord: vec2<f32>
+            };
+
+            struct VertexOutput {
+                @builtin(position) Position: vec4<f32>,
+                @location(0) vNormal: vec3<f32>,
+            };
+
+            @vertex
+            fn vs_main(input: VertexInput) -> VertexOutput {
+                var output: VertexOutput;
+                output.Position = vec4<f32>(input.position, 1.0);
+                output.vNormal = input.normal;
+                return output;
+            }
+
+            @fragment
+            fn fs_main(input: VertexOutput) -> @location(0) vec4<f32> {
+                let color = vec3<f32>(0.5, 0.5, 0.5) * (input.vNormal.z * 0.5 + 0.5);
+                return vec4<f32>(color, 1.0);
+            }
+        `,
+    });
+
+    await objParser.createPipeline(shaderModule, format);
+
+    const commandEncoder = device.createCommandEncoder();
+    const passEncoder = commandEncoder.beginRenderPass({
+        colorAttachments: [{ view: context.getCurrentTexture().createView(), loadOp: "clear", storeOp: "store" }],
+    });
+
+    objParser.render(passEncoder);
+    passEncoder.end();
+    device.queue.submit([commandEncoder.finish()]);
+
+ </script>
 </html>

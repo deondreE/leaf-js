@@ -1,3 +1,4 @@
+import OBJParser from './parsers/obj';
 import Renderer from './renderer';
 
 console.log('Loading leaf');
@@ -25,6 +26,11 @@ class Leaf extends HTMLCanvasElement {
 
     if (!this.renderer && this.is3D) {
       this.id = 'webgpu-canvas';
+      // FIXME: Recognize context.
+      if (this.hasAttribute("src")) {
+        const src = this.getAttribute("src");
+      }
+
       queueMicrotask(async () => {
         this.renderer = await Renderer.init({ canvas: this });
         this.renderer.render();
