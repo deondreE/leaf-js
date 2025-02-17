@@ -1,5 +1,6 @@
 import OBJParser from './parsers/obj';
 import Renderer from './renderer';
+import { assert } from './utils/index';
 
 console.log('Loading leaf');
 class Leaf extends HTMLCanvasElement {
@@ -24,6 +25,17 @@ class Leaf extends HTMLCanvasElement {
     if (!this.hasAttribute('src'))
       return console.warn('leaf canvases rely on src attribute to populate');
 
+    if (this.hasAttribute('src')) {
+      const funcName: string = this.getAttribute('src')!;
+      const global = window as Record<string, any>;
+      assert(funcName !== null);
+
+      if (typeof global[funcName] === 'function') {
+        let v = global[funcName]();
+        console.log(v);
+      }
+    }
+
     if (!this.renderer && this.is3D) {
       this.id = 'webgpu-canvas';
       // FIXME: Recognize context.
@@ -45,6 +57,9 @@ class Leaf extends HTMLCanvasElement {
   adoptedCallback() {
     console.log('Time to transfer context');
   }
+
+  /** Returns a file type */
+  checkFileType() {}
 
   /**
    * Anytime a value changed. Unfortunately the attributeChangedCallback doesnt know what the type is accepting as unknown allows for simple coercion.

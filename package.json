@@ -1,16 +1,15 @@
 {
-  "name": "leaf-js",
-  "version": "1.0.0",
+  "name": "leaf",
+  "version": "2.0.0",
   "type": "module",
   "description": "A performant 3d javascript library",
-  "main": "dist/remove_later.cjs.js",
-  "module": "dist/remove_later.esm.js",
-  "types": "dist/remove_later.d.ts",
+  "source": "src/index.ts",
   "scripts": {
     "dev": "vite",
     "build": "rollup -c",
     "preview": "vite preview",
     "format": "prettier --write .",
+    "check": "tsc --noEmit",
     "test": "vitest"
   },
   "author": "deondreE",
@@ -18,10 +17,11 @@
   "devDependencies": {
     "@rollup/plugin-commonjs": "^28.0.2",
     "@rollup/plugin-node-resolve": "^16.0.0",
+    "@rollup/plugin-typescript": "^12.1.2",
     "@types/node": "^22.13.2",
     "@webgpu/types": "^0.1.54",
     "prettier": "^3.5.0",
-    "rollup": "^4.34.7",
+    "rollup": "^4.34.8",
     "rollup-plugin-typescript3": "^3.0.5",
     "typescript": "^5.7.3",
     "vite": "^6.0.7",

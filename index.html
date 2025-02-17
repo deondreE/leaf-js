@@ -105,17 +105,67 @@
   </body>
 </html> -->
 
-<!doctype html>
+<!-- <!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Document</title>
+    <title>Worky</title>
   </head>
   <body>
-    <canvas id="canvas" src="t.obj" is3D width="640" height="640"></canvas>
+    <canvas is="leaf-js" src="tester" width="640" height="640"></canvas>
   </body>
-  <!-- <script type="module" src="./src/main.ts"></script> -->
+  <script src="./src/leaf.ts" type="module"></script>
+  <script lang="ts">
+    function tester()  {
+      console.log('This is now working I think maybe sometimes');
+      console.log('vscode sucks');
+
+      const scene = {
+        models: {
+          cube: { // cube[10]
+            size: { w: 10, h: 10 }, 
+            amount: 10,
+            onInit: function () {
+              this.location = Math.random * 10;
+            },
+            onRender: function () {
+
+            }
+          },
+          otherCube: {
+            size: { w: 100, h: 100 },
+            type: "cube",
+            amount: 1
+          }
+        },
+        start: function () {
+            this.add = 'string';
+            this.remove('string');
+        },
+        update: function() {
+          for (o in this.objects) { 
+            if (typeof (o) === "cube") {
+              
+            }
+          }
+        }
+      };
+
+      return scene; 
+    }
+  </script>
+</html> -->
+<!-- <script type="module" src="./src/main.ts"></script>
+
+
+  
+</html> -->
+
+<html>
+  <body>
+    <canvas is="leaf-js" width="800" height="600"></canvas>
+  </body>
   <script lang="ts" type="module">
     import WebGPUOBJParser from './src/parsers/obj';
     import { mat4 } from 'gl-matrix';
