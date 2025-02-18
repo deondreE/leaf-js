@@ -31,12 +31,11 @@ class STLParser {
 
   // Load and parse the STL file (ASCII format)
   async loadSTL(stlData: string): Promise<boolean> {
-    const regex =
-      /facet\s+normal\s+([-0-9.]+)\s+([-0-9.]+)\s+([-0-9.]+)\s+([\s\S]*?)\s+endfacet/g;
+    const regex = /facet\s+normal\s+([-0-9.]+)\s+([-0-9.]+)\s+([-0-9.]+)\s+([\s\S]*?)\s+endfacet/g;
     let match;
     const vertices: Vertex[] = [];
     const indices: number[] = [];
-  
+
     // Parsing the STL data
     while ((match = regex.exec(stlData)) !== null) {
       const [_, nx, ny, nz, verticesData] = match;
@@ -45,12 +44,12 @@ class STLParser {
         y: parseFloat(ny),
         z: parseFloat(nz),
       };
-  
+
       // Extracting vertices of the triangle
       const vertexRegex = /vertex\s+([-0-9.]+)\s+([-0-9.]+)\s+([-0-9.]+)/g;
       let vertexMatch;
       let triangleVertices: Vec3[] = [];
-  
+
       while ((vertexMatch = vertexRegex.exec(verticesData)) !== null) {
         const vertex: Vec3 = {
           x: parseFloat(vertexMatch[1]),
@@ -59,27 +58,27 @@ class STLParser {
         };
         triangleVertices.push(vertex);
       }
-  
+
       // Store the triangle vertices
       if (triangleVertices.length === 3) {
         const offset = vertices.length; // Get the current offset BEFORE adding vertices
-  
+
         for (const vertex of triangleVertices) {
           const texCoord: Vec2 = { u: 0, v: 0 }; // Default texCoord, you can modify this
           vertices.push({ position: vertex, normal, texCoord });
         }
-  
+
         indices.push(offset, offset + 1, offset + 2);
       }
     }
-  
+
     // Assign vertices and indices BEFORE creating buffers
     this.vertices = vertices;
     this.indices = indices;
-  
+
     // Now create the buffers
     await this.createBuffers();
-  
+
     return vertices.length > 0; // Return true if vertices were loaded
   }
 
@@ -116,10 +115,9 @@ class STLParser {
 
     // ***CRITICAL: Check if indexData has any data***
     if (indexData.length === 0) {
-        console.warn("Index data is empty. Skipping index buffer creation.");
-        return; // Or handle the error appropriately
-      }
-      
+      console.warn('Index data is empty. Skipping index buffer creation.');
+      return; // Or handle the error appropriately
+    }
 
     this.indexBuffer = this.device.createBuffer({
       size: indexData.byteLength,
@@ -234,20 +232,18 @@ class STLParser {
     passEncoder.setPipeline(this.pipeline);
     passEncoder.setBindGroup(0, this.bindGroup);
     passEncoder.setVertexBuffer(0, this.vertexBuffer);
-  
+
     // Check if indexBuffer exists BEFORE using it
     if (!this.indexBuffer) {
-      console.warn(
-        "Index buffer is not initialized. Rendering without indices (drawArrays)."
-      );
+      console.warn('Index buffer is not initialized. Rendering without indices (drawArrays).');
       passEncoder.draw(this.vertices.length); // drawArrays
       return;
     }
-  
+
     // Determine the correct index format based on the buffer size
-    const indexFormat = this.indexBuffer.size <= 65536 ? "uint16" : "uint32";
+    const indexFormat = this.indexBuffer.size <= 65536 ? 'uint16' : 'uint32';
     passEncoder.setIndexBuffer(this.indexBuffer, indexFormat);
-  
+
     // Draw the correct number of indices
     passEncoder.drawIndexed(this.indices.length);
   }

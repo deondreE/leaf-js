@@ -1,4 +1,4 @@
-import { FBXTree } from "fbx-parser";
+import { FBXTree } from 'fbx-parser';
 
 interface Vec3 {
   x: number;
@@ -43,7 +43,7 @@ export default class FBXParser {
       const parsedData = this.parseBinaryFBX(fbxData);
 
       if (!parsedData) {
-        console.error("Failed to parse binary FBX data.");
+        console.error('Failed to parse binary FBX data.');
         return false;
       }
 
@@ -58,9 +58,7 @@ export default class FBXParser {
     }
   }
 
-  private parseBinaryFBX(
-    fbxData: ArrayBuffer
-  ): {
+  private parseBinaryFBX(fbxData: ArrayBuffer): {
     vertices: Vertex[];
     indices: number[];
   } | null {
@@ -75,7 +73,7 @@ export default class FBXParser {
       const geometry = fbxTree.Objects.Geometry[0];
 
       if (!geometry) {
-        console.warn("No geometry found in FBX file.");
+        console.warn('No geometry found in FBX file.');
         return null;
       }
 
@@ -85,7 +83,7 @@ export default class FBXParser {
       const polygonVertexIndex = geometry.polygonVertexIndex;
 
       if (!positions || !polygonVertexIndex) {
-        console.warn("Missing positions or indices in FBX geometry.");
+        console.warn('Missing positions or indices in FBX geometry.');
         return null;
       }
 
@@ -123,7 +121,7 @@ export default class FBXParser {
 
       return { vertices, indices };
     } catch (error) {
-      console.error("Error parsing FBX data:", error);
+      console.error('Error parsing FBX data:', error);
       return null;
     }
   }
@@ -139,7 +137,7 @@ export default class FBXParser {
         v.normal.z,
         v.texCoord.u,
         v.texCoord.v,
-      ])
+      ]),
     );
 
     this.vertexBuffer = this.device.createBuffer({
@@ -163,14 +161,14 @@ export default class FBXParser {
   async createPipeline(
     shaderModule: GPUShaderModule,
     format: GPUTextureFormat,
-    uniformBuffer: GPUBuffer
+    uniformBuffer: GPUBuffer,
   ) {
     const bindGroupLayout = this.device.createBindGroupLayout({
       entries: [
         {
           binding: 0,
           visibility: GPUShaderStage.VERTEX,
-          buffer: { type: "uniform" },
+          buffer: { type: 'uniform' },
         },
       ],
     });
@@ -183,28 +181,28 @@ export default class FBXParser {
       layout: pipelineLayout,
       vertex: {
         module: shaderModule,
-        entryPoint: "vs_main",
+        entryPoint: 'vs_main',
         buffers: [
           {
             arrayStride: 8 * 4,
             attributes: [
-              { shaderLocation: 0, offset: 0, format: "float32x3" }, // position
-              { shaderLocation: 1, offset: 3 * 4, format: "float32x3" }, // normal
-              { shaderLocation: 2, offset: 6 * 4, format: "float32x2" }, // texCoord
+              { shaderLocation: 0, offset: 0, format: 'float32x3' }, // position
+              { shaderLocation: 1, offset: 3 * 4, format: 'float32x3' }, // normal
+              { shaderLocation: 2, offset: 6 * 4, format: 'float32x2' }, // texCoord
             ],
           },
         ],
       },
       fragment: {
         module: shaderModule,
-        entryPoint: "fs_main",
+        entryPoint: 'fs_main',
         targets: [{ format }],
       },
       primitive: {
-        topology: "triangle-list",
-        cullMode: "front",
+        topology: 'triangle-list',
+        cullMode: 'front',
         unclippedDepth: false,
-        frontFace: "cw",
+        frontFace: 'cw',
       },
     });
 
@@ -261,7 +259,7 @@ export default class FBXParser {
     passEncoder.setPipeline(this.pipeline);
     passEncoder.setBindGroup(0, this.bindGroup);
     passEncoder.setVertexBuffer(0, this.vertexBuffer);
-    passEncoder.setIndexBuffer(this.indexBuffer, "uint16");
+    passEncoder.setIndexBuffer(this.indexBuffer, 'uint16');
     passEncoder.drawIndexed(this.indices.length);
   }
 }
