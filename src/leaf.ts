@@ -67,6 +67,12 @@ class Leaf extends HTMLCanvasElement {
       case 'obj':
         console.log('Detected OBJ file');
         return true;
+      case 'fbx':
+        console.log('Detected FBX');
+        return true;
+      case 'stl':
+        console.log('Detected SDL');
+        return true;
       default:
         console.warn('Unsupported file type:', extension);
         return false;

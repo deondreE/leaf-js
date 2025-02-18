@@ -1,5 +1,6 @@
 import { mat4 } from 'gl-matrix';
 import OBJParser from './parsers/obj';
+import STLParser from './parsers/stl';
 
 /** Currently Supports static file definitions. */
 class Renderer3D {
@@ -58,8 +59,9 @@ class Renderer3D {
     mat4.multiply(mvpMatrix, projectionMatrix, viewMatrix);
     mat4.multiply(mvpMatrix, mvpMatrix, modelMatrix);
 
+    console.log(this.returnFileExt(fileName));
     switch (this.returnFileExt(fileName)) {
-      case 'obj':
+      case 'obj': {
         const objParser = new OBJParser(this.device);
 
         // Actually get the data given
@@ -95,11 +97,47 @@ class Renderer3D {
         });
 
         break;
-      case '.fbx':
-        console.log('Not Implmented yet!');
+      }
+
+      case 'fbx':
+        console.warn('TODO:');
         break;
-      case '.stl':
-        console.warn('Not Implmented yet!');
+
+      case 'stl':
+        console.log('test');
+        const stlParser = new STLParser(this.device);
+
+        const data = await fetch(fileName).then((data) => data.text());
+        await stlParser.loadSTL(data);
+
+        const shaderModule = stlParser.getShader();
+        const uniformBuffer = this.device.createBuffer({
+          size: 64,
+          usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+        });
+
+        // @ts-ignore
+        this.device.queue.writeBuffer(uniformBuffer, 0, mvpMatrix.buffer);
+
+        await stlParser.createPipeline(shaderModule, this.format, uniformBuffer);
+
+        this.render(() => {
+          const commandEncoder = this.device.createCommandEncoder();
+          const passEncoder = commandEncoder.beginRenderPass({
+            colorAttachments: [
+              {
+                view: this.context.getCurrentTexture().createView(),
+                loadOp: 'clear',
+                storeOp: 'store',
+              },
+            ],
+          });
+
+          stlParser.render(passEncoder);
+          passEncoder.end();
+          this.device.queue.submit([commandEncoder.finish()]);
+        });
+
         break;
       default:
         break;
@@ -108,7 +146,6 @@ class Renderer3D {
 
   returnFileExt(fileName: string): string {
     const parts = fileName.split('.');
-    console.log();
     return parts.length > 1 ? parts.pop() || '' : '';
   }
 
