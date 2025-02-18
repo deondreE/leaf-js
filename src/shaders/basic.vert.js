@@ -1,4 +1,3 @@
-
 const basicVert = `
 struct Uniforms {
   modelViewProjectionMatrix : mat4x4f,

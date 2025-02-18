@@ -105,7 +105,7 @@
   </body>
 </html> -->
 
-<!-- <!doctype html>
+<!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
@@ -113,55 +113,48 @@
     <title>Worky</title>
   </head>
   <body>
-    <canvas is="leaf-js" src="tester" width="640" height="640"></canvas>
+    <canvas is="leaf-js" src="l.obj" width="640" height="640"></canvas>
   </body>
   <script src="./src/leaf.ts" type="module"></script>
-  <script lang="ts">
-    function tester()  {
+  <!-- <script lang="ts">
+    function tester() {
       console.log('This is now working I think maybe sometimes');
       console.log('vscode sucks');
 
       const scene = {
         models: {
-          cube: { // cube[10]
-            size: { w: 10, h: 10 }, 
+          cube: {
+            // cube[10]
+            size: { w: 10, h: 10 },
             amount: 10,
             onInit: function () {
               this.location = Math.random * 10;
             },
-            onRender: function () {
-
-            }
+            onRender: function () {},
           },
           otherCube: {
             size: { w: 100, h: 100 },
-            type: "cube",
-            amount: 1
-          }
+            type: 'cube',
+            amount: 1,
+          },
         },
         start: function () {
-            this.add = 'string';
-            this.remove('string');
+          this.add = 'string';
+          this.remove('string');
         },
-        update: function() {
-          for (o in this.objects) { 
-            if (typeof (o) === "cube") {
-              
+        update: function () {
+          for (o in this.objects) {
+            if (typeof o === 'cube') {
             }
           }
-        }
+        },
       };
 
-      return scene; 
+      return scene;
     }
-  </script>
-</html> -->
-<!-- <script type="module" src="./src/main.ts"></script>
-
-
-  
-</html> -->
-
+  </script> -->
+</html>
+<!-- 
 <html>
   <body>
     <canvas is="leaf-js" width="800" height="600"></canvas>
@@ -188,8 +181,8 @@
     const mvpMatrix = mat4.create();
 
     mat4.lookAt(viewMatrix, [0, 0, 5], [0, 0, 0], [0, 1, 0]); // Camera at (0,0,5), looking at origin
-    mat4.perspective(projectionMatrix, Math.PI / 4, canvas.width / canvas.height, 0.1, 100.0); // FOV = 45 degreess
-
+    mat4.perspective(project
+ionMatrix, Math.PI / 4, canvas.width / canvas.height, 0.1, 100.0); // FOV = 45 degreess
     mat4.multiply(mvpMatrix, projectionMatrix, viewMatrix);
     mat4.multiply(mvpMatrix, mvpMatrix, modelMatrix);
 
@@ -200,39 +193,7 @@
 
     device.queue.writeBuffer(uniformBuffer, 0, mvpMatrix.buffer);
 
-    const shaderModule = device.createShaderModule({
-      code: `
-            struct Uniforms {
-              mvpMatrix: mat4x4<f32>,
-            }
-            @group(0) @binding(0) var<uniform> uniforms: Uniforms; 
-
-            struct VertexInput {
-                @location(0) position: vec3<f32>,
-                @location(1) normal: vec3<f32>,
-                @location(2) texCoord: vec2<f32>
-            };
-
-            struct VertexOutput {
-                @builtin(position) Position: vec4<f32>,
-                @location(0) vNormal: vec3<f32>,
-            };
-
-            @vertex
-            fn vs_main(input: VertexInput) -> VertexOutput {
-                var output: VertexOutput;
-                output.Position = uniforms.mvpMatrix * vec4<f32>(input.position, 1.0);
-                output.vNormal = input.normal;
-                return output;
-            }
-
-            @fragment
-            fn fs_main(input: VertexOutput) -> @location(0) vec4<f32> {
-                let color = vec3<f32>(0.5, 0.5, 0.5) * (input.vNormal.z * 0.5 + 0.5);
-                return vec4<f32>(color, 1.0);
-            }
-        `,
-    });
+    const shaderModule = objParser.getShader();
 
     await objParser.createPipeline(shaderModule, format, uniformBuffer);
 
@@ -248,3 +209,4 @@
     device.queue.submit([commandEncoder.finish()]);
   </script>
 </html>
+ -->

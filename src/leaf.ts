@@ -1,5 +1,4 @@
-import OBJParser from './parsers/obj';
-import Renderer from './renderer';
+import Renderer from './renderer.new';
 import { assert } from './utils/index';
 
 console.log('Loading leaf');
@@ -13,11 +12,6 @@ class Leaf extends HTMLCanvasElement {
     super();
   }
 
-  async initRenderer() {
-    this.renderer = await Renderer.init({ canvas: this });
-    this.renderer.render();
-  }
-
   connectedCallback() {
     this.is3D = this.getOptimisticBoolAttribute('is3D');
     this.static = this.getOptimisticBoolAttribute('static');
@@ -26,13 +20,19 @@ class Leaf extends HTMLCanvasElement {
       return console.warn('leaf canvases rely on src attribute to populate');
 
     if (this.hasAttribute('src')) {
-      const funcName: string = this.getAttribute('src')!;
-      const global = window as Record<string, any>;
-      assert(funcName !== null);
+      if (!this.checkFileType(this.getAttribute('src'))) {
+        const funcName: string = this.getAttribute('src')!;
+        const global = window as Record<string, any>;
+        assert(funcName !== null);
 
-      if (typeof global[funcName] === 'function') {
-        let v = global[funcName]();
-        console.log(v);
+        if (typeof global[funcName] === 'function') {
+          let v = global[funcName]();
+          console.log(v);
+        }
+      } else {
+        // Render supported static file type.
+        this.renderer = new Renderer(this);
+        this.renderer.init(this.getAttribute('src'));
       }
     }
 
@@ -42,11 +42,6 @@ class Leaf extends HTMLCanvasElement {
       if (this.hasAttribute('src')) {
         const src = this.getAttribute('src');
       }
-
-      queueMicrotask(async () => {
-        this.renderer = await Renderer.init({ canvas: this });
-        this.renderer.render();
-      });
     }
   }
 
@@ -59,7 +54,24 @@ class Leaf extends HTMLCanvasElement {
   }
 
   /** Returns a file type */
-  checkFileType() {}
+  checkFileType(possibleFile: string): boolean {
+    const parts = possibleFile.split('.');
+    if (parts.length < 2) {
+      console.warn('Not a valid file type');
+      return false;
+    }
+
+    const extension = parts.pop()?.toLowerCase() || '';
+
+    switch (extension) {
+      case 'obj':
+        console.log('Detected OBJ file');
+        return true;
+      default:
+        console.warn('Unsupported file type:', extension);
+        return false;
+    }
+  }
 
   /**
    * Anytime a value changed. Unfortunately the attributeChangedCallback doesnt know what the type is accepting as unknown allows for simple coercion.

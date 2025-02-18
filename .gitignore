@@ -8,10 +8,12 @@ Makefile
 scene.json
 test.json*
 
+# Editors
 *.sln
 *.vcxproj
 *.vcxproj.user
 .vs
+.idea
 
 # Model files
 *.obj

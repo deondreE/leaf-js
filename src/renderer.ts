@@ -9,6 +9,7 @@ import {
   DEFAULT_VIEW_FRUSTRUM,
 } from './constants';
 import { cubeVertexArray, cubeVertexCount } from './meshes/cube';
+import type { Model } from './types/types.scene';
 
 /**
  * Returning false from this method prevents renderer from resizing the view, projectionMatrix, and depthStencil
@@ -22,6 +23,7 @@ export type RendererOptions = {
   perspective?: number;
   vertexShader?: string | GPUShaderModule;
   fragmentShader?: string | GPUShaderModule;
+  currentModel?: Model; // TODO: define model types
   buffers?: Iterable<GPUVertexBufferLayout>;
   primitive?: GPUPrimitiveState;
   depthStencil?: GPUDepthStencilState;
@@ -94,6 +96,7 @@ export default class Renderer implements RenderDescriptor {
   get vMin(): number {
     return this._vMin;
   }
+
   set vMin(value: number) {
     this._vMin = value;
     //invalidate the projection matrix
@@ -103,10 +106,12 @@ export default class Renderer implements RenderDescriptor {
   get vFar(): number {
     return this._vFar;
   }
+
   set vFar(value: number) {
     this._vFar = value;
     this._projectionMatrix = null;
   }
+
   get aspect(): number {
     if (this._aspect != null) return this._aspect;
     return (this.aspect = this.canvas.width / this.canvas.height);
@@ -232,6 +237,7 @@ export default class Renderer implements RenderDescriptor {
     canvas,
     perspective = DEFAULT_VIEW_FRUSTRUM,
     onResize,
+    currentModel,
     vertexShader = basicVert,
     fragmentShader = colorVert,
     primitive = DEFAULT_PRIMITIVE_STATE,
@@ -247,6 +253,7 @@ export default class Renderer implements RenderDescriptor {
     const context: GPUCanvasContext = canvas.getContext('webgpu');
     assert(!!context);
     context.configure({ device, format });
+
     //moving to the initializer because for now once a pipeline is set it should live the lifetime of the renderer (with few exceptions)
     //todo this should have a singleton with a simplified configuration.
     const renderPipeline: GPURenderPipeline = device.createRenderPipeline({
@@ -300,6 +307,7 @@ export default class Renderer implements RenderDescriptor {
         },
       ],
     });
+
     return new Renderer({
       canvas,
       device,
