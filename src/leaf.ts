@@ -1,5 +1,6 @@
 import {loadAseprite} from "./parsers/aseprite";
 import Renderer from "./renderer";
+import Renderer2d from "./renderer2d";
 
 
 
@@ -11,7 +12,7 @@ class Leaf extends HTMLCanvasElement {
 		 */
 	static observedAttributes = ["src"];
 	is3D: boolean = true;
-	renderer: Renderer
+	renderer: Renderer | Renderer2d
 	constructor(){
 		
 		super();
@@ -39,17 +40,25 @@ class Leaf extends HTMLCanvasElement {
 	async parseAseprite(){
 		const src = this.getAttribute("src");
 		const aseprite = await loadAseprite(src);
-		console.log(aseprite);
+		return aseprite;
 	}
 	connectedCallback(){
 		this.is3D = this.getOptimisticBoolAttribute("is3D");
 		//improvement opportunity 
 		if(!this.hasAttribute("src")) return console.warn("leaf canvases rely on src attribute to populate");
-		this.parseAseprite();
+		const src = this.getAttribute("src").toLowerCase();
 		if(!this.renderer) {
 			queueMicrotask(async () => {
-				this.renderer = await Renderer.init({canvas: this});
-				this.renderer.render();
+				if (src.endsWith('.aseprite')) {
+					this.parseAseprite()
+					.then(aseprite => {
+						this.renderer = new Renderer2d(this.getContext('2d'), aseprite.frames.map(f=>[f.duration, f.bitmap]), aseprite.size);
+					});
+				} else {
+					this.renderer = await Renderer.init({canvas: this});
+					this.renderer.render();
+				}
+				
 			});
 		}
 	}
