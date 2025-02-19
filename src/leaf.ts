@@ -1,4 +1,4 @@
-import { loadAseprite } from "./parsers/aseprite";
+import {loadAseprite} from "./parsers/aseprite";
 import Renderer from "./renderer";
 
 
@@ -36,9 +36,10 @@ class Leaf extends HTMLCanvasElement {
 	/**
 	 * Parser will be made more dynamic this is just to test the parser
 	 */
-	parseAseprite(){
+	async parseAseprite(){
 		const src = this.getAttribute("src");
-		loadAseprite(src);
+		const aseprite = await loadAseprite(src);
+		console.log(aseprite);
 	}
 	connectedCallback(){
 		this.is3D = this.getOptimisticBoolAttribute("is3D");
