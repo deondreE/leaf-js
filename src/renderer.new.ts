@@ -1,7 +1,6 @@
 import { mat4 } from 'gl-matrix';
 import OBJParser from './parsers/obj';
 import STLParser from './parsers/stl';
-import FBXParser from './parsers/fbx';
 
 /** Currently Supports static file definitions. */
 class Renderer3D {
@@ -11,7 +10,7 @@ class Renderer3D {
   format: GPUTextureFormat | null = null;
   renderTexture: GPUTexture | null = null;
 
-  constructor(canvas: HTMLCanvasElement) {
+constructor(canvas: HTMLCanvasElement) {
     this.canvas = canvas;
   }
 
@@ -100,43 +99,9 @@ class Renderer3D {
         break;
       }
 
-      case 'fbx': {
-        const fbxParser = new FBXParser(this.device);
-
-        // Actually get the data given
-        const data = await fetch(fileName).then((data) => data.arrayBuffer());
-        await fbxParser.loadFBX(data);
-
-        const shaderModule = fbxParser.getShader();
-        const uniformBuffer = this.device.createBuffer({
-          size: 64,
-          usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
-        });
-
-        // @ts-ignore
-        this.device.queue.writeBuffer(uniformBuffer, 0, mvpMatrix.buffer);
-
-        await fbxParser.createPipeline(shaderModule, this.format, uniformBuffer);
- 
-        this.render(() => {
-          const commandEncoder = this.device.createCommandEncoder();
-          const passEncoder = commandEncoder.beginRenderPass({
-            colorAttachments: [
-              {
-                view: this.context.getCurrentTexture().createView(),
-                loadOp: 'clear',
-                storeOp: 'store',
-              },
-            ],
-          });
-
-          fbxParser.render(passEncoder);
-          passEncoder.end();
-          this.device.queue.submit([commandEncoder.finish()]);
-        });
-
+      case 'fbx': 
+        console.warn('Not implemented yet!');
         break;
-      }
       case 'stl':
         console.log('test');
         const stlParser = new STLParser(this.device);
