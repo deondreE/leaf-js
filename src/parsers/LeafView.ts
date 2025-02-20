@@ -43,8 +43,11 @@ export default class LeafView extends DataView<ArrayBuffer> {
 	  array(len: number, s: number = 0): Uint8Array {
 		return this.next(new Uint8Array(this.buffer.slice(this.offset, this.offset + len)), len + s);
 	  }
+	  str(len: number, s:number): string {
+		return this.decoder.decode(this.array(len, s));
+	  }
 	  string(s: number = 0): string {
-		return this.decoder.decode(this.array(this.word(), s));
+		return this.str(this.word(), s);
 	  }
 	  uuid(s: number = 0): string {
 		return this.decoder.decode(this.array(16, s));

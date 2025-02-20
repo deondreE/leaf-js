@@ -20,6 +20,7 @@ test.json*
 
 # 2D files
 *.aseprite
+*.psd
 *.png
 *.jpg
 *.jpeg
