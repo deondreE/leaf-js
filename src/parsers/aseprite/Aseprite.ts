@@ -26,11 +26,13 @@ export default class Aseprite {
 		const gridSize = v.pair(v.word, 84);
 		const pixelFormat = colorDepth / 8;
 		let colorProfile: (AseColorProfile | AseICCProfile)[] = []
-		let colorPalette: AseColorPalette[] = []
+		let colorPalette: AseQuad[] = [];
+		const namedColors: Map<string, AseQuad> = new Map();
 		const imgSize = size[0] * size[1];
 		const layers: AseLayer[] = [];
 		const externals: AseExternalAssets[] = [];
 		const frames: AseFrame[] = []
+		
 		for(let i = 0; i<len; i++){
 			const end = v.offset + v.dword();
 			assert(v.word(2) === 0xF1FA, "Frame mismatch");
@@ -43,22 +45,27 @@ export default class Aseprite {
 				if(!chunk) continue;
 				switch (chunk.chunkType) {
 					case 0x2004:
-						console.log("Got layer");
+						//console.log("Got layer");
+						chunk.cels = new Array(len); //this is a second frame representation to enable explicit linking without traversing the entire file.
 						layers.push(chunk);
 						break;
 					case 0x2005:
-						console.log("Got cel");
+						//console.log("Got cel");
 						//calculate the cells true layer by combining information
 						const lyr = chunk.layerIndex + chunk.zIndex;
-						layers[chunk.layerIndex].cels.push(chunk);
+						layers[chunk.layerIndex].cels[i] = chunk; //in reality I should be able to resolve this link here (I cant imagine linking to the future being supported).
 						if(!(lyr in cels)) {
 							cels[lyr] = [chunk];
 						} else {
 							const ni = cels[lyr].findIndex(c=>c.zIndex > lyr);
-							cels[lyr].push(chunk);
-							//if(~ni) cels[lyr].splice(ni, 0, chunk);
-							//else cels[lyr].push(chunk);
+							//cels[lyr].push(chunk);
+							if(~ni) cels[lyr].splice(ni, 0, chunk);
+							else cels[lyr].push(chunk);
 						}
+						if(chunk.celType === 2 && pixelFormat != 4) {
+							if(pixelFormat === 1) chunk.pixels = v.indexedToRGBA(chunk.pixels, colorPalette);
+							else if (pixelFormat === 2) chunk.pixels = v.greyToRGBA(chunk.pixels);
+						} 
 						break;
 					case 0x2006:
 						break; //not used yet
@@ -76,11 +83,18 @@ export default class Aseprite {
 						break; //tags are not necessary yet
 					case 0x2019:
 						console.log("Got color palette");
-						if(colorPalette.length === 0) colorPalette.push(chunk);
-						else colorPalette[0] = chunk; //I dont think they support more then 1 color palette; also it appears layers are stil comprised of rgba colors in most instances. (I think a future plan to reduce image size is to use color palette indices)
+						if(chunk.lastIndex >= colorPalette.length){
+							colorPalette = [...colorPalette, ...new Array(chunk.lastIndex-colorPalette.length-1)];
+						}
+						for(let j = 0; j<chunk.colors.length; j++){
+							const pIndex = chunk.firstIndex+j;
+							if(pIndex === paletteEntry) chunk.colors[j].color = [0,0,0,0]; //this is the transparent color... always
+							colorPalette[chunk.firstIndex+j] = chunk.colors[j].color;
+							if(chunk.colors[j].name) namedColors.set(chunk.colors[j].name, chunk.colors[j].color);
+						}
 						break;
 					case 0x2020:
-						console.log("Got user data");
+						console.log("Got user data", chunk);
 						break; //im not doing anything with user data just yet.
 					case 0x2022:
 						console.log("Got slice");
@@ -99,31 +113,18 @@ export default class Aseprite {
 					if(!(layers[lyr.layerIndex].flags & 0x1))continue; //layer is not visible
 					//console.log(lyr);
 					if(lyr.celType === 0 || lyr.celType === 2){
-						if(pixelFormat === 4){
-							for(let j = 0; j<lyr.pixels.length; j+= 4){
-								const color = lyr.pixels.slice(j, j+4);
-								if(!color[3]) continue; //no alpha no pixel
-								//calculate pixel position based on location
-	
-								const li = j/4;
-								const lx = (li%lyr.pixelSize[0])+lyr.position[0];
-								const ly = Math.floor(li/lyr.pixelSize[0])+lyr.position[1];
-								if(lx < 0 || lx >= size[0] || ly < 0 || ly >= size[0]) continue; //clipped
-								const bi = (ly*size[0]+lx)*4;
-								//console.log("Setting color", color);
-								bm.set(color, bi); //just replacing for now. This is where blendModes need to be calculated.
-							}
-						} else if (pixelFormat === 1){
-							for(let j = 0; j<lyr.pixels.length; j++){
-								const color = colorPalette[0].colors[lyr.pixels[j]].color;
-								const lx = (j%lyr.pixelSize[0])+lyr.position[0];
-								const ly = Math.floor(j/lyr.pixelSize[0])+lyr.position[1];
-								if(lx < 0 || lx >= size[0] || ly < 0 || ly >= size[0]) continue; //clipped
-								const bi = (ly*size[0]+lx)*4;
-								const ncolor = rgbaNormal(Array.from(bm.slice(bi, bi+4)) as AseQuad, color, layers[lyr.layerIndex].alpha);
-								//console.log("Blended color", ncolor);
-								bm.set(ncolor, bi);
-							}
+						for(let j = 0; j<lyr.pixels.length; j+= 4){
+							const color = lyr.pixels.slice(j, j+4);
+							if(!color[3]) continue; //no alpha no pixel
+							//calculate pixel position based on location
+
+							const li = j/4;
+							const lx = (li%lyr.pixelSize[0])+lyr.position[0];
+							const ly = Math.floor(li/lyr.pixelSize[0])+lyr.position[1];
+							if(lx < 0 || lx >= size[0] || ly < 0 || ly >= size[0]) continue; //clipped
+							const bi = (ly*size[0]+lx)*4;
+							//console.log("Setting color", color);
+							bm.set(color, bi); //just replacing for now. This is where blendModes need to be calculated.
 						}
 					} else if (lyr.celType === 1) {
 						console.log("Linked", i, lyr, layers[lyr.frame]);
@@ -132,7 +133,7 @@ export default class Aseprite {
 					}
 				}
 			}
-			console.log(layers);
+			
 			const bitmap = await createImageBitmap(new ImageData(
 				new Uint8ClampedArray(bm.buffer),
 				...size
@@ -141,7 +142,7 @@ export default class Aseprite {
 			v.offset = end
 
 		}
-		console.log("frames length", frames.length, colorDepth, colorPalette[0]);
+		console.log("frames length", frames.length, colorDepth, colorPalette[0], paletteEntry, colorPalette[paletteEntry], layers);
 		return new Aseprite(frames, size);
 	}
 }
@@ -149,3 +150,5 @@ export default class Aseprite {
 export const loadAseprite = (filePath: string) => fetch(filePath)
 .then(r=>r.arrayBuffer())
 .then(r=>Aseprite.init(r));
+
+
