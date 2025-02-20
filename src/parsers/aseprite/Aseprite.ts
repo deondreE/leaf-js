@@ -1,7 +1,7 @@
 import { assert } from "../../utils";
 import AseView from "./AseView";
 import { rgbaNormal } from "./blendFunctions";
-import { AsePair, AseLayer, AseColorProfile, AseCel, AseICCProfile, AseTags, AseColorPalette, AseExternalAssets, AseFrame, AseQuad } from "./types";
+import { AsePair, AseLayer, AseColorProfile, AseCel, AseICCProfile, AseTags, AseExternalAssets, AseFrame, AseQuad, AseTileset } from "./types";
 
 export default class Aseprite {
 	frames: AseFrame[] = [];
@@ -24,6 +24,7 @@ export default class Aseprite {
 		const pixelSize = v.pair(v.byte);
 		const position = v.pair(v.short);
 		const gridSize = v.pair(v.word, 84);
+		let tileset: AseTileset | undefined = undefined;
 		const pixelFormat = colorDepth / 8;
 		let colorProfile: (AseColorProfile | AseICCProfile)[] = []
 		let colorPalette: AseQuad[] = [];
@@ -48,6 +49,7 @@ export default class Aseprite {
 						//console.log("Got layer");
 						chunk.cels = new Array(len); //this is a second frame representation to enable explicit linking without traversing the entire file.
 						layers.push(chunk);
+						if(chunk.tileIndex) console.log("Chunk with tileIndex", chunk);
 						break;
 					case 0x2005:
 						//console.log("Got cel");
@@ -65,7 +67,8 @@ export default class Aseprite {
 						if(chunk.celType === 2 && pixelFormat != 4) {
 							if(pixelFormat === 1) chunk.pixels = v.indexedToRGBA(chunk.pixels, colorPalette);
 							else if (pixelFormat === 2) chunk.pixels = v.greyToRGBA(chunk.pixels);
-						} 
+						}
+						
 						break;
 					case 0x2006:
 						break; //not used yet
@@ -78,11 +81,10 @@ export default class Aseprite {
 						externals.push(chunk);
 						break;
 					case 0x2018: 
-						console.log("Got tags", i);
+						console.log("Got tags", i, chunk);
 						tags.push(chunk);
 						break; //tags are not necessary yet
 					case 0x2019:
-						console.log("Got color palette");
 						if(chunk.lastIndex >= colorPalette.length){
 							colorPalette = [...colorPalette, ...new Array(chunk.lastIndex-colorPalette.length-1)];
 						}
@@ -94,7 +96,7 @@ export default class Aseprite {
 						}
 						break;
 					case 0x2020:
-						console.log("Got user data", chunk);
+						//console.log("Got user data", chunk);
 						break; //im not doing anything with user data just yet.
 					case 0x2022:
 						console.log("Got slice");
@@ -102,37 +104,47 @@ export default class Aseprite {
 						console.log(slice);
 						break; //I am pretty sure a slice just describes a reusable set of frames to render the base frames this should be uncessary.
 					case 0x2023:
-						console.log("Got tileset");
+						console.log("Got tileset", chunk);
+						tileset = chunk;
 						break; //I am not ready to support tilesets.
 				}
 			}
 			let bm = new Uint8Array(size[0]*size[1]*4);
-			const lyrs = Object.keys(cels).map(i=>parseInt(i)).sort();
-			for(const i of lyrs){
-				for(const lyr of cels[i]){
-					if(!(layers[lyr.layerIndex].flags & 0x1))continue; //layer is not visible
-					//console.log(lyr);
-					if(lyr.celType === 0 || lyr.celType === 2){
-						for(let j = 0; j<lyr.pixels.length; j+= 4){
-							const color = lyr.pixels.slice(j, j+4);
-							if(!color[3]) continue; //no alpha no pixel
-							//calculate pixel position based on location
+			if(tileset) {
+				if(tileset.pixels){
+					//bm = v.indexedToRGBA(tileset.pixels, colorPalette);
+				} else {
+					console.warn("External tilesets are not yet supported");
+				}
+			} else {
+				const lyrs = Object.keys(cels).map(i=>parseInt(i)).sort();
+				for(const i of lyrs){
+					for(const lyr of cels[i]){
+						if(!(layers[lyr.layerIndex].flags & 0x1))continue; //layer is not visible
+						//console.log(lyr);
+						if(lyr.celType === 0 || lyr.celType === 2){
+							for(let j = 0; j<lyr.pixels.length; j+= 4){
+								const color = lyr.pixels.slice(j, j+4);
+								if(!color[3]) continue; //no alpha no pixel
+								//calculate pixel position based on location
 
-							const li = j/4;
-							const lx = (li%lyr.pixelSize[0])+lyr.position[0];
-							const ly = Math.floor(li/lyr.pixelSize[0])+lyr.position[1];
-							if(lx < 0 || lx >= size[0] || ly < 0 || ly >= size[0]) continue; //clipped
-							const bi = (ly*size[0]+lx)*4;
-							//console.log("Setting color", color);
-							bm.set(color, bi); //just replacing for now. This is where blendModes need to be calculated.
+								const li = j/4;
+								const lx = (li%lyr.pixelSize[0])+lyr.position[0];
+								const ly = Math.floor(li/lyr.pixelSize[0])+lyr.position[1];
+								if(lx < 0 || lx >= size[0] || ly < 0 || ly >= size[0]) continue; //clipped
+								const bi = (ly*size[0]+lx)*4;
+								//console.log("Setting color", color);
+								bm.set(color, bi); //just replacing for now. This is where blendModes need to be calculated.
+							}
+						} else if (lyr.celType === 1) {
+							//console.log("Linked", i, lyr, layers[lyr.frame]);
+						} else {
+							console.log(`Need additional render support 0x${lyr.celType.toString(16)}`);
 						}
-					} else if (lyr.celType === 1) {
-						console.log("Linked", i, lyr, layers[lyr.frame]);
-					} else {
-						console.log(`Need additional render support 0x${lyr.celType.toString(16)}`);
 					}
 				}
 			}
+			
 			
 			const bitmap = await createImageBitmap(new ImageData(
 				new Uint8ClampedArray(bm.buffer),
