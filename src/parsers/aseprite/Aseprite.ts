@@ -1,6 +1,7 @@
 import { assert } from "../../utils";
 import AseView from "./AseView";
-import { AsePair, AseLayer, AseColorProfile, AseCel, AseICCProfile, AseTags, AseColorPalette, AseExternalAssets, AseFrame } from "./types";
+import { rgbaNormal } from "./blendFunctions";
+import { AsePair, AseLayer, AseColorProfile, AseCel, AseICCProfile, AseTags, AseColorPalette, AseExternalAssets, AseFrame, AseQuad } from "./types";
 
 export default class Aseprite {
 	frames: AseFrame[] = [];
@@ -49,6 +50,7 @@ export default class Aseprite {
 						console.log("Got cel");
 						//calculate the cells true layer by combining information
 						const lyr = chunk.layerIndex + chunk.zIndex;
+						layers[chunk.layerIndex].cels.push(chunk);
 						if(!(lyr in cels)) {
 							cels[lyr] = [chunk];
 						} else {
@@ -90,40 +92,56 @@ export default class Aseprite {
 						break; //I am not ready to support tilesets.
 				}
 			}
-			console.log(layers, cels);
 			let bm = new Uint8Array(size[0]*size[1]*4);
 			const lyrs = Object.keys(cels).map(i=>parseInt(i)).sort();
 			for(const i of lyrs){
 				for(const lyr of cels[i]){
+					if(!(layers[lyr.layerIndex].flags & 0x1))continue; //layer is not visible
 					//console.log(lyr);
 					if(lyr.celType === 0 || lyr.celType === 2){
-						for(let j = 0; j<lyr.pixels.length; j+= 4){
-							const color = lyr.pixels.slice(j, j+4);
-							if(!color[3]) continue; //no alpha no pixel
-							//calculate pixel position based on location
-
-							const li = j/4;
-							const lx = (li%lyr.pixelSize[0])+lyr.position[0];
-							const ly = Math.floor(li/lyr.pixelSize[0])+lyr.position[1];
-							if(lx < 0 || lx >= size[0] || ly < 0 || ly >= size[0]) continue; //clipped
-							const bi = (ly*size[0]+lx)*4;
-							//console.log("Setting color", color);
-							bm.set(color, bi); //just replacing for now. This is where blendModes need to be calculated.
+						if(pixelFormat === 4){
+							for(let j = 0; j<lyr.pixels.length; j+= 4){
+								const color = lyr.pixels.slice(j, j+4);
+								if(!color[3]) continue; //no alpha no pixel
+								//calculate pixel position based on location
+	
+								const li = j/4;
+								const lx = (li%lyr.pixelSize[0])+lyr.position[0];
+								const ly = Math.floor(li/lyr.pixelSize[0])+lyr.position[1];
+								if(lx < 0 || lx >= size[0] || ly < 0 || ly >= size[0]) continue; //clipped
+								const bi = (ly*size[0]+lx)*4;
+								//console.log("Setting color", color);
+								bm.set(color, bi); //just replacing for now. This is where blendModes need to be calculated.
+							}
+						} else if (pixelFormat === 1){
+							for(let j = 0; j<lyr.pixels.length; j++){
+								const color = colorPalette[0].colors[lyr.pixels[j]].color;
+								const lx = (j%lyr.pixelSize[0])+lyr.position[0];
+								const ly = Math.floor(j/lyr.pixelSize[0])+lyr.position[1];
+								if(lx < 0 || lx >= size[0] || ly < 0 || ly >= size[0]) continue; //clipped
+								const bi = (ly*size[0]+lx)*4;
+								const ncolor = rgbaNormal(Array.from(bm.slice(bi, bi+4)) as AseQuad, color, layers[lyr.layerIndex].alpha);
+								//console.log("Blended color", ncolor);
+								bm.set(ncolor, bi);
+							}
 						}
+					} else if (lyr.celType === 1) {
+						console.log("Linked", i, lyr, layers[lyr.frame]);
 					} else {
 						console.log(`Need additional render support 0x${lyr.celType.toString(16)}`);
 					}
 				}
 			}
+			console.log(layers);
 			const bitmap = await createImageBitmap(new ImageData(
 				new Uint8ClampedArray(bm.buffer),
 				...size
 			));
-			frames.push({bitmap, duration});
+			frames.push({bitmap, duration, layers});
 			v.offset = end
 
 		}
-		console.log("frames length", frames.length, colorDepth);
+		console.log("frames length", frames.length, colorDepth, colorPalette[0]);
 		return new Aseprite(frames, size);
 	}
 }

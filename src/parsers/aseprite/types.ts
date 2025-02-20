@@ -220,6 +220,7 @@ export type AseTileset = {
 }
 
 export type AseFrame = {
+	layers: AseLayer[];
 	bitmap: ImageBitmap;
 	duration: number;
 }
