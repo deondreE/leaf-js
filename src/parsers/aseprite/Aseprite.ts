@@ -1,12 +1,13 @@
 import { assert } from "../../utils";
 import AseView from "./AseView";
 import { rgbaNormal } from "./blendFunctions";
-import { AsePair, AseLayer, AseColorProfile, AseCel, AseICCProfile, AseTags, AseExternalAssets, AseFrame, AseQuad, AseTileset } from "./types";
+import { AseLayer, AseColorProfile, AseCel, AseICCProfile, AseTags, AseExternalAssets, AseFrame, AseTileset } from "./types";
+import { LfPair, LfQuad } from "../types";
 
 export default class Aseprite {
 	frames: AseFrame[] = [];
-	size: AsePair;
-	constructor(frames: AseFrame[], size: AsePair){
+	size: LfPair;
+	constructor(frames: AseFrame[], size: LfPair){
 		this.frames = frames;
 		this.size = size;
 	}
@@ -27,8 +28,8 @@ export default class Aseprite {
 		let tileset: AseTileset | undefined = undefined;
 		const pixelFormat = colorDepth / 8;
 		let colorProfile: (AseColorProfile | AseICCProfile)[] = []
-		let colorPalette: AseQuad[] = [];
-		const namedColors: Map<string, AseQuad> = new Map();
+		let colorPalette: LfQuad[] = [];
+		const namedColors: Map<string, LfQuad> = new Map();
 		const imgSize = size[0] * size[1];
 		const layers: AseLayer[] = [];
 		const externals: AseExternalAssets[] = [];

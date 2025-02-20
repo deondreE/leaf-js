@@ -1,9 +1,10 @@
-import { AseQuad } from "./types";
+import { LfQuad } from "../types";
+
 
 
 /* This file is an attempt to replicate aseprites blendmodes without the use of multiple canvases */
 //looking at examples of how their blending works requires a lot of optimization to ensure values dont overflow. Javascript this will be less necessary. but in turn less efficient. 
-export const rgbaNormal = ([br, bg, bb, ba]: AseQuad, [fr, fg, fb, fa]: AseQuad, alpha: number) => {
+export const rgbaNormal = ([br, bg, bb, ba]: LfQuad, [fr, fg, fb, fa]: LfQuad, alpha: number) => {
 	if(!(ba & 255)){ //if background is invisible
 		const a = fa*alpha;
 		return [fr, fg, fb, a];

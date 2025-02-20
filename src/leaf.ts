@@ -42,6 +42,11 @@ class Leaf extends HTMLCanvasElement {
 		const aseprite = await loadAseprite(src);
 		return aseprite;
 	}
+
+	async parsePsd(){
+		const src = this.getAttribute("src");
+		
+	}
 	connectedCallback(){
 		this.is3D = this.getOptimisticBoolAttribute("is3D");
 		//improvement opportunity 
@@ -54,6 +59,8 @@ class Leaf extends HTMLCanvasElement {
 					.then(aseprite => {
 						this.renderer = new Renderer2d(this.getContext('2d'), aseprite.frames.map(f=>[f.duration, f.bitmap]), aseprite.size);
 					});
+				} else if (src.endsWith('.psd')) {
+
 				} else {
 					this.renderer = await Renderer.init({canvas: this});
 					this.renderer.render();

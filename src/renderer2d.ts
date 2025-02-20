@@ -1,14 +1,15 @@
-import type { AsePair } from "./parsers/aseprite";
+import { LfPair } from "./parsers/types";
+
 export type RedenderFrame = [duration: number, bitmap: ImageBitmap];
 export default class Renderer2d {
 	context: CanvasRenderingContext2D;
 	frames: RedenderFrame[];
-	size: AsePair;
+	size: LfPair;
 	frame: number = 0;
 	animationFrame: number = -1;
 	lastUpdate: number = 0;
 	currentFrame: RedenderFrame;
-	constructor(context: CanvasRenderingContext2D, frames: RedenderFrame[], size: AsePair){
+	constructor(context: CanvasRenderingContext2D, frames: RedenderFrame[], size: LfPair){
 		this.context = context;
 		this.frames = frames;
 		this.size = size;

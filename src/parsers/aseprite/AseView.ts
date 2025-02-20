@@ -1,5 +1,6 @@
 import { assert } from '../../utils';
 import LeafView from '../LeafView';
+import { LfQuad } from '../types';
 import { LEGACY_TYPES } from './constants';
 import {
   AseCel,
@@ -19,18 +20,15 @@ import {
   AseLayerBlendMode,
   AseLayerType,
   AseLinkedCel,
-  AsePair,
   AsePropertyArray,
   AsePropertyMap,
   AsePropertyTypes,
-  AseQuad,
   AseSlice,
   AseSliceElement,
   AseTag,
   AseTags,
   AseTileset,
   AseUserData,
-  ReaderFunc,
 } from './types';
 import pako from 'pako';
 
@@ -340,7 +338,7 @@ export default class AseView extends LeafView {
     return props;
   }
 
-  indexedToRGBA(indexed: Uint8Array, palette: AseQuad[]): Uint8Array {
+  indexedToRGBA(indexed: Uint8Array, palette: LfQuad[]): Uint8Array {
     const bitmap = new Uint8Array(indexed.length*4);
     for(let i = 0; i<indexed.length; i++){
       bitmap.set(palette[indexed[i]], i*4);

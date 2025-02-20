@@ -1,20 +1,20 @@
+import { LfPair, LfQuad, LfTriplet } from "../types";
+
 export type ReaderFunc<T = number> = (s?:number)=>T
-export type AsePair<T = number> = [T, T];
-export type AseTriplet<T = number> = [T, T, T];
-export type AseQuad<T = number> = [T, T, T, T];
+
 
 export type AseHeader = {
 	fileSize: number;
 	frames: number;
-	size: AsePair;
+	size: LfPair;
 	colorDepth: number;
 	flags: number;
 	speed: number;
 	paletteEntry: number;
 	colorCount: number;
-	pixelSize: AsePair;
-	location: AsePair;
-	gridSize: AsePair;
+	pixelSize: LfPair;
+	location: LfPair;
+	gridSize: LfPair;
 }
 
 export type AseChunk = AseLegacyPalette | AseLayer | AseCel | AseCelExtra | AseColorProfile | AseICCProfile | AseExternalAssets | AseMask | AsePath | AseTags | AseColorPalette | AseUserData | AseSlice | AseTileset;
@@ -52,7 +52,7 @@ export type AseLayer = {
 	flags: number;
 	layerType: AseLayerType;
 	depth: number;
-	size: AsePair;
+	size: LfPair;
 	blendMode: AseLayerBlendMode;
 	alpha: number;
 	name: string;
@@ -65,14 +65,14 @@ export type AseCel = AseImageCel | AseLinkedCel | AseCelTilemap;
 export type AseCelBase = {
 	chunkType: 0x2005;
 	layerIndex: number;
-	position: AsePair;
+	position: LfPair;
 	alpha: number;
 	zIndex: number;
 }
 
 export type AseImageCel = {
 	celType: 0 | 2;
-	pixelSize: AsePair;
+	pixelSize: LfPair;
 	pixels: Uint8Array
 } & AseCelBase;
 
@@ -83,16 +83,16 @@ export type AseLinkedCel = {
 
 export type AseCelTilemap = {
 	celType: 3;
-	tileMapSize: AsePair;
+	tileMapSize: LfPair;
 	tileBpt: number;
-	bitmask: AseQuad;
+	bitmask: LfQuad;
 	tiles: Uint8Array;
 } & AseCelBase;
 
 export type AseCelExtra = {
 	chunkType: 0x2006;
 	flags: number;
-	preciseRect: AseQuad;
+	preciseRect: LfQuad;
 }
 
 export type AseColorProfileBase = {
@@ -122,8 +122,8 @@ export type AseExternalAssets = {
 
 export type AseMask = { /* deprecated but parsed for possible future support of legacy aseprite */
 	chunkType: 0x2016;
-	position: AsePair;
-	size: AsePair;
+	position: LfPair;
+	size: LfPair;
 	name: string;
 	bitmap: Uint8Array;
 }
@@ -145,10 +145,10 @@ export enum AseLoopDirection {
 }
 
 export type AseTag = {
-	range: AsePair;
+	range: LfPair;
 	direction: AseLoopDirection;
 	repeat: number;
-	tagColor: AseTriplet;
+	tagColor: LfTriplet;
 	tagName: string
 }
 
@@ -160,7 +160,7 @@ export type AseColorPalette = {
 }
 
 export type AseColorPaletteEntry = {
-	color: AseQuad;
+	color: LfQuad;
 	name?: string
 }
 
@@ -168,13 +168,13 @@ export type AseColorPaletteEntry = {
 
 export type AsePropertyTypers = 0x0001 | 0x0002 | 0x0003 | 0x0004 | 0x0005 | 0x0006 | 0x0008 | 0x0009 | 0x000A | 0x000B | 0x000C | 0x000D | 0x000E | 0x000F | 0x0010 | 0x0011 | 0x0012 | 0x0013;
 
-export type AsePropertyTypes = boolean | number | string | bigint | AsePair | AseQuad | AsePropertyArray | AsePropertyMap
+export type AsePropertyTypes = boolean | number | string | bigint | LfPair | LfQuad | AsePropertyArray | AsePropertyMap
 export type AsePropType<T extends AsePropertyTypers | 0x0 = 0> = T extends 0x0001 ? boolean
 : T extends 0x0002 | 0x0003 | 0x0004 | 0x0005 | 0x0006 | 0x0007 | 0x000A | 0x000B ? number
 : T extends 0x0008 | 0x0009 | 0x000C ? bigint
 : T extends 0x000D | 0x0013 ? string
-: T extends 0x000E | 0x000F ? AsePair
-: T extends 0x0010 ? AseQuad
+: T extends 0x000E | 0x000F ? LfPair
+: T extends 0x0010 ? LfQuad
 : T extends 0x0011 ? AsePropertyArray
 : T extends 0x0012 ? AsePropertyMap
 : AsePropertyTypes;
@@ -186,7 +186,7 @@ export interface AsePropertyMap {
 export type AseUserData = {
 	chunkType: 0x2020;
 	text?: string,
-	color?: AseQuad,
+	color?: LfQuad,
 	properties?: AsePropertyMap
 }
 
@@ -199,18 +199,18 @@ export type AseSlice = {
 
 export type AseSliceElement = {
 	frameIndex: number;
-	location: AsePair; //long
-	size: AsePair; //dword
-	center?: AsePair; //long
-	centerSize?: AsePair; //dword
-	pivot?: AsePair; //long
+	location: LfPair; //long
+	size: LfPair; //dword
+	center?: LfPair; //long
+	centerSize?: LfPair; //dword
+	pivot?: LfPair; //long
 }
 
 export type AseTileset = {
 	chunkType: 0x2023;
 	tilesetId: number;
 	tilesetFlags: number; //bitwise flag
-	tilesetSize: AsePair;
+	tilesetSize: LfPair;
 	tilesLength: number;
 	tilesetBaseIndex: number;
 	tilesetName: string
