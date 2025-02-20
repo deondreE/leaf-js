@@ -6,7 +6,6 @@ export default class Renderer2d {
 	size: AsePair;
 	frame: number = 0;
 	animationFrame: number = -1;
-	animationDelay: number = -1;
 	lastUpdate: number = 0;
 	currentFrame: RedenderFrame;
 	constructor(context: CanvasRenderingContext2D, frames: RedenderFrame[], size: AsePair){
@@ -28,8 +27,17 @@ export default class Renderer2d {
 		this.currentFrame = this.frames[this.frame];
 		this.frame = (this.frame+1)%this.frames.length;
 		this.context.reset();
+		//this.context.clearRect(0, 0, ...this.size);
 		//console.log(typeof bitmap, Array.isArray(bitmap), ArrayBuffer.isView(bitmap));
+		//console.log(bitmap);
+		//this.context.save();
+		//this.context.beginPath();
+		
+		//this.context.rect(0, 0, ...this.size);
+		//this.context.clip();
+		//this.context.clearRect(0,0, ...this.size);
 		this.context.drawImage(bitmap, 0, 0);
+		//this.context.restore();
 		
 		//console.log(data);
 		
@@ -42,9 +50,7 @@ export default class Renderer2d {
 	}
 
 	stop(){
-		if(~this.animationDelay) clearTimeout(this.animationDelay);
 		if(~this.animationFrame) cancelAnimationFrame(this.animationFrame);
 		this.animationFrame = -1;
-		this.animationDelay = -1;
 	}
 }

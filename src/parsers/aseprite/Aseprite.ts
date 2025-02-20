@@ -42,17 +42,20 @@ export default class Aseprite {
 				if(!chunk) continue;
 				switch (chunk.chunkType) {
 					case 0x2004:
+						console.log("Got layer");
 						layers.push(chunk);
 						break;
 					case 0x2005:
+						console.log("Got cel");
 						//calculate the cells true layer by combining information
 						const lyr = chunk.layerIndex + chunk.zIndex;
 						if(!(lyr in cels)) {
 							cels[lyr] = [chunk];
 						} else {
 							const ni = cels[lyr].findIndex(c=>c.zIndex > lyr);
-							if(~ni) cels[lyr].splice(ni, 0, chunk);
-							else cels[lyr].push(chunk);
+							cels[lyr].push(chunk);
+							//if(~ni) cels[lyr].splice(ni, 0, chunk);
+							//else cels[lyr].push(chunk);
 						}
 						break;
 					case 0x2006:
@@ -62,52 +65,65 @@ export default class Aseprite {
 						else colorProfile[0] = chunk;
 						break;
 					case 0x2008:
+						console.log("Got externals");
 						externals.push(chunk);
 						break;
 					case 0x2018: 
-						//tags.push(chunk);
+						console.log("Got tags", i);
+						tags.push(chunk);
 						break; //tags are not necessary yet
 					case 0x2019:
+						console.log("Got color palette");
 						if(colorPalette.length === 0) colorPalette.push(chunk);
 						else colorPalette[0] = chunk; //I dont think they support more then 1 color palette; also it appears layers are stil comprised of rgba colors in most instances. (I think a future plan to reduce image size is to use color palette indices)
 						break;
 					case 0x2020:
+						console.log("Got user data");
 						break; //im not doing anything with user data just yet.
-					case 0x2022:break; //I am pretty sure a slice just describes a reusable set of frames to render the base frames this should be uncessary.
-					case 0x2023:break; //I am not ready to support tilesets.
+					case 0x2022:
+						console.log("Got slice");
+						const slice = v.slice();
+						console.log(slice);
+						break; //I am pretty sure a slice just describes a reusable set of frames to render the base frames this should be uncessary.
+					case 0x2023:
+						console.log("Got tileset");
+						break; //I am not ready to support tilesets.
 				}
-				let bm = new Uint8Array(size[0]*size[1]*4);
-				const lyrs = Object.keys(cels).map(i=>parseInt(i)).sort();
-				for(const i of lyrs){
-					for(const lyr of cels[i]){
-						if(lyr.celType === 0 || lyr.celType === 2){
-							for(let j = 0; j<lyr.pixels.length; j+= 4){
-								const color = lyr.pixels.slice(j, j+4);
-								if(!color[3]) continue; //no alpha no pixel
-								//calculate pixel position based on location
-								const li = j/4;
-								const lx = (li%lyr.pixelSize[0])+lyr.position[0];
-								const ly = Math.floor(li/lyr.pixelSize[0])+lyr.position[1];
-								if(lx < 0 || lx >= size[0] || ly < 0 || ly >= size[0]) continue; //clipped
-								const bi = (ly*size[0]+lx)*4;
-								//console.log("Setting color", color);
-								bm.set(color, bi); //just replacing for now. This is where blendModes need to be calculated.
-							}
+			}
+			console.log(layers, cels);
+			let bm = new Uint8Array(size[0]*size[1]*4);
+			const lyrs = Object.keys(cels).map(i=>parseInt(i)).sort();
+			for(const i of lyrs){
+				for(const lyr of cels[i]){
+					//console.log(lyr);
+					if(lyr.celType === 0 || lyr.celType === 2){
+						for(let j = 0; j<lyr.pixels.length; j+= 4){
+							const color = lyr.pixels.slice(j, j+4);
+							if(!color[3]) continue; //no alpha no pixel
+							//calculate pixel position based on location
+
+							const li = j/4;
+							const lx = (li%lyr.pixelSize[0])+lyr.position[0];
+							const ly = Math.floor(li/lyr.pixelSize[0])+lyr.position[1];
+							if(lx < 0 || lx >= size[0] || ly < 0 || ly >= size[0]) continue; //clipped
+							const bi = (ly*size[0]+lx)*4;
+							//console.log("Setting color", color);
+							bm.set(color, bi); //just replacing for now. This is where blendModes need to be calculated.
 						}
+					} else {
+						console.log(`Need additional render support 0x${lyr.celType.toString(16)}`);
 					}
 				}
-				if(bm.find(n=>n>0)) {
-					const bitmap = await createImageBitmap(new ImageData(
-						new Uint8ClampedArray(bm.buffer),
-						...size
-					));
-					frames.push({bitmap, duration});
-				}
-				
 			}
+			const bitmap = await createImageBitmap(new ImageData(
+				new Uint8ClampedArray(bm.buffer),
+				...size
+			));
+			frames.push({bitmap, duration});
 			v.offset = end
 
 		}
+		console.log("frames length", frames.length, colorDepth);
 		return new Aseprite(frames, size);
 	}
 }
