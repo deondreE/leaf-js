@@ -10,7 +10,7 @@ class Renderer3D {
   format: GPUTextureFormat | null = null;
   renderTexture: GPUTexture | null = null;
 
-constructor(canvas: HTMLCanvasElement) {
+  constructor(canvas: HTMLCanvasElement) {
     this.canvas = canvas;
   }
 
@@ -99,7 +99,7 @@ constructor(canvas: HTMLCanvasElement) {
         break;
       }
 
-      case 'fbx': 
+      case 'fbx':
         console.warn('Not implemented yet!');
         break;
       case 'stl':

@@ -7,6 +7,7 @@ class Leaf extends HTMLCanvasElement {
   is3D: boolean = false;
   static: boolean = false;
   renderer: Renderer | null = null;
+  id: string;
 
   constructor() {
     super();

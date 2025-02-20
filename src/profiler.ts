@@ -63,10 +63,7 @@ export class Profiler extends HTMLCanvasElement {
   hookCanvas() {
     if (!this.targetCanvas) return;
 
-    const targetCtx =
-      this.targetCanvas.getContext('2d') ||
-      this.targetCanvas.getContext('webgl') ||
-      this.targetCanvas.getContext('webgpu');
+    const targetCtx = this.targetCanvas.getContext('webgpu');
     if (!targetCtx) {
       console.warn('Profiler: Unable to hook into canvas context.');
       return;
@@ -114,7 +111,7 @@ export class Profiler extends HTMLCanvasElement {
   }
 
   trackMemory() {
-    // FIXME: perfomance.memroy is techinically being deprecated.
+    // FIXME: perfomance.memory is techinically being deprecated.
     // @ts-ignore
     if (performance.memory) {
       // @ts-ignore
@@ -187,13 +184,10 @@ export class Profiler extends HTMLCanvasElement {
       const latestMemory = this.memoryUsage[this.memoryUsage.length - 1];
       ctx.fillText(`Memory Usage: ${latestMemory} MB`, 10, 30);
     }
-
-    if (this.showBoundingBoxes) {
-      this.renderBoundingBoxes();
-    }
   }
 
   renderBoundingBoxes() {
+    // Target canvas set to 2D
     const targetCanvasCTX = this.targetCanvas.getContext('2d') as CanvasRenderingContext2D | null;
     if (!targetCanvasCTX || !this.showBoundingBoxes) {
       console.log('borky');

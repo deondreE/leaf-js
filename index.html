@@ -6,8 +6,10 @@
     <title>Worky</title>
   </head>
   <body>
-    <canvas is="leaf-js" src="l.stl" width="640" height="640"></canvas>
+    <canvas is="leaf-js" src="l.stl" width="640" height="640" id="webgpu-canvas"></canvas>
+    <canvas is="l-profiler" width="400" height="200" target-id="webgpu-canvas"></canvas>
   </body>
+  <script src="./src/profiler.ts" type="module"></script>
   <script src="./src/leaf.ts" type="module"></script>
   <!-- <script lang="ts">
     function tester() {
