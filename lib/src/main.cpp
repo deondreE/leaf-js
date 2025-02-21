@@ -151,7 +151,6 @@ namespace Leaf {
 	}
 #endif
 
-
 int main() {
 	// Create sample model data
 	Leaf::Model::Size size1 = { 10.0f, 20.0f };
@@ -169,7 +168,7 @@ int main() {
 	scene.name = "Example Scene";
 	scene.children.push_back(model1);
 	scene.children.push_back(model2);
-
+	
 	// Write to JSON
 	Leaf::json_write(scene);
 	std::cout << "Scene data written to scene.json" << std::endl;

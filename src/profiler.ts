@@ -1,4 +1,5 @@
-import { assert } from './utils/util';
+import { Y } from 'vitest/dist/chunks/reporters.DTtkbAtP.js';
+import { assert } from './utils/index';
 
 export interface LProfilerProps {
   targetId?: string;
@@ -95,13 +96,16 @@ export class Profiler extends HTMLCanvasElement {
 
     monitorFrame();
 
+    // @ts-ignore
     const originalDrawImage = targetCtx.drawImage;
+    // @ts-ignore
     const originalClearRect = targetCtx.clearRect;
+    // @ts-ignore
     targetCtx.drawImage = function (...args) {
       originalDrawImage.apply(this, args);
       this.trackFrame();
     };
-
+    // @ts-ignore
     targetCtx.clearRect = (...args: any[]) => {
       originalClearRect.apply(targetCtx, args);
       this.trackFrame();
@@ -136,6 +140,31 @@ export class Profiler extends HTMLCanvasElement {
     }
 
     this.render();
+  }
+
+  /** Takes the list of frames iterates them in a canvas as key-frames; */
+  renderAnimationFrames(ctx: CanvasRenderingContext2D) {
+    let animationFrame: any[] = [1, 1, 1, 1, 1, 1, 1];
+    let padding: number = 10;
+    let startX = padding + 2;
+    let startY = this.height - 150 / 1.5;
+    let radius = 3;
+
+    ctx.fillStyle = 'white';
+    ctx.fillText('Animation Key Frames', padding + 5, this.height - 160);
+
+
+    ctx.strokeStyle = 'yellow';
+    ctx.strokeRect(0 + padding, this.height - 150, (this.width - padding*2), 100);
+
+    // render the frame
+    for (let i = 0; i < animationFrame.length; ++i) {
+      const x = startX + i * (2 * radius + padding) + 10;
+      ctx.beginPath();
+      ctx.arc(x, startY, radius, 0, 2 * Math.PI);
+      ctx.fillStyle = 'red';
+      ctx.fill();
+    }
   }
 
   // FIXME: I would love certain sections to be toggable, by the end user.
@@ -175,6 +204,8 @@ export class Profiler extends HTMLCanvasElement {
       ctx.stroke();
     }
 
+    this.renderAnimationFrames(ctx);
+
     ctx.fillStyle = 'green';
     ctx.font = '12px Arial';
     ctx.fillText(this.paused ? 'PAUSED' : `Max Frame Time: ${maxFrameTime.toFixed(2)}ms`, 10, 15);
@@ -183,21 +214,6 @@ export class Profiler extends HTMLCanvasElement {
       ctx.fillStyle = 'orange';
       const latestMemory = this.memoryUsage[this.memoryUsage.length - 1];
       ctx.fillText(`Memory Usage: ${latestMemory} MB`, 10, 30);
-    }
-  }
-
-  renderBoundingBoxes() {
-    // Target canvas set to 2D
-    const targetCanvasCTX = this.targetCanvas.getContext('2d') as CanvasRenderingContext2D | null;
-    if (!targetCanvasCTX || !this.showBoundingBoxes) {
-      console.log('borky');
-    }
-
-    targetCanvasCTX.strokeStyle = 'black';
-    targetCanvasCTX.lineWidth = 4;
-
-    for (const box of this.boundingBoxes) {
-      targetCanvasCTX.strokeRect(box.x, box.y, box.width, box.height);
     }
   }
 
