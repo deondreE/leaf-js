@@ -10,7 +10,9 @@ export type AsepriteOptions = {
 export default class Aseprite {
 	frames: AseFrame[] = [];
 	size: LfPair;
-	constructor(frames: AseFrame[], size: LfPair){
+	tags: Record<string, AseTag>
+
+	constructor(frames: AseFrame[], size: LfPair, tags){
 		this.frames = frames;
 		this.size = size;
 	}
@@ -24,6 +26,7 @@ export default class Aseprite {
 		const flags = v.dword();
 		const speed = v.word(8);
 		const paletteEntry = v.byte(3);
+		//Do I really need all this...
 		const colorCount = v.word();
 		const pixelSize = v.pair(v.byte);
 		const position = v.pair(v.short);
@@ -33,7 +36,6 @@ export default class Aseprite {
 		let colorProfile: (AseColorProfile | AseICCProfile)[] = []
 		let colorPalette: LfQuad[] = [];
 		const namedColors: Map<string, LfQuad> = new Map();
-		const imgSize = size[0] * size[1];
 		const layers: AseLayer[] = [];
 		const externals: AseExternalAssets[] = [];
 		const frames: AseFrame[] = []
@@ -59,7 +61,7 @@ export default class Aseprite {
 						//calculate the cells true layer by combining information
 						const lyr = chunk.layerIndex + chunk.zIndex;
 						layers[chunk.layerIndex].cels[i] = chunk; //in reality I should be able to resolve this link here (I cant imagine linking to the future being supported).
-						
+						frames[i].layers.push(chunk);
 						if(!(lyr in cels)) {
 							cels[lyr] = [chunk];
 						} else {
@@ -187,9 +189,9 @@ export default class Aseprite {
 				if(!tg) continue;
 				nf.push(...frames.slice(...tg.range));
 			}
-			return new Aseprite(nf, size);
+			return new Aseprite(nf, size, tags);
 		}
-		return new Aseprite(frames, size);
+		return new Aseprite(frames, size, tags);
 	}
 }
 

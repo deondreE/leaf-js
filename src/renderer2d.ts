@@ -16,7 +16,6 @@ export default class Renderer2d {
 		this.currentFrame = this.frames[0];
 		this.render = this.render.bind(this);
 		this.start();
-
 	}
 
 	render(time: number){
