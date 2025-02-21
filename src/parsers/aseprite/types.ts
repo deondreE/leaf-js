@@ -57,7 +57,7 @@ export type AseLayer = {
 	alpha: number;
 	name: string;
 	tileIndex: number;
-	cels: Omit<AseCel, "chunkType">[]
+	cels: AseCel[];
 }
 
 export type AseCel = AseImageCel | AseLinkedCel | AseCelTilemap;

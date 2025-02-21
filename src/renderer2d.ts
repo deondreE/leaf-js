@@ -20,7 +20,7 @@ export default class Renderer2d {
 	}
 
 	render(time: number){
-		this.animationFrame = requestAnimationFrame(this.render);
+		if(this.frames.length > 1) this.animationFrame = requestAnimationFrame(this.render);
 		const [duration, bitmap] = this.currentFrame;
 		if(!this.lastUpdate) this.lastUpdate = time;
 		if(this.lastUpdate && time-this.lastUpdate < duration) return;
