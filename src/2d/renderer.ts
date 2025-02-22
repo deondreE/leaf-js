@@ -12,11 +12,11 @@ export default class Renderer2d {
 	lastFrame: number;
 	draw: RenderDrawFunction
 	
-	constructor(canvas: HTMLCanvasElement, draw: RenderDrawFunction, {context, size, fps}:RenderOptions = {}){
+	constructor(canvas: HTMLCanvasElement, draw: RenderDrawFunction, {context, size, fps=64}:RenderOptions = {}){
 		this.context = context ?? canvas.getContext('2d');
 		assert(this.context != null, "Rendering context unavailable");
 		this.draw = draw;
-		this.fps = 1e3/(fps ?? 64);
+		this.fps = 1e3/fps;
 		if(!size){
 			const bounding = canvas.getBoundingClientRect()
 			this.rect = [bounding.left, bounding.top, bounding.width, bounding.height];

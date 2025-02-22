@@ -46,8 +46,10 @@ export default class Aseprite {
 			const duration = v.word(2);
 			const chunkLen = v.dword();
 			const cels: Record<number, AseCel[]> = {};
+			const frameLayers: AseCel[] = [];
 			for(let j = 0; j<chunkLen; j++){
 				let chunk = v.chunk();
+				
 				if(!chunk) continue;
 				switch (chunk.chunkType) {
 					case 0x2004:
@@ -61,7 +63,7 @@ export default class Aseprite {
 						//calculate the cells true layer by combining information
 						const lyr = chunk.layerIndex + chunk.zIndex;
 						layers[chunk.layerIndex].cels[i] = chunk; //in reality I should be able to resolve this link here (I cant imagine linking to the future being supported).
-						frames[i].layers.push(chunk);
+						frameLayers.push(chunk);
 						if(!(lyr in cels)) {
 							cels[lyr] = [chunk];
 						} else {
@@ -177,7 +179,7 @@ export default class Aseprite {
 				new Uint8ClampedArray(bm.buffer),
 				...size
 			));
-			frames.push({bitmap, duration, layers});
+			frames.push({bitmap, duration, layers: frameLayers});
 			v.offset = end
 
 		}

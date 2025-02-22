@@ -4,6 +4,11 @@ export type RenderOptions = {
 	context?: CanvasRenderingContext2D;
 	size?: Quad;
 }
+export type SpriteState = {
+	start: number;
+	end: number;
+	
+}
 /**
  * Just a method that delegates draw operations. 
  */

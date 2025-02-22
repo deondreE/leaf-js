@@ -6,10 +6,13 @@ export default class Scene2d {
 	context: CanvasRenderingContext2D;
 	renderer: Renderer2d;
 	sprites: Sprite[];
-	_statics: Uint8Array;
-	statics: ImageBitmap;
 
 	constructor(canvas: HTMLCanvasElement){
-
+		this.canvas = canvas;
+		this.context = canvas.getContext('2d');
+		this.renderer = new Renderer2d(canvas, (rndr, time)=>{
+			
+		},{context: this.context})
 	}
+
 }
