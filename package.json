@@ -23,6 +23,8 @@
     "prettier": "^3.5.0",
     "rollup": "^4.34.8",
     "rollup-plugin-typescript3": "^3.0.5",
+    "@webgpu/types": "^0.1.52",
+    "prettier": "^3.5.1",
     "typescript": "^5.7.3",
     "vite": "^6.0.7",
     "vite-raw-plugin": "^1.0.2"
@@ -32,6 +34,7 @@
     "gl-matrix": "^3.4.3",
     "rollup-plugin-typescript2": "^0.36.0",
     "vitest": "^3.0.5",
+    "pako": "^2.1.0",
     "wgpu-matrix": "^3.3.0"
   }
 }

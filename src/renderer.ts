@@ -200,6 +200,7 @@ export default class Renderer implements RenderDescriptor {
     this.animationFrame = requestAnimationFrame(this.frame);
   }
 
+
   halt() {
     if (this.animationFrame) cancelAnimationFrame(this.animationFrame);
     this.animationFrame = 0;

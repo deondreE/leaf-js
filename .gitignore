@@ -22,3 +22,12 @@ test.json*
 
 *.egg-info
 dist
+
+# 2D files
+*.aseprite
+*.psd
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.ase

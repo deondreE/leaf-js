@@ -1,4 +1,5 @@
 export * from './scene';
+export * from './leaf';
 export * from './profiler';
 export * from './leaf';
 export * from './utils/index';

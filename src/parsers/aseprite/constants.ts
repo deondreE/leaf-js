@@ -1,0 +1,1 @@
+export const LEGACY_TYPES = new Set([0x0004, 0x0011, 0x2016, 0x2017]);
