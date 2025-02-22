@@ -1,6 +1,5 @@
 node_modules
 bin*
-obj*
 vendor*
 Makefile
 *.make
@@ -8,15 +7,21 @@ Makefile
 scene.json
 test.json*
 
+# Editors
 *.sln
 *.vcxproj
 *.vcxproj.user
 .vs
+.idea
 
 # Model files
 *.obj
 *.fbx
 *.mtl
+*.stl
+
+*.egg-info
+dist
 
 # 2D files
 *.aseprite

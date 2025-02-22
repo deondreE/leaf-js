@@ -18,6 +18,6 @@
     /* types */
     "typeRoots": ["./node_modules/@webgpu/types", "./node_modules/tweakpane/dist/type/"]
   },
-  "include": ["src/**/*.ts"],
-  "exclude": ["**/node_modules/**", "**/dist/**"]
+  "include": ["src/**/*"],
+  "exclude": ["**/node_modules/**", "**/dist"]
 }
