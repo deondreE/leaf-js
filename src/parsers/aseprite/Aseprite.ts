@@ -65,7 +65,7 @@ export default class Aseprite {
         let chunk = v.chunk();
 
         if (!chunk) continue;
-        
+
         switch (chunk.chunkType) {
           case 0x2004:
             //console.log("Got layer");
@@ -79,7 +79,7 @@ export default class Aseprite {
             const lyr = chunk.layerIndex + chunk.zIndex;
             layers[chunk.layerIndex].cels[i] = chunk; //in reality I should be able to resolve this link here (I cant imagine linking to the future being supported).
             frameLayers.push(chunk);
-            
+
             if (!(lyr in cels)) {
               cels[lyr] = [chunk];
             } else {
@@ -182,7 +182,7 @@ export default class Aseprite {
               continue;
             }
             const l = layers[lyr.layerIndex].cels[lyr.frame] as AseImageCel;
-            
+
             for (let j = 0; j < l.pixels.length; j += 4) {
               const color = l.pixels.slice(j, j + 4);
               if (!color[3]) continue; //no alpha no pixel
@@ -210,7 +210,7 @@ export default class Aseprite {
       v.offset = end;
     }
     console.log(tags);
-    
+
     if (options.animations) {
       const nf: AseFrame[] = [];
       for (const anim of options.animations) {

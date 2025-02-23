@@ -10,15 +10,15 @@ export default class Psd {
     this.size = size;
     this.frames = frames;
   }
-  
+
   static async init(buffer: ArrayBuffer) {
     const v = new PsdView(buffer);
     const sig = v.str(4);
     const ver = v.word(6);
-    
+
     assert(sig === '8BPS', 'Invalid file format');
     assert(ver === 1, `File version mismatch ${ver}`);
-    
+
     const channels = v.word();
     const size = v.pair(v.dword);
     const depth = v.word();

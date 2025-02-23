@@ -15,5 +15,4 @@ interface Model {
   static: boolean;
 }
 
-
 export type { Model, SceneTypes };

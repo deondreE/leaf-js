@@ -26,7 +26,7 @@ export default class Renderer2d {
       const bounding = canvas.getBoundingClientRect();
       this.rect = [bounding.left, bounding.top, bounding.width, bounding.height];
     }
-    
+
     this.render = this.render.bind(this);
   }
 
@@ -41,13 +41,13 @@ export default class Renderer2d {
 
   start() {
     if (this.animationFrame) return;
-    
+
     this.animationFrame = requestAnimationFrame(this.render);
   }
 
   stop() {
     if (!this.animationFrame) return;
-    
+
     cancelAnimationFrame(this.animationFrame);
     this.animationFrame = 0;
   }

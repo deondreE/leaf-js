@@ -11,7 +11,7 @@ export const rgbaNormal = ([br, bg, bb, ba]: LfQuad, [fr, fg, fb, fa]: LfQuad, a
     //if foreground is invisible
     return [br, bg, bb, ba];
   }
-  
+
   const bo = ba / 255; //convert to 0-1
   const fo = fa / 255; //this will simplify and reduce divisions later
   const na = bo + fo - bo * fo;

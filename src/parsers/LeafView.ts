@@ -10,7 +10,7 @@ export default class LeafView extends DataView<ArrayBuffer> {
 
   next<T>(v: T, s: number = 0): T {
     this.offset += s;
-    
+
     return v;
   }
 
@@ -65,7 +65,7 @@ export default class LeafView extends DataView<ArrayBuffer> {
   string(s: number = 0): string {
     return this.str(this.word(), s);
   }
-  
+
   uuid(s: number = 0): string {
     return this.decoder.decode(this.array(16, s));
   }
@@ -73,19 +73,19 @@ export default class LeafView extends DataView<ArrayBuffer> {
 
   pair<T>(fn: ReaderFunc<T>, s: number = 0): [T, T] {
     fn = fn.bind(this);
-    
+
     return [fn(), fn(s)];
   }
 
   triplet<T>(fn: ReaderFunc<T>, s: number = 0): [T, T, T] {
     fn = fn.bind(this);
-    
+
     return [fn(), fn(), fn(s)];
   }
 
   quad<T>(fn: ReaderFunc<T>, s: number = 0): [T, T, T, T] {
     fn = fn.bind(this);
-    
+
     return [fn(), fn(), fn(), fn(s)];
   }
 
@@ -93,14 +93,14 @@ export default class LeafView extends DataView<ArrayBuffer> {
     const len = width * height;
     const bitmap = new Uint8ClampedArray(width * height * 4);
     console.log('Populating bitmap', width * height);
-    
+
     for (let i = 0; i < len; i) {
       const rgb = this.array(3);
       bitmap.set([...rgb, 255], i * 4);
     }
 
     console.log('bitmap', bitmap);
-    
+
     return createImageBitmap(new ImageData(bitmap, width, height));
   }
 }

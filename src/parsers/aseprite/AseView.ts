@@ -278,7 +278,7 @@ export default class AseView extends LeafView {
 
     const props = this.chunker(chunkType, end);
     this.offset = end;
-    
+
     return { chunkType, ...props } as AseChunk;
   }
 
@@ -300,7 +300,7 @@ export default class AseView extends LeafView {
     for (let i = 0; i < len; i++) {
       elements[i] = this.propertyValue();
     }
-    
+
     return elements;
   }
 
@@ -357,7 +357,7 @@ export default class AseView extends LeafView {
       const value = this.propertyValue();
       props[key] = value;
     }
-    
+
     return props;
   }
 
@@ -367,7 +367,7 @@ export default class AseView extends LeafView {
     for (let i = 0; i < indexed.length; i++) {
       bitmap.set(palette[indexed[i]], i * 4);
     }
-    
+
     return bitmap;
   }
   greyToRGBA(grey: Uint8Array): Uint8Array {
@@ -378,7 +378,7 @@ export default class AseView extends LeafView {
       const a = grey[i + 1];
       bitmap.set([v, v, v, a], i * 2);
     }
-    
+
     return bitmap;
   }
 }
