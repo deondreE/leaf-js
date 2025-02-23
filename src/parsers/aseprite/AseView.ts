@@ -339,18 +339,18 @@ export default class AseView extends LeafView {
   }
 
   indexedToRGBA(indexed: Uint8Array, palette: LfQuad[]): Uint8Array {
-    const bitmap = new Uint8Array(indexed.length*4);
-    for(let i = 0; i<indexed.length; i++){
-      bitmap.set(palette[indexed[i]], i*4);
+    const bitmap = new Uint8Array(indexed.length * 4);
+    for (let i = 0; i < indexed.length; i++) {
+      bitmap.set(palette[indexed[i]], i * 4);
     }
     return bitmap;
   }
   greyToRGBA(grey: Uint8Array): Uint8Array {
-    const bitmap = new Uint8Array(grey.length*2);
-    for(let i = 0; i<grey.length; i+=2){
+    const bitmap = new Uint8Array(grey.length * 2);
+    for (let i = 0; i < grey.length; i += 2) {
       const v = grey[i];
-      const a = grey[i+1];
-      bitmap.set([v,v,v,a], i*2);
+      const a = grey[i + 1];
+      bitmap.set([v, v, v, a], i * 2);
     }
     return bitmap;
   }

@@ -26,211 +26,257 @@ export interface AseHeader {
 }
 
 export type AseFrame = {
-	duration: number; //word
-	chunks: AseChunk[];
-}
+  duration: number; //word
+  chunks: AseChunk[];
+};
 
-export type AseChunk = AseLegacyPalette | AseLayer | AseCel | AseCelExtra | AseColorProfile | AseICCProfile | AseExternalAssets | AseMask | AsePath | AseTags | AseColorPalette | AseUserData | AseSlice | AseTileset;
+export type AseChunk =
+  | AseLegacyPalette
+  | AseLayer
+  | AseCel
+  | AseCelExtra
+  | AseColorProfile
+  | AseICCProfile
+  | AseExternalAssets
+  | AseMask
+  | AsePath
+  | AseTags
+  | AseColorPalette
+  | AseUserData
+  | AseSlice
+  | AseTileset;
 
 export type AseChunkType = AseChunk['chunkType'];
 
 export type AseLegacyPalette = {
-	chunkType: 0x0004 | 0x0011;
-	colors: AseTriplet[];
-}
+  chunkType: 0x0004 | 0x0011;
+  colors: AseTriplet[];
+};
 export type AseLayerFlags = 1 | 2 | 4 | 8 | 16 | 32 | 64;
 export type AseLayerType = 0 | 1 | 2;
 export enum AseLayerBlendMode {
-	normal = 0,
-	multiply = 1,
-	screen = 2,
-	overlay = 3,
-	darken = 4,
-	lighten = 5,
-	colorDodge = 6,
-	colorBurn = 7,
-	hardLight = 8,
-	softLight = 9,
-	difference = 10,
-	exclusion = 11,
-	hue = 12,
-	saturation = 13,
-	color = 14,
-	lumnosity = 15,
-	addition = 16,
-	subtract = 17,
-	divide = 18
+  normal = 0,
+  multiply = 1,
+  screen = 2,
+  overlay = 3,
+  darken = 4,
+  lighten = 5,
+  colorDodge = 6,
+  colorBurn = 7,
+  hardLight = 8,
+  softLight = 9,
+  difference = 10,
+  exclusion = 11,
+  hue = 12,
+  saturation = 13,
+  color = 14,
+  lumnosity = 15,
+  addition = 16,
+  subtract = 17,
+  divide = 18,
 }
 export type AseLayer = {
-	chunkType: 0x2004;
-	flags: AseLayerFlags;
-	layerType: AseLayerType;
-	layerChildLevel: number;
-	layerSize: AsePair;
-	blendMode: AseLayerBlendMode;
-	alpha: number;
-	name: string;
-	tileIndex: number;
-}
+  chunkType: 0x2004;
+  flags: AseLayerFlags;
+  layerType: AseLayerType;
+  layerChildLevel: number;
+  layerSize: AsePair;
+  blendMode: AseLayerBlendMode;
+  alpha: number;
+  name: string;
+  tileIndex: number;
+};
 
 export type AseCel = AseImageCel | AseLinkedCel | AseCelTilemap;
 
 export type AseCelBase = {
-	chunkType: 0x2005;
-	layerIndex: number;
-	layerPosition: AsePair;
-	alpha: number;
-	zIndex: number;
-}
+  chunkType: 0x2005;
+  layerIndex: number;
+  layerPosition: AsePair;
+  alpha: number;
+  zIndex: number;
+};
 
 export type AseImageCel = {
-	celType: 0 | 2;
-	pixelSize: AsePair;
-	pixels: Uint8Array
+  celType: 0 | 2;
+  pixelSize: AsePair;
+  pixels: Uint8Array;
 } & AseCelBase;
 
 export type AseLinkedCel = {
-	celType: 1;
-	position: number;
+  celType: 1;
+  position: number;
 } & AseCelBase;
 
 export type AseCelTilemap = {
-	celType: 3;
-	tileMapSize: AsePair;
-	tileBpt: number;
-	bitmask: AseQuad;
-	tiles: Uint8Array;
+  celType: 3;
+  tileMapSize: AsePair;
+  tileBpt: number;
+  bitmask: AseQuad;
+  tiles: Uint8Array;
 } & AseCelBase;
 
 export type AseCelExtra = {
-	chunkType: 0x2006;
-	flags: number;
-	preciseRect: AseQuad;
-}
+  chunkType: 0x2006;
+  flags: number;
+  preciseRect: AseQuad;
+};
 
 export type AseColorProfileBase = {
-	chunkType: 0x2007;
-	gamma: number; //fixed (the flag will be unecessary for now it will be skipped)
-}
+  chunkType: 0x2007;
+  gamma: number; //fixed (the flag will be unecessary for now it will be skipped)
+};
 
 export type AseColorProfile = {
-	profileType: 0 | 1; //no profile and sRGB will be treated the same
+  profileType: 0 | 1; //no profile and sRGB will be treated the same
 } & AseColorProfileBase;
 
 export type AseICCProfile = {
-	profileType: 2;
-	icc: Uint8Array;
+  profileType: 2;
+  icc: Uint8Array;
 } & AseColorProfileBase;
 
 export type AseExternalAsset = {
-	assetId: number;
-	assetType: 0 | 1 | 2 | 3;
-	assetPath: string; //only relative paths are accepted this may be problematic if third party library extension.id's are needed to render
-}
+  assetId: number;
+  assetType: 0 | 1 | 2 | 3;
+  assetPath: string; //only relative paths are accepted this may be problematic if third party library extension.id's are needed to render
+};
 
 export type AseExternalAssets = {
-	chunkType: 0x2008;
-	assets: AseExternalAsset[];
-}
+  chunkType: 0x2008;
+  assets: AseExternalAsset[];
+};
 
-export type AseMask = { /* deprecated but parsed for possible future support of legacy aseprite */
-	chunkType: 0x2016;
-	position: AsePair;
-	size: AsePair;
-	name: string;
-	bitmap: Uint8Array;
-}
+export type AseMask = {
+  /* deprecated but parsed for possible future support of legacy aseprite */ chunkType: 0x2016;
+  position: AsePair;
+  size: AsePair;
+  name: string;
+  bitmap: Uint8Array;
+};
 
 export type AsePath = {
-	chunkType: 0x2017
-}
+  chunkType: 0x2017;
+};
 
 export type AseTags = {
-	chunkType: 0x2018;
-	tags: AseTag[]
-}
+  chunkType: 0x2018;
+  tags: AseTag[];
+};
 
 export enum AseLoopDirection {
-	forward = 0,
-	reverse = 1,
-	pingPong = 2,
-	pingPongReverse = 3
+  forward = 0,
+  reverse = 1,
+  pingPong = 2,
+  pingPongReverse = 3,
 }
 
 export type AseTag = {
-	range: AsePair;
-	direction: AseLoopDirection;
-	repeat: number;
-	tagColor: AseTriplet;
-	tagName: string
-}
+  range: AsePair;
+  direction: AseLoopDirection;
+  repeat: number;
+  tagColor: AseTriplet;
+  tagName: string;
+};
 
 export type AseColorPalette = {
-	chunkType: 0x2019;
-	firstIndex: number;
-	lastIndex: number;
-	colors: AseColorPaletteEntry[];
-}
+  chunkType: 0x2019;
+  firstIndex: number;
+  lastIndex: number;
+  colors: AseColorPaletteEntry[];
+};
 
 export type AseColorPaletteEntry = {
-	color: AseQuad;
-	name?: string
-}
+  color: AseQuad;
+  name?: string;
+};
 
+export type AsePropertyTypers =
+  | 0x0001
+  | 0x0002
+  | 0x0003
+  | 0x0004
+  | 0x0005
+  | 0x0006
+  | 0x0008
+  | 0x0009
+  | 0x000a
+  | 0x000b
+  | 0x000c
+  | 0x000d
+  | 0x000e
+  | 0x000f
+  | 0x0010
+  | 0x0011
+  | 0x0012
+  | 0x0013;
 
+export type AsePropertyTypes =
+  | boolean
+  | number
+  | string
+  | bigint
+  | AsePair
+  | AseQuad
+  | AsePropertyArray
+  | AsePropertyMap;
+export type AsePropType<T extends AsePropertyTypers | 0x0 = 0> = T extends 0x0001
+  ? boolean
+  : T extends 0x0002 | 0x0003 | 0x0004 | 0x0005 | 0x0006 | 0x0007 | 0x000a | 0x000b
+    ? number
+    : T extends 0x0008 | 0x0009 | 0x000c
+      ? bigint
+      : T extends 0x000d | 0x0013
+        ? string
+        : T extends 0x000e | 0x000f
+          ? AsePair
+          : T extends 0x0010
+            ? AseQuad
+            : T extends 0x0011
+              ? AsePropertyArray
+              : T extends 0x0012
+                ? AsePropertyMap
+                : AsePropertyTypes;
 
-export type AsePropertyTypers = 0x0001 | 0x0002 | 0x0003 | 0x0004 | 0x0005 | 0x0006 | 0x0008 | 0x0009 | 0x000A | 0x000B | 0x000C | 0x000D | 0x000E | 0x000F | 0x0010 | 0x0011 | 0x0012 | 0x0013;
-
-export type AsePropertyTypes = boolean | number | string | bigint | AsePair | AseQuad | AsePropertyArray | AsePropertyMap
-export type AsePropType<T extends AsePropertyTypers | 0x0 = 0> = T extends 0x0001 ? boolean
-: T extends 0x0002 | 0x0003 | 0x0004 | 0x0005 | 0x0006 | 0x0007 | 0x000A | 0x000B ? number
-: T extends 0x0008 | 0x0009 | 0x000C ? bigint
-: T extends 0x000D | 0x0013 ? string
-: T extends 0x000E | 0x000F ? AsePair
-: T extends 0x0010 ? AseQuad
-: T extends 0x0011 ? AsePropertyArray
-: T extends 0x0012 ? AsePropertyMap
-: AsePropertyTypes;
-
-export interface AsePropertyArray extends Array<AsePropertyTypes> {};
+export interface AsePropertyArray extends Array<AsePropertyTypes> {}
 export interface AsePropertyMap {
-	[key: string]: AsePropertyTypes
+  [key: string]: AsePropertyTypes;
 }
 export type AseUserData = {
-	chunkType: 0x2020;
-	text?: string,
-	color?: AseQuad,
-	properties?: AsePropertyMap
-}
+  chunkType: 0x2020;
+  text?: string;
+  color?: AseQuad;
+  properties?: AsePropertyMap;
+};
 
 export type AseSlice = {
-	chunkType: 0x2022;
-	flags: number;
-	name: string;
-	slices: AseSliceElement[];
-}
+  chunkType: 0x2022;
+  flags: number;
+  name: string;
+  slices: AseSliceElement[];
+};
 
 export type AseSliceElement = {
-	frameIndex: number;
-	location: AsePair; //long
-	size: AsePair; //dword
-	center?: AsePair; //long
-	centerSize?: AsePair; //dword
-	pivot?: AsePair; //long
-}
+  frameIndex: number;
+  location: AsePair; //long
+  size: AsePair; //dword
+  center?: AsePair; //long
+  centerSize?: AsePair; //dword
+  pivot?: AsePair; //long
+};
 
 export type AseTileset = {
-	chunkType: 0x2023;
-	tilesetId: number;
-	tilesetFlags: number; //bitwise flag
-	tilesetSize: AsePair;
-	tilesLength: number;
-	tilesetBaseIndex: number;
-	tilesetName: string
-	externalChunkId?: number;
-	externalId?: number;
-	pixels?: Uint8Array;
-}
+  chunkType: 0x2023;
+  tilesetId: number;
+  tilesetFlags: number; //bitwise flag
+  tilesetSize: AsePair;
+  tilesLength: number;
+  tilesetBaseIndex: number;
+  tilesetName: string;
+  externalChunkId?: number;
+  externalId?: number;
+  pixels?: Uint8Array;
+};
 export type AsePair = [number, number];
 export type AseTriplet = [number, number, number];
 export type AseQuad = [number, number, number, number];

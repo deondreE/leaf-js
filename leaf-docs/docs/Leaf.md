@@ -5,12 +5,12 @@ How to use leaf in all contexts.
 ## Usage
 
 ```html
-    <html>
-        <body>
-            <l-canvas src=""></l-canvas>
-        </body>
-        <script src="replace with leaf package"></script>
-    </html>
+<html>
+  <body>
+    <l-canvas src=""></l-canvas>
+  </body>
+  <script src="replace with leaf package"></script>
+</html>
 ```
 
 ---

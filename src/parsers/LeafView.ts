@@ -72,14 +72,14 @@ export default class LeafView extends DataView<ArrayBuffer> {
   }
 
   rgb(width: number, height: number): Promise<ImageBitmap> {
-	const len = width*height;
+    const len = width * height;
     const bitmap = new Uint8ClampedArray(width * height * 4);
-	console.log("Populating bitmap", width*height)
-	for(let i = 0; i<len; i){
-		const rgb = this.array(3);
-		bitmap.set([...rgb, 255], i*4);
-	}
-	console.log("bitmap", bitmap);
+    console.log('Populating bitmap', width * height);
+    for (let i = 0; i < len; i) {
+      const rgb = this.array(3);
+      bitmap.set([...rgb, 255], i * 4);
+    }
+    console.log('bitmap', bitmap);
     return createImageBitmap(new ImageData(bitmap, width, height));
   }
 }

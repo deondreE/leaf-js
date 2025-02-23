@@ -22,7 +22,7 @@ class Renderer3D {
     }
 
     this.device = await adapter.requestDevice();
-    this.context = this.canvas.getContext('webgpu');
+    this.context = this.canvas!.getContext('webgpu');
     this.format = navigator.gpu.getPreferredCanvasFormat();
 
     if (!this.device || !this.context || !this.format) {
@@ -37,7 +37,7 @@ class Renderer3D {
 
     // Create a texture to render to
     this.renderTexture = this.device.createTexture({
-      size: [this.canvas.width, this.canvas.height],
+      size: [this.canvas!.width, this.canvas!.height],
       format: this.format,
       usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.COPY_SRC, // Add COPY_SRC
     });
@@ -52,7 +52,7 @@ class Renderer3D {
     mat4.perspective(
       projectionMatrix,
       Math.PI / 4,
-      this.canvas.width / this.canvas.height,
+      this.canvas!.width / this.canvas!.height,
       0.1,
       100.0,
     ); // FOV = 45 degreess
@@ -80,11 +80,11 @@ class Renderer3D {
         await objParser.createPipeline(shaderModule, this.format, uniformBuffer);
 
         this.render(() => {
-          const commandEncoder = this.device.createCommandEncoder();
+          const commandEncoder = this.device!.createCommandEncoder();
           const passEncoder = commandEncoder.beginRenderPass({
             colorAttachments: [
               {
-                view: this.context.getCurrentTexture().createView(),
+                view: this.context!.getCurrentTexture().createView(),
                 loadOp: 'clear',
                 storeOp: 'store',
               },
@@ -93,7 +93,7 @@ class Renderer3D {
 
           objParser.render(passEncoder);
           passEncoder.end();
-          this.device.queue.submit([commandEncoder.finish()]);
+          this.device!.queue.submit([commandEncoder.finish()]);
         });
 
         break;
@@ -121,11 +121,11 @@ class Renderer3D {
         await stlParser.createPipeline(shaderModule, this.format, uniformBuffer);
 
         this.render(() => {
-          const commandEncoder = this.device.createCommandEncoder();
+          const commandEncoder = this.device!.createCommandEncoder();
           const passEncoder = commandEncoder.beginRenderPass({
             colorAttachments: [
               {
-                view: this.context.getCurrentTexture().createView(),
+                view: this.context!.getCurrentTexture().createView(),
                 loadOp: 'clear',
                 storeOp: 'store',
               },
@@ -134,7 +134,7 @@ class Renderer3D {
 
           stlParser.render(passEncoder);
           passEncoder.end();
-          this.device.queue.submit([commandEncoder.finish()]);
+          this.device!.queue.submit([commandEncoder.finish()]);
         });
 
         break;

@@ -7,7 +7,7 @@ class Leaf extends HTMLCanvasElement {
   is3D: boolean = false;
   static: boolean = false;
   renderer: Renderer | null = null;
-  id: string;
+  id: string = '';
 
   constructor() {
     super();
@@ -21,7 +21,7 @@ class Leaf extends HTMLCanvasElement {
       return console.warn('leaf canvases rely on src attribute to populate');
 
     if (this.hasAttribute('src')) {
-      if (!this.checkFileType(this.getAttribute('src'))) {
+      if (!this.checkFileType(this.getAttribute('src')!)) {
         const funcName: string = this.getAttribute('src')!;
         const global = window as Record<string, any>;
         assert(funcName !== null);
@@ -33,7 +33,7 @@ class Leaf extends HTMLCanvasElement {
       } else {
         // Render supported static file type.
         this.renderer = new Renderer(this);
-        this.renderer.init(this.getAttribute('src'));
+        this.renderer.init(this.getAttribute('src')!);
       }
     }
 
