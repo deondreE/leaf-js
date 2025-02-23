@@ -19,8 +19,6 @@
     "@rollup/plugin-node-resolve": "^16.0.0",
     "@rollup/plugin-typescript": "^12.1.2",
     "@types/node": "^22.13.2",
-    "@webgpu/types": "^0.1.54",
-    "prettier": "^3.5.0",
     "rollup": "^4.34.8",
     "rollup-plugin-typescript3": "^3.0.5",
     "@webgpu/types": "^0.1.52",
