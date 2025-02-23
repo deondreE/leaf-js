@@ -9,7 +9,7 @@ class Scene {
   children: Map<Model, string> = new Map<Model, string>();
   renderer: Renderer | null = null;
 
-  constructor({ name }: Scene) {
+  constructor(name: string) {
     this.name = name;
   }
 

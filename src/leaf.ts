@@ -1,4 +1,5 @@
 import Renderer from './renderer.new';
+import Scene from './scene';
 import { assert } from './utils/util';
 
 console.log('Loading leaf');
@@ -44,6 +45,10 @@ class Leaf extends HTMLCanvasElement {
         const src = this.getAttribute('src');
       }
     }
+  }
+
+  createDynamicScene() {
+    let scene = new Scene('string');
   }
 
   disconectedCallback() {

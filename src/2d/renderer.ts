@@ -21,10 +21,12 @@ export default class Renderer2d {
     assert(this.context != null, 'Rendering context unavailable');
     this.draw = draw;
     this.fps = 1e3 / fps;
+
     if (!size) {
       const bounding = canvas.getBoundingClientRect();
       this.rect = [bounding.left, bounding.top, bounding.width, bounding.height];
     }
+    
     this.render = this.render.bind(this);
   }
 
@@ -39,11 +41,13 @@ export default class Renderer2d {
 
   start() {
     if (this.animationFrame) return;
+    
     this.animationFrame = requestAnimationFrame(this.render);
   }
 
   stop() {
     if (!this.animationFrame) return;
+    
     cancelAnimationFrame(this.animationFrame);
     this.animationFrame = 0;
   }

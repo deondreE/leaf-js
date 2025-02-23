@@ -6,46 +6,10 @@
     <title>Worky</title>
   </head>
   <body>
-    <canvas is="leaf-js" src="l.obj" width="640" height="640" id="webgpu-canvas"></canvas>
+    <canvas is="leaf-js" src="t.obj" width="640" height="640" id="webgpu-canvas"></canvas>
     <canvas is="l-profiler" width="400" height="300" target-id="webgpu-canvas"></canvas>
   </body>
   <script src="./src/profiler.ts" type="module"></script>
   <script src="./src/leaf.ts" type="module"></script>
-  <!-- <script lang="ts">
-    function tester() {
-      console.log('This is now working I think maybe sometimes');
-      console.log('vscode sucks');
-
-      const scene = {
-        models: {
-          cube: {
-            // cube[10]
-            size: { w: 10, h: 10 },
-            amount: 10,
-            onInit: function () {
-              this.location = Math.random * 10;
-            },
-            onRender: function () {},
-          },
-          otherCube: {
-            size: { w: 100, h: 100 },
-            type: 'cube',
-            amount: 1,
-          },
-        },
-        start: function () {
-          this.add = 'string';
-          this.remove('string');
-        },
-        update: function () {
-          for (o in this.objects) {
-            if (typeof o === 'cube') {
-            }
-          }
-        },
-      };
-
-      return scene;
-    }
-  </script> -->
+ 
 </html>

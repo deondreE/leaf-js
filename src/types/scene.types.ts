@@ -1,40 +1,19 @@
-import { Vec2 } from './math.types';
-
-/** Definition of an animation applied to a model */
-interface Animation {
+/** */
+interface SceneTypes {
   name: string;
-  type: 'rotation' | 'translation' | 'scale';
-  duration: string;
-
-  start(): void;
-  update(dt: number): void;
-  stop(): void;
-}
-
-interface Scene {
-  name: string;
+  id: string;
   models: Model[];
-  subscenes?: Scene[];
-  animations?: Animation[];
 }
 
-/** Definition of a model inside of a scene. */
+/** If item not defined then it not static. */
 interface Model {
-  type: 'square' | 'circle' | 'custom';
-  id: number;
+  vertexBuffer?: Float32Array;
+  shader?: string;
+  indexBuffer?: Float32Array;
   name: string;
-  position: Vec2;
-  size: { w: number; h: number };
-  verticies: Float32Array;
-  shaders: string[];
-  modelFile?: string;
-  startAnimation: boolean;
-
-  /** Apply transformation: Scale, Rotation, Transform. */
-  applyTransformation(
-    type: 'scale' | 'rotate' | 'translate',
-    value: { x: number; y: number; z: number },
-  ): void;
+  id: string;
+  static: boolean;
 }
 
-export type { Model, Animation, Scene };
+
+export type { Model, SceneTypes };

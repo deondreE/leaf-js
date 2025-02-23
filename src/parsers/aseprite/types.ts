@@ -206,6 +206,7 @@ export type AsePropertyTypes =
   | LfQuad
   | AsePropertyArray
   | AsePropertyMap;
+
 export type AsePropType<T extends AsePropertyTypers | 0x0 = 0> = T extends 0x0001
   ? boolean
   : T extends 0x0002 | 0x0003 | 0x0004 | 0x0005 | 0x0006 | 0x0007 | 0x000a | 0x000b
@@ -225,9 +226,11 @@ export type AsePropType<T extends AsePropertyTypers | 0x0 = 0> = T extends 0x000
                 : AsePropertyTypes;
 
 export interface AsePropertyArray extends Array<AsePropertyTypes> {}
+
 export interface AsePropertyMap {
   [key: string]: AsePropertyTypes;
 }
+
 export type AseUserData = {
   chunkType: 0x2020;
   text?: string;

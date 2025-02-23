@@ -1,13 +1,16 @@
 import Renderer from './renderer';
+
 export type RenderOptions = {
   fps?: number;
   context?: CanvasRenderingContext2D;
   size?: Quad;
 };
+
 export type SpriteState = {
   start: number;
   end: number;
 };
+
 /**
  * Just a method that delegates draw operations.
  */

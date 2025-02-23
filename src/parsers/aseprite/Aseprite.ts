@@ -27,6 +27,7 @@ export default class Aseprite {
     this.frames = frames;
     this.size = size;
   }
+
   static async init(buffer: ArrayBuffer, options: AsepriteOptions = {}): Promise<Aseprite> {
     const v = new AseView(buffer);
     const fileSize = v.dword();
@@ -51,6 +52,7 @@ export default class Aseprite {
     const externals: AseExternalAssets[] = [];
     const frames: AseFrame[] = [];
     const tags: Record<string, AseTag> = {};
+
     for (let i = 0; i < len; i++) {
       const end = v.offset + v.dword();
       assert(v.word(2) === 0xf1fa, 'Frame mismatch');
@@ -58,10 +60,12 @@ export default class Aseprite {
       const chunkLen = v.dword();
       const cels: Record<number, AseCel[]> = {};
       const frameLayers: AseCel[] = [];
+
       for (let j = 0; j < chunkLen; j++) {
         let chunk = v.chunk();
 
         if (!chunk) continue;
+        
         switch (chunk.chunkType) {
           case 0x2004:
             //console.log("Got layer");
@@ -75,6 +79,7 @@ export default class Aseprite {
             const lyr = chunk.layerIndex + chunk.zIndex;
             layers[chunk.layerIndex].cels[i] = chunk; //in reality I should be able to resolve this link here (I cant imagine linking to the future being supported).
             frameLayers.push(chunk);
+            
             if (!(lyr in cels)) {
               cels[lyr] = [chunk];
             } else {
@@ -106,6 +111,7 @@ export default class Aseprite {
             break;
           case 0x2018: {
             console.log('Got tags', i, chunk);
+
             for (const tag of chunk.tags) {
               tags[tag.tagName.replace(/\s/g, '')] = tag;
             }
@@ -118,6 +124,7 @@ export default class Aseprite {
                 ...new Array(chunk.lastIndex - colorPalette.length - 1),
               ];
             }
+
             for (let j = 0; j < chunk.colors.length; j++) {
               const pIndex = chunk.firstIndex + j;
               if (pIndex === paletteEntry) chunk.colors[j].color = [0, 0, 0, 0]; //this is the transparent color... always
@@ -125,6 +132,7 @@ export default class Aseprite {
               if (chunk.colors[j].name)
                 namedColors.set(chunk.colors[j].name, chunk.colors[j].color);
             }
+
             break;
           case 0x2020:
             //console.log("Got user data", chunk);
@@ -142,7 +150,7 @@ export default class Aseprite {
       }
       let bm = new Uint8Array(size[0] * size[1] * 4);
       const lyrs = Object.keys(cels)
-        .map((i) => parseInt(i))
+        .map((i) => parseInt(i)) // ?
         .sort();
       for (const i of lyrs) {
         for (const lyr of cels[i]) {
@@ -174,6 +182,7 @@ export default class Aseprite {
               continue;
             }
             const l = layers[lyr.layerIndex].cels[lyr.frame] as AseImageCel;
+            
             for (let j = 0; j < l.pixels.length; j += 4) {
               const color = l.pixels.slice(j, j + 4);
               if (!color[3]) continue; //no alpha no pixel
@@ -201,6 +210,7 @@ export default class Aseprite {
       v.offset = end;
     }
     console.log(tags);
+    
     if (options.animations) {
       const nf: AseFrame[] = [];
       for (const anim of options.animations) {
