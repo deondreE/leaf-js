@@ -1,4 +1,4 @@
-import { assert } from '../../utils';
+import { assert } from '../../utils/util';
 import LeafView from '../LeafView';
 import { LfQuad } from '../types';
 import { LEGACY_TYPES } from './constants';

@@ -2,7 +2,7 @@ export * from './scene';
 export * from './leaf';
 export * from './profiler';
 export * from './leaf';
-export * from './utils/index';
+export * from './utils/util';
 export * from './constants';
 
 export * from './meshes/capsule';

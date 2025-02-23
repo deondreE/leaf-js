@@ -1,4 +1,4 @@
-import { assert } from '../utils';
+import { assert } from '../utils/util';
 import { AseCel, AseCelBase, AseCelExtra, AseChunk, AseChunkType, AseColorPalette, AseColorPaletteEntry, AseColorProfile, AseExternalAsset, AseExternalAssets, AseFrame, AseHeader, AseICCProfile, AseImageCel, AseLayer, AseLayerBlendMode, AseLayerFlags, AseLayerType, AseLegacyPalette, AseMask, AsePair, AsePixel, AsePropertyArray, AsePropertyMap, AsePropertyTypes, AseQuad, AseSlice, AseSliceElement, AseTag, AseTags, AseTileset, AseTriplet, AseUserData } from './aseprite.types';
 import pako from "pako";
 export class Aseprite {

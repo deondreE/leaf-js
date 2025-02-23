@@ -1,5 +1,5 @@
 import { Y } from 'vitest/dist/chunks/reporters.DTtkbAtP.js';
-import { assert } from './utils/index';
+import { assert } from './utils/util';
 
 export interface LProfilerProps {
   targetId?: string;

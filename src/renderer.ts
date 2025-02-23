@@ -1,5 +1,5 @@
 import { mat4, Mat4, vec3 } from 'wgpu-matrix';
-import { assert } from './utils/index';
+import { assert } from './utils/util';
 import basicVert from './shaders/basic.vert.js';
 import colorVert from './shaders/color.frag.js';
 import {

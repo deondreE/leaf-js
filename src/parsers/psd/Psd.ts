@@ -1,4 +1,4 @@
-import { assert } from "../../utils";
+import { assert } from "../../utils/util";
 import { LfPair } from "../types";
 import PsdView from "./PsdView";
 

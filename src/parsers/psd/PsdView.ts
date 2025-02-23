@@ -1,4 +1,4 @@
-import { assert } from "../../utils";
+import { assert } from "../../utils/util";
 import LeafView from "../LeafView";
 
 export default class PsdView extends LeafView {

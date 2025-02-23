@@ -1,4 +1,4 @@
-import { assert } from "../../utils";
+import { assert } from "../../utils/util";
 import AseView from "./AseView";
 import { rgbaNormal } from "./blendFunctions";
 import { AseLayer, AseColorProfile, AseCel, AseICCProfile, AseTags, AseExternalAssets, AseFrame, AseTileset, AseImageCel, AseTag } from "./types";
@@ -200,5 +200,3 @@ export default class Aseprite {
 export const loadAseprite = (filePath: string, options:AsepriteOptions) => fetch(filePath)
 .then(r=>r.arrayBuffer())
 .then(r=>Aseprite.init(r, options));
-
-
