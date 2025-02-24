@@ -2,6 +2,10 @@ import { mat4 } from 'gl-matrix';
 import OBJParser from './parsers/obj';
 import STLParser from './parsers/stl';
 
+import AssetBuilder from './assetloading/build';
+import { Model } from './types/scene.types';
+import { v4 as uuid } from 'uuid'; 
+
 /** Currently Supports static file definitions. */
 class Renderer3D {
   canvas?: HTMLCanvasElement;
@@ -95,6 +99,17 @@ class Renderer3D {
           passEncoder.end();
           this.device!.queue.submit([commandEncoder.finish()]);
         });
+        // Generic Model def for saving specifically.
+        let model: Model = {
+          name: fileName,
+          id: uuid(),
+          vertexBuffer: objParser.getVertexBuffer(),
+          indexBuffer: objParser.getIndexBuffer(),
+          shader: objParser.getShaderString()
+        };
+    
+        const assetBuilder = new AssetBuilder();
+        assetBuilder.buildModelScene(model);
 
         break;
       }

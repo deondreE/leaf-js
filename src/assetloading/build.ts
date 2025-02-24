@@ -1,32 +1,31 @@
 import Scene from '../scene';
-import { SceneTypes } from '../types/scene.types';
+import { SceneTypes, Model } from '../types/scene.types';
 import { AssetData } from './assetloading.types';
+import { v4 as uuid } from 'uuid';
 
 class AssetBuilder {
   currentScene: any;
   modelFileName: string;
 
-  constructor(fileName: string, currentScene: any) {
-    this.currentScene = currentScene;
-    this.modelFileName = fileName;
+  constructor() { 
   }
-
-  start() {
-    // @ts-ignore
-    if (import.meta.env.MODE == 'production' || process.env.NODE_ENV == 'production') {
-      // being built by vite, or node_env
-    }
-  }
-
+  
   /** This will only be called if a scene needs to be created from an imported file. */
-  processData(sceneData: any): SceneTypes {
-    let result: SceneTypes = {
-      name: 'testName',
-      id: 'uuid',
+ buildModelScene(model: Model): void {
+   let importScene: SceneTypes = {
+      name: model.name,
+      type: 'staticimport',
+      id: uuid(),
       models: [],
     };
 
-    return result;
+    if (import.meta.env.MODE == 'production' || process.env.NODE_ENV == 'production') {
+      // TODO: Figure out file reading and writing when it comes to the client.
+      // This will write a src file to the client.
+    } else {
+      importScene.models.push(model);
+      localStorage.setItem('staticimport', JSON.stringify(importScene)); 
+    }
   }
 }
 

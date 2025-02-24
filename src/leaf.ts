@@ -2,7 +2,6 @@ import Renderer from './renderer.new';
 import Scene from './scene';
 import { assert } from './utils/util';
 
-console.log('Loading leaf');
 class Leaf extends HTMLCanvasElement {
   static observedAttributes = ['src'];
   is3D: boolean = false;
@@ -40,14 +39,13 @@ class Leaf extends HTMLCanvasElement {
 
     if (!this.renderer && this.is3D) {
       this.id = 'webgpu-canvas';
-      // FIXME: Recognize context.
       if (this.hasAttribute('src')) {
         const src = this.getAttribute('src');
       }
     }
   }
 
-  createDynamicScene() {
+  private createDynamicScene() {
     let scene = new Scene('string');
   }
 

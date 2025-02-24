@@ -1,6 +1,7 @@
 /** */
 interface SceneTypes {
   name: string;
+  type: string;
   id: string;
   models: Model[];
 }
