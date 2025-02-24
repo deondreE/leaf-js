@@ -28,22 +28,26 @@ export type Rect = {
   width: number;
   height: number;
 }
-
-export type Scene2dImageAssetDescription = {
+export type Scene2dImageAssetDescription = Scene2dSlicedImageAssetDescription;
+export type Scene2dSlicedImageAssetDescription = {
   slices: Pair;
+  sprites: SpriteDescriptor[]
 } & Partial<Rect>;
+
 /**
  * Sprites will be used for animated and sprite assets. 
  */
 export type SpriteDescriptor = {
-  animations: Record<string, Pair >; //if 3 values are provided the 3rd value will be used to describe a custom animation time.
+  name: string;
+  animations: SpriteAnimationDescriptor[];
 };
 
+
 export type SpriteAnimationDescriptor = {
+  name: string;
   range: Pair;
-  //The duration by default is 32ms per frame but may be changed by providing either a different value or an array specifying durations of each frame specifically. 
   duration?: number | number[];
-};
+}
 
 
 

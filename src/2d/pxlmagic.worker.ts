@@ -13,26 +13,35 @@ const mkCircle =  (): ImageBitmap => {
   return oc.transferToImageBitmap();
   
 }
-const render = () => {
+
+const loadImage = async (path: string) => new Promise((resolve, reject)=>{
+  const img = new Image();
+  img.onload = ()=>{
+    console.log("Loaded");
+    return resolve(undefined);
+  }
+  img.onerror = (err)=>reject(err);
+  img.src = path;
+
+})
+const render = (camX: number, camY: number, width: number, height: number, ...spriteStates: number[]) => {
   const image = mkCircle();
   //@ts-ignore
   self.postMessage(image, [image]);
 }
-mkCircle();
-type MessageData = [0, never[]]
-| [1];
+
+loadImage('knight.png');
+type RegisterCanvas = [0, canvas: OffscreenCanvas];
+type 
+type MessageData = [0, canvas: OffscreenCanvas]
+| [1, [path: string, ]];
 self.onmessage = (e: MessageEvent) => {
 
   const [cmd, args] = e.data as MessageData;
   switch (cmd){
-    case 0: return render();
+    case 0: return render(...args);
     default: throw new Error(`Unsupported command ${cmd}`);
   }
-
-  //console.log("Doing something");
-  //const image = mkCircle()
-  //@ts-ignore
-  //self.postMessage(image, [image]);
 };
 
 

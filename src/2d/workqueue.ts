@@ -3,8 +3,14 @@ export default class WorkQueue {
   queue: Promise<void>;
 
   constructor(url: string | URL) {
+    const cached = WorkQueue.cache.get(url);
+    if(cached) {
+      cached.terminate();
+    }
+
     this.wrkr = new Worker(url);
     this.queue = new Promise<void>((resolve) => resolve()); //just put a resolved promise at the start of the chain.
+    WorkQueue.cache.set(url, this);
   }
 
   /**
@@ -23,4 +29,12 @@ export default class WorkQueue {
     this.queue = prom.then(); 
     return prom;
   }
+
+  terminate(){
+    this.wrkr.terminate();
+  }
+
+  //The cache prevents multiple workers queues from using the same source. 
+  static cache: Map<string | URL, WorkQueue> = new Map();
+
 }

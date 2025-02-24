@@ -39,7 +39,7 @@ export default class Renderer {
 
 	start(){
 		if(this.animationFrame) return;
-		this.animationFrame = requestAnimationFrame(this.render);
+		//this.animationFrame = requestAnimationFrame(this.render);
 	}
 
 	stop(){
