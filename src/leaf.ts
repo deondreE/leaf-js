@@ -1,47 +1,36 @@
+import { Scene2dConfiguration, Renderer2d, Scene2d } from './2d';
 import Renderer from './renderer.new';
-import { assert } from './utils/util';
+import { assert, findGlobalFunc } from './utils/util';
 
 console.log('Loading leaf');
 class Leaf extends HTMLCanvasElement {
   static observedAttributes = ['src'];
   is3D: boolean = false;
   static: boolean = false;
-  renderer: Renderer | null = null;
-  id: string;
+  renderer: Renderer | Renderer2d | null = null;
 
-  constructor() {
-    super();
-  }
 
   connectedCallback() {
     this.is3D = this.getOptimisticBoolAttribute('is3D');
     this.static = this.getOptimisticBoolAttribute('static');
 
-    if (!this.hasAttribute('src'))
-      return console.warn('leaf canvases rely on src attribute to populate');
+    const src = this.getAttribute('src');
+    if(!src) throw new Error("Canvases rely on the src attribute to work");
 
     if (this.hasAttribute('src')) {
-      if (!this.checkFileType(this.getAttribute('src'))) {
-        const funcName: string = this.getAttribute('src')!;
-        const global = window as Record<string, any>;
-        assert(funcName !== null);
-
-        if (typeof global[funcName] === 'function') {
-          let v = global[funcName]();
-          console.log(v);
+      if (!this.checkFileType(src)) {
+        const fn = findGlobalFunc<()=>Scene2dConfiguration | object>(src);
+        assert(!!fn, "No src function found");
+        const config = fn();
+        if(!this.is3D){
+          const scene = new Scene2d(this, config as Scene2dConfiguration);
+          this.renderer = new Renderer2d(this, scene.render);
+          this.renderer.start();
         }
       } else {
         // Render supported static file type.
         this.renderer = new Renderer(this);
-        this.renderer.init(this.getAttribute('src'));
-      }
-    }
-
-    if (!this.renderer && this.is3D) {
-      this.id = 'webgpu-canvas';
-      // FIXME: Recognize context.
-      if (this.hasAttribute('src')) {
-        const src = this.getAttribute('src');
+        this.renderer.init(src);
       }
     }
   }
@@ -56,14 +45,10 @@ class Leaf extends HTMLCanvasElement {
 
   /** Returns a file type */
   checkFileType(possibleFile: string): boolean {
-    const parts = possibleFile.split('.');
-    if (parts.length < 2) {
-      console.warn('Not a valid file type');
-      return false;
-    }
-
-    const extension = parts.pop()?.toLowerCase() || '';
-
+    const ext = possibleFile.match(/\.[^\.]*$/);
+    if(!ext) return false;
+    const extension = ext[0].slice(1).toLowerCase();
+    
     switch (extension) {
       case 'obj':
         console.log('Detected OBJ file');
@@ -73,6 +58,10 @@ class Leaf extends HTMLCanvasElement {
         return true;
       case 'stl':
         console.log('Detected SDL');
+        return true;
+      case 'ase':
+      case 'aseprite':
+        console.log("Detected aseprite");
         return true;
       default:
         console.warn('Unsupported file type:', extension);

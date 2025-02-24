@@ -26,3 +26,15 @@ throw new Error(msg);
 }
   
 // i use these a LOT
+
+export const findGlobalFunc = <T extends Function = VoidFunction>(funcName: string):T | undefined => {
+  var cursor: any = window;
+  var nms = funcName.split('.');
+  while(nms.length){
+    console.log(nms, cursor);
+    if(!(nms[0] in cursor)) return undefined;
+    cursor = cursor[nms.shift()!];
+  }
+  if(typeof cursor !== 'function') return undefined;
+  return cursor;
+}
