@@ -11,7 +11,8 @@ project "Lib"
    -- ADD boost......
    includedirs {
       "vendor/json/single_include/",
-      "vendor/googletest/googletest/include/"
+      "vendor/googletest/googletest/include/",
+      "vendor/emsdk/"
    }
 
    -- Source files
