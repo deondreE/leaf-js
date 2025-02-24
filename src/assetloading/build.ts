@@ -7,12 +7,11 @@ class AssetBuilder {
   currentScene: any;
   modelFileName: string;
 
-  constructor() { 
-  }
-  
+  constructor() {}
+
   /** This will only be called if a scene needs to be created from an imported file. */
- buildModelScene(model: Model): void {
-   let importScene: SceneTypes = {
+  buildModelScene(model: Model): void {
+    let importScene: SceneTypes = {
       name: model.name,
       type: 'staticimport',
       id: uuid(),
@@ -24,7 +23,7 @@ class AssetBuilder {
       // This will write a src file to the client.
     } else {
       importScene.models.push(model);
-      localStorage.setItem('staticimport', JSON.stringify(importScene)); 
+      localStorage.setItem('staticimport', JSON.stringify(importScene));
     }
   }
 }

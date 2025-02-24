@@ -8,9 +8,9 @@ interface SceneTypes {
 
 /** If item not defined then it not static. */
 interface Model {
-  vertexBuffer?: Float32Array;
+  vertexBuffer?: GPUBuffer;
   shader?: string;
-  indexBuffer?: Float32Array;
+  indexBuffer?: GPUBuffer;
   name: string;
   id: string;
   static: boolean;

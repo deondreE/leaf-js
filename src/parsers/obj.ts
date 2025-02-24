@@ -42,7 +42,6 @@ export default class WebGPUOBJParser {
     const shaderString: string = '';
     this.vertices = [];
     this.indices = [];
-    
 
     const vertexMap = new Map<string, number>();
 
@@ -214,7 +213,7 @@ export default class WebGPUOBJParser {
   }
 
   getShader() {
-      this.shaderString =    `
+    this.shaderString = `
             struct Uniforms {
               mvpMatrix: mat4x4<f32>,
             }
@@ -247,12 +246,12 @@ export default class WebGPUOBJParser {
         `;
 
     const shader = this.device.createShaderModule({
-      code: this.shaderString
+      code: this.shaderString,
     });
 
     return shader;
   }
-  
+
   getVertexBuffer(): GPUBuffer {
     return this.vretexBuffer;
   }
@@ -262,7 +261,7 @@ export default class WebGPUOBJParser {
   }
 
   getShaderString(): string {
-    return this.shaderString; 
+    return this.shaderString;
   }
 
   render(passEncoder: GPURenderPassEncoder): void {

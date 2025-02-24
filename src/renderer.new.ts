@@ -4,7 +4,7 @@ import STLParser from './parsers/stl';
 
 import AssetBuilder from './assetloading/build';
 import { Model } from './types/scene.types';
-import { v4 as uuid } from 'uuid'; 
+import { v4 as uuid } from 'uuid';
 
 /** Currently Supports static file definitions. */
 class Renderer3D {
@@ -80,7 +80,6 @@ class Renderer3D {
 
         // @ts-ignore
         this.device.queue.writeBuffer(uniformBuffer, 0, mvpMatrix.buffer);
-
         await objParser.createPipeline(shaderModule, this.format, uniformBuffer);
 
         this.render(() => {
@@ -103,11 +102,12 @@ class Renderer3D {
         let model: Model = {
           name: fileName,
           id: uuid(),
+          static: true,
           vertexBuffer: objParser.getVertexBuffer(),
           indexBuffer: objParser.getIndexBuffer(),
-          shader: objParser.getShaderString()
+          shader: objParser.getShaderString(),
         };
-    
+
         const assetBuilder = new AssetBuilder();
         assetBuilder.buildModelScene(model);
 
@@ -162,6 +162,8 @@ class Renderer3D {
     const parts = fileName.split('.');
     return parts.length > 1 ? parts.pop() || '' : '';
   }
+
+  private cameraControls(): void {}
 
   private render(renderMethod: () => void) {
     if (typeof renderMethod !== 'function') {
