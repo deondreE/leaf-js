@@ -1,4 +1,5 @@
 import Renderer from './renderer.new';
+import ParticleRenderer from './renderer.particle';
 import Scene from './scene';
 import { assert } from './utils/util';
 
@@ -32,8 +33,9 @@ class Leaf extends HTMLCanvasElement {
         }
       } else {
         // Render supported static file type.
-        this.renderer = new Renderer(this);
-        this.renderer.init(this.getAttribute('src')!);
+        // this.renderer = new Renderer(this);
+        // this.renderer.init(this.getAttribute('src')!);
+        const particleRenderer = new ParticleRenderer(this);
       }
     }
 

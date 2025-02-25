@@ -1,22 +1,26 @@
-export class ParticleRenderer {
+export default class ParticleRenderer {
   device: GPUDevice;
-  context: GPUCanvasContext;
+  context: GPUCanvasContext | null = null;
   format: GPUCanvasFormat;
   computePipeline: GPUComputePipeline;
   particleBuffer: GPUBuffer;
   uniformBuffer: GPUBuffer;
   bindGroup: GPUBindGroup;
   computeBindGroup: GPUBindGroup;
-  particleCount: number = 10000;
+  pipeline: GPURenderPipeline | null = null;
+  canvas: HTMLCanvasElement;
+  particleCount: number = 4000000;
   time: number = 0;
 
   constructor(canvas: HTMLCanvasElement) {
     this.canvas = canvas;
 
-    this.init();
-    this.initBuffers();
-    this.createPipeline();
-    this.createComputePipeline();
+    this.init().then(() => {
+      this.initBuffers();
+      this.createPipeline();
+      this.createComputePipeline();
+      this.startRenderLoop();
+    });
   }
 
   async init() {
@@ -28,7 +32,7 @@ export class ParticleRenderer {
 
     this.device = await adapter.requestDevice();
     this.context = this.canvas!.getContext('webgpu');
-    this.format = navigator.getPreferredCanvasFormat();
+    this.format = navigator.gpu.getPreferredCanvasFormat();
 
     if (!this.device || !this.context || !this.format) {
       console.error('Failed to init WebGPU');
@@ -43,7 +47,6 @@ export class ParticleRenderer {
 
   private initBuffers() {
     // TODO: support user provided data when it comes to creating particles.
-    // Create particle buffer (Each particle = vec2 position + vec2 velocity)
     const particleData = new Float32Array(this.particleCount * 4);
     for (let i = 0; i < this.particleCount; i++) {
       particleData[i * 4] = (Math.random() - 0.5) * 2; // x position
@@ -61,7 +64,7 @@ export class ParticleRenderer {
     this.particleBuffer.unmap();
 
     this.uniformBuffer = this.device.createBuffer({
-      size: 8, // 2 floats (time, gravity)
+      size: 8, // t,g 
       usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
     });
   }
@@ -173,9 +176,34 @@ export class ParticleRenderer {
     this.device.queue.submit([commandEncoder.finish()]);
   }
 
-  public render(passEncoder: GPURenderPassEncoder) {
+  public render() {
+    const renderPassDescriptor = {
+      colorAttachments: [{
+        view: this.context!.getCurrentTexture().createView(),
+        loadValue: [0,0,0,1],
+        storeOp: 'store',
+        loadOp: 'load'
+      }],
+    };
+    
+    const commandEncoder = this.device.createCommandEncoder();
+    const passEncoder = commandEncoder.beginRenderPass(renderPassDescriptor);
     passEncoder.setPipeline(this.pipeline);
     passEncoder.setVertexBuffer(0, this.particleBuffer);
     passEncoder.draw(this.particleCount);
+    passEncoder.end();
+
+    this.device.queue.submit([commandEncoder.finish()]);
+  }
+
+  private startRenderLoop() {
+    const renderLoop = () => {
+      const deltaTime = 1 / 60;
+      this.update(deltaTime);
+      this.render();
+      requestAnimationFrame(renderLoop);
+    };
+    // WISH THIS DIDN't have to be recursive, maybe a while running condition.
+    renderLoop();
   }
 }
