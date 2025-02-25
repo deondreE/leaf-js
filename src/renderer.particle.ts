@@ -11,9 +11,11 @@ export default class ParticleRenderer {
   canvas: HTMLCanvasElement;
   particleCount: number = 4000000;
   time: number = 0;
+  userData?: any;
 
-  constructor(canvas: HTMLCanvasElement) {
+  constructor(canvas: HTMLCanvasElement, userData: any) {
     this.canvas = canvas;
+    this.userData = userData;
 
     this.init().then(() => {
       this.initBuffers();
@@ -64,7 +66,7 @@ export default class ParticleRenderer {
     this.particleBuffer.unmap();
 
     this.uniformBuffer = this.device.createBuffer({
-      size: 8, // t,g 
+      size: 8, // t,g
       usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
     });
   }
@@ -119,8 +121,8 @@ export default class ParticleRenderer {
       entries: [{ binding: 0, resource: { buffer: this.uniformBuffer } }],
     });
   }
-
   private createComputePipeline() {
+    const grav = this.userData ? this.userData.gravity : -0.0001;
     const computeShaderModule = this.device.createShaderModule({
       code: `
       struct Particle {
@@ -136,7 +138,7 @@ export default class ParticleRenderer {
           let index = id.x;
           if (index >= arrayLength(&particles)) { return; }
 
-          let gravity = vec2<f32>(0.0, -0.0001);
+          let gravity = vec2<f32>(0.0, ${grav});
           particles[index].velocity += gravity * time;
           particles[index].position += particles[index].velocity;
       }
@@ -178,14 +180,16 @@ export default class ParticleRenderer {
 
   public render() {
     const renderPassDescriptor = {
-      colorAttachments: [{
-        view: this.context!.getCurrentTexture().createView(),
-        loadValue: [0,0,0,1],
-        storeOp: 'store',
-        loadOp: 'load'
-      }],
+      colorAttachments: [
+        {
+          view: this.context!.getCurrentTexture().createView(),
+          loadValue: [0, 0, 0, 1],
+          storeOp: 'store',
+          loadOp: 'load',
+        },
+      ],
     };
-    
+
     const commandEncoder = this.device.createCommandEncoder();
     const passEncoder = commandEncoder.beginRenderPass(renderPassDescriptor);
     passEncoder.setPipeline(this.pipeline);

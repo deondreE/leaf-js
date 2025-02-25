@@ -4,9 +4,10 @@ import Scene from './scene';
 import { assert } from './utils/util';
 
 class Leaf extends HTMLCanvasElement {
-  static observedAttributes = ['src'];
+  static observedAttributes = ['src', 'particle'];
   is3D: boolean = false;
   static: boolean = false;
+  particleSim: boolean = false;
   renderer: Renderer | null = null;
   id: string = '';
 
@@ -17,6 +18,7 @@ class Leaf extends HTMLCanvasElement {
   connectedCallback() {
     this.is3D = this.getOptimisticBoolAttribute('is3D');
     this.static = this.getOptimisticBoolAttribute('static');
+    this.particleSim = this.getOptimisticBoolAttribute('particleSim');
 
     if (!this.hasAttribute('src'))
       return console.warn('leaf canvases rely on src attribute to populate');
@@ -28,14 +30,20 @@ class Leaf extends HTMLCanvasElement {
         assert(funcName !== null);
 
         if (typeof global[funcName] === 'function') {
-          let v = global[funcName]();
-          console.log(v);
+          let scene = global[funcName]();
+          assert(scene !== null);
+        
+          if (scene.particle) {
+            console.log('test:', scene.particle);
+            console.log(scene.particle.emitter);
+
+            this.startParticleRenderer(scene.particle);
+          }
         }
       } else {
         // Render supported static file type.
-        // this.renderer = new Renderer(this);
-        // this.renderer.init(this.getAttribute('src')!);
-        const particleRenderer = new ParticleRenderer(this);
+        this.renderer = new Renderer(this);
+        this.renderer.init(this.getAttribute('src')!);
       }
     }
 
@@ -49,6 +57,10 @@ class Leaf extends HTMLCanvasElement {
 
   private createDynamicScene() {
     let scene = new Scene('string');
+  }
+
+  private startParticleRenderer(userParticleData: any) {
+    const particleRenderer = new ParticleRenderer(this, userParticleData);
   }
 
   disconectedCallback() {

@@ -6,9 +6,26 @@
     <title>Worky</title>
   </head>
   <body>
-    <canvas is="leaf-js" src="t.obj" width="640" height="640" id="webgpu-canvas"></canvas>
+    <canvas is="leaf-js" src="initScene" width="1000" height="1000" id="webgpu-canvas"></canvas>
     <canvas is="l-profiler" width="400" height="300" target-id="webgpu-canvas"></canvas>
   </body>
   <script src="./src/profiler.ts" type="module"></script>
   <script src="./src/leaf.ts" type="module"></script>
+  <script>
+    function initScene() {
+      let scene = {
+        particle: {
+          gravity: -0.0001,
+          emitter: {
+            x: 0,
+            y: 0,
+            z: 0,
+            shape: 'default'
+          },
+        }
+      }; 
+
+      return scene;
+    }
+  </script>
 </html>

@@ -16,4 +16,22 @@ interface Model {
   static: boolean;
 }
 
-export type { Model, SceneTypes };
+/** Data that can effect the color directly. Default data will be applied to the renderer when it is called. */
+interface ParticleData {
+  gravity?: number;
+  rotation?: number;
+  emitter: {
+    x: number;
+    y: number;
+    z: number;
+    shape: 'cone' | 'rect' | 'default';
+  };
+  color: {
+    r: number;
+    g: number;
+    b: number;
+    a: number;
+  };
+}
+
+export type { Model, SceneTypes, ParticleData };
