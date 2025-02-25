@@ -30,18 +30,16 @@ const render = (camX: number, camY: number, width: number, height: number, ...sp
   self.postMessage(image, [image]);
 }
 
-loadImage('knight.png');
+/*
+Worker actions 
+ */
 type RegisterCanvas = [0, canvas: OffscreenCanvas];
-type 
+type LoadImage = [1, path: string]; //need to nail down the data structure for image asset options. an option may be sprites 
 type MessageData = [0, canvas: OffscreenCanvas]
 | [1, [path: string, ]];
 self.onmessage = (e: MessageEvent) => {
-
   const [cmd, args] = e.data as MessageData;
-  switch (cmd){
-    case 0: return render(...args);
-    default: throw new Error(`Unsupported command ${cmd}`);
-  }
+  
 };
 
 
