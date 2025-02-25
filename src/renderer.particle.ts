@@ -17,6 +17,8 @@ export default class ParticleRenderer {
     this.canvas = canvas;
     this.userData = userData;
 
+    this.particleCount = userData ? userData.particleCount : 4_000_000;
+
     this.init().then(() => {
       this.initBuffers();
       this.createPipeline();
