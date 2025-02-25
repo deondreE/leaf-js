@@ -32,7 +32,7 @@ class Leaf extends HTMLCanvasElement {
         if (typeof global[funcName] === 'function') {
           let scene = global[funcName]();
           assert(scene !== null);
-        
+
           if (scene.particle) {
             console.log('test:', scene.particle);
             console.log(scene.particle.emitter);
