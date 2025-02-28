@@ -23,9 +23,12 @@ class Leaf extends HTMLCanvasElement {
         assert(!!fn, "No src function found");
         const config = fn();
         if(!this.is3D){
-          const scene = new Scene2d(this, config as Scene2dConfiguration);
-          this.renderer = new Renderer2d(this, scene.render);
-          this.renderer.start();
+          //const scene = new Scene2d(this, config as Scene2dConfiguration);
+          Renderer2d.init({canvas:this})
+          .then(()=>{
+            console.log("You should see a sprite sheet");
+          });
+          //this.renderer.start();
         }
       } else {
         // Render supported static file type.

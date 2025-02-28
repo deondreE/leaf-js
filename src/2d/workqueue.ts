@@ -30,6 +30,18 @@ export default class WorkQueue {
     return prom;
   }
 
+  /**
+   * Send message into the void and dont expect anything back. ASAP
+   * @param message 
+   * @param transfers 
+   */ 
+  send(message: any, transfers: Transferable[]=[]){
+    this.queue.then(()=>{
+      this.wrkr.onerror = e=>{throw e;}
+      this.wrkr.postMessage(message, transfers);
+    });
+  }
+
   terminate(){
     this.wrkr.terminate();
   }
@@ -37,4 +49,14 @@ export default class WorkQueue {
   //The cache prevents multiple workers queues from using the same source. 
   static cache: Map<string | URL, WorkQueue> = new Map();
 
+  /**
+   * Unlike initializing a worker directly this method will use the cache to returns an existing render worker. 
+   * @param url 
+   * @returns 
+   */
+  static init(url: string | URL): WorkQueue {
+    const cached = this.cache.get(url);
+    if(cached) return cached;
+    return new WorkQueue(url);
+  }
 }
