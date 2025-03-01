@@ -33,6 +33,12 @@ class Leaf extends HTMLCanvasElement {
           let scene = global[funcName]();
           assert(scene !== null);
 
+          // If it has a particle that system needs access to it, otherwise use it here.
+          // TODO: Model scale,
+          // TODO: Custom camera position. Camera Class
+          // TODO: Multiple model support. Not sure, maybe appending to the current pipeline.
+          // TODO: Layout the model definitions for the end user, so that we can write the api around that.
+
           if (scene.particle) {
             console.log('test:', scene.particle);
             console.log(scene.particle.emitter);

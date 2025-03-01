@@ -5,6 +5,7 @@ import STLParser from './parsers/stl';
 import AssetBuilder from './assetloading/build';
 import { Model } from './types/scene.types';
 import { v4 as uuid } from 'uuid';
+import Camera from './camera';
 
 /** Currently Supports static file definitions. */
 class Renderer3D {
@@ -46,11 +47,23 @@ class Renderer3D {
       usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.COPY_SRC, // Add COPY_SRC
     });
 
+    // TODO: Make this a camera class.
     // Matrix Definitions can be global context.
     const modelMatrix = mat4.create();
     const viewMatrix = mat4.create();
     const projectionMatrix = mat4.create();
     const mvpMatrix = mat4.create();
+
+    const camera = new Camera(
+      Math.PI / 4,
+      // @ts-ignore
+      this.canvas.width / this.canvas.height,
+      0.1,
+      100,
+      1,
+      'perspective',
+    );
+    camera.setup();
 
     mat4.lookAt(viewMatrix, [0, 0, 5], [0, 0, 0], [0, 1, 0]); // Camera at (0,0,5), looking at origin
     mat4.perspective(
@@ -156,6 +169,12 @@ class Renderer3D {
       default:
         break;
     }
+  }
+
+  private createModelViewMatrix() {}
+
+  private createModelScaleMatrix(scaleX: number, scaleY: number, scaleZ: number) {
+    return new Float32Array([scaleX, 0, 0, 0, 0, scaleY, 0, 0, 0, 0, scaleZ, 0, 0, 0, 0, 1]);
   }
 
   returnFileExt(fileName: string): string {
