@@ -20,6 +20,14 @@ test.json*
 *.mtl
 *.stl
 
+# zig
+.zig-cache
+zig-out
+*.o
+*.wasm
+tester.js
+output.txt
+
 *.egg-info
 dist
 
