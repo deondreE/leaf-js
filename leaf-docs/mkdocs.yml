@@ -1,5 +1,50 @@
 site_name: Leaf docs
+site_author: deondreE
+site_description: Docs for a rendering library.
+
+repo_url: https://github.com/deondreE/leaf-js
+
 theme:
-  palette:
-    primary: indigo
   name: material
+  langauge: en
+  copyright: "Copyright &copy; 2024 @deondreE. All rights reserved."
+  font:
+    default: Roboto
+    text: Roboto
+    code: Syne Mono
+  palette:
+    - scheme: default
+      primary: indigo
+      accent: pink
+    - scheme: slate
+      primary: black
+      accent: lime
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - search.suggest
+    - search.highlight
+    - content.code.copy
+markdown_extensions:
+  - admonition
+  - codehilite:
+      guess_lang: false
+  - footnotes
+  - pymdownx.tasklist:
+      custom_checkbox: true
+  - pymdownx.superfences
+
+nav:
+  - Home: index.md
+  - Getting Started:
+    - Understanding Leaf: Leaf.md
+    - Leaf Reference: reference.md
+  - Code Style: code-style.md
+  - Future Of Leaf: future.md
+
+plugins:
+  - minify:
+      minify_html: true
+      minify_js: true
+      minify_css: true
+  - search
