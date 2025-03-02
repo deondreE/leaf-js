@@ -176,7 +176,11 @@ export default class Renderer {
 		});
 		const uniformData = new Float32Array(16);
 		uniformData.set([0, 0, 1,1,1, 256, 256]);
-		uniformData.set(perspective, 7);
+		uniformData.set(new Float32Array([
+			1,0,0,
+			0,1,0,
+			0,0,1
+		]), 7); //dropping the translation that gl-matrix applies and using identity to attempt to apply transforms manually to find bad actor.
 
 		device.queue.writeBuffer(uniformBuffer,0,uniformData);
 		
@@ -223,7 +227,7 @@ fn vertexMain(
 ) -> VertexOutput {
   var output: VertexOutput;
 
-  var scaled = (uniforms.projectionMatrix * vec3f(position, 1.0));
+  var scaled = vec3f(position, 1.0);
 
 
   //TODO support z-index
