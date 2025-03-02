@@ -1,3 +1,4 @@
+import { mat3, mat4 } from "gl-matrix";
 import { assert, initializeWebGpu } from "../utils/util";
 import { Render2dDescription } from "./types";
 import { loadImgAsBitmap } from "./utils";
@@ -13,9 +14,13 @@ export default class Renderer {
 	static async init({
 		canvas
 	}:Render2dDescription) {
-
+		const clientRect = canvas.getBoundingClientRect(); 
+		canvas.width = clientRect.width * devicePixelRatio;
+		canvas.height = clientRect.height * devicePixelRatio;
 		const [adapter, device, format] = await initializeWebGpu();
 		const context: GPUCanvasContext = canvas.getContext('webgpu')!;
+		const perspective = mat3.create();
+		mat3.projection(perspective, canvas.width, canvas.height);
 		assert(!!context);
 		context.configure({device, format});
 
@@ -55,11 +60,9 @@ export default class Renderer {
 				}
 			]
 		};
-
-		const uniformBufferSize = 4*4;
 		const uniformBuffer = device.createBuffer({
 			label: "Sprite uniform",
-			size: 4*4,
+			size: 80,
 			usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
 		});
 
@@ -171,14 +174,17 @@ export default class Renderer {
 				storeOp: "store"
 			}]
 		});
-		device.queue.writeBuffer(
-			uniformBuffer,
-			0,
-			new Float32Array([
-				0, 0,
-				1,1
-			])
-		);
+		const uniformData = new Float32Array(16);
+		uniformData.set([0, 0, 1,1,1, 256, 256]);
+		uniformData.set(perspective, 7);
+
+		device.queue.writeBuffer(uniformBuffer,0,uniformData);
+		
+		console.log(`
+[${perspective[0]} ${perspective[1]} ${perspective[2]}]
+[${perspective[3]} ${perspective[4]} ${perspective[5]}]
+[${perspective[6]} ${perspective[7]} ${perspective[8]}]`);
+
 		renderPass.setPipeline(pipeline);
 		renderPass.setBindGroup(0, bindGroup);
 		renderPass.setVertexBuffer(0, spriteQuad);
@@ -204,8 +210,8 @@ struct Uniforms {
   frameOffset: vec2f,
   frameSize: vec2f,
   zIndex: f32,
-  spriteSize: vec2f
-  projectionMatrix: mat4x4f
+  spriteSize: vec2f,
+  projectionMatrix: mat3x3f
 };
 
 @group(0) @binding(2) var<uniform> uniforms: Uniforms;
@@ -217,16 +223,12 @@ fn vertexMain(
 ) -> VertexOutput {
   var output: VertexOutput;
 
-  var scaled = vec3f(
-    position.x * uniforms.spriteSize.x,
-	position.y * uniforms.spriteSize.y,
-	uniforms.zIndex
-  );
+  var scaled = (uniforms.projectionMatrix * vec3f(position, 1.0));
 
 
   //TODO support z-index
-  output.position = uniforms.projectionMatrix * vec4f(scaled, 1.0);
-  output.texCoord = uniforms.frameOffset + texCoord * uniforms.frameSize;
+  output.position = vec4f(scaled, 1.0);
+  output.texCoord = texCoord;
   return output;
 }
 
@@ -235,6 +237,6 @@ fn vertexMain(
 
 @fragment
 fn fragmentMain(input: VertexOutput) -> @location(0) vec4f {
-  return textureSample(spriteTex, spriteSampler, input.texCoord);
+  return vec4f(1.0, 0.0, 0.0, 1.0);
 }
 `;

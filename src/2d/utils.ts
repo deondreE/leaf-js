@@ -1,3 +1,5 @@
+import { mat4 } from "gl-matrix";
+
 /**
  * Loads an image and converts it into a bitmap ready to be used as a texture. 
  * @param path 

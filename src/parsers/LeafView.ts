@@ -12,6 +12,7 @@ export default class LeafView extends DataView<ArrayBuffer> {
     this.offset += s;
     return v;
   }
+  
   byte(s: number = 0): number {
     return this.next(this.getUint8(this.offset), 1 + s);
   }
