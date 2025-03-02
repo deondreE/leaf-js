@@ -1,9 +1,14 @@
-import { mat3 } from "wgpu-matrix";
+import { mat3, Mat3 } from "wgpu-matrix";
 import { assert, initializeWebGpu } from "../utils/util";
 import { Render2dDescription } from "./types";
 import { loadImgAsBitmap } from "./utils";
 import WorkQueue from "./workqueue";
 
+const projection = (width: number, height: number) => mat3.create(
+	2/width, 0, 0,
+	0, 2/height, 0,
+	-1, 1, 1
+); //uses gl-matrixes math but in webgpus-homogenous matrix. 
 
 export default class Renderer {
 	wrkr = WorkQueue.init(new URL("./renderer.worker.ts", import.meta.url));
@@ -19,18 +24,8 @@ export default class Renderer {
 		canvas.height = clientRect.height * devicePixelRatio;
 		const [adapter, device, format] = await initializeWebGpu();
 		const context: GPUCanvasContext = canvas.getContext('webgpu')!;
-		/*
-		webgpu makes matrix homogenous is seems to affect matrix math in a manner I dont understand. Lets see it 
-		const perspective = mat3.create(
-			1,0,0,
-			0,1,0,
-			0,0,1,
-		);*/
-		const perspective = new Float32Array([
-			1,0,0,
-			0,1,0,
-			0,0,1
-		]);
+		
+		const perspective = projection(canvas.width, canvas.height);
 		assert(!!context);
 		context.configure({device, format});
 
@@ -72,7 +67,7 @@ export default class Renderer {
 		};
 		const uniformBuffer = device.createBuffer({
 			label: "Sprite uniform",
-			size: 80,
+			size: 48,
 			usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
 		});
 
@@ -184,10 +179,10 @@ export default class Renderer {
 				storeOp: "store"
 			}]
 		});
-		const uni = new Float32Array([0, 0, 1,1,1, 256, 256]);
-		const uniformData = new Float32Array(9);
+		//const uni = new Float32Array([0, 0, 1,1,1, 256, 256]);
+		const uniformData = new Float32Array(12);
 		//uniformData.set([0, 0, 1,1,1, 256, 256]);
-		console.log(perspective.byteLength, uniformData.byteOffset/4);
+		//console.log(perspective.byteLength, uniformData.byteOffset/4);
 		uniformData.set(perspective, 0); //dropping the translation that gl-matrix applies and using identity to attempt to apply transforms manually to find bad actor.
 
 		device.queue.writeBuffer(uniformBuffer,0,uniformData);
@@ -219,10 +214,6 @@ struct VertexOutput {
 };
 
 struct Uniforms {
-  //frameOffset: vec2f,
-  //frameSize: vec2f,
-  //zIndex: f32,
-  //spriteSize: vec2f,
   projectionMatrix: mat3x3f
 };
 
@@ -235,11 +226,7 @@ fn vertexMain(
 ) -> VertexOutput {
   var output: VertexOutput;
 
-  var scaled = mat3x3f(
-  1.0,0.0,0.0,
-  0.0,1.0,0.0,
-  0.0,0.1,1.0
-  ) * vec3f(position, 1.0);
+  var scaled = uniforms.projectionMatrix * vec3f(position * vec2f(256, 256), 1.0).xyz;
 
 
   //TODO support z-index
