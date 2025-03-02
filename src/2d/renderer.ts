@@ -1,4 +1,4 @@
-import { mat3, mat4 } from "gl-matrix";
+import { mat3 } from "wgpu-matrix";
 import { assert, initializeWebGpu } from "../utils/util";
 import { Render2dDescription } from "./types";
 import { loadImgAsBitmap } from "./utils";
@@ -19,8 +19,13 @@ export default class Renderer {
 		canvas.height = clientRect.height * devicePixelRatio;
 		const [adapter, device, format] = await initializeWebGpu();
 		const context: GPUCanvasContext = canvas.getContext('webgpu')!;
-		const perspective = mat3.create();
-		mat3.projection(perspective, canvas.width, canvas.height);
+		/*
+		webgpu makes matrix homogenous is seems to affect matrix math in a manner I dont understand. Lets see it 
+		const perspective = mat3.create(
+			1,0,0,
+			0,1,0,
+			0,0,1,
+		);*/
 		assert(!!context);
 		context.configure({device, format});
 
@@ -174,20 +179,18 @@ export default class Renderer {
 				storeOp: "store"
 			}]
 		});
-		const uniformData = new Float32Array(16);
+		const uni = new Float32Array([0, 0, 1,1,1, 256, 256]);
+		const uniformData = new Float32Array(19);
 		uniformData.set([0, 0, 1,1,1, 256, 256]);
-		uniformData.set(new Float32Array([
-			1,0,0,
-			0,1,0,
-			0,0,1
-		]), 7); //dropping the translation that gl-matrix applies and using identity to attempt to apply transforms manually to find bad actor.
+		console.log(perspective.byteLength/4, uniformData.byteOffset/4);
+		uniformData.set(perspective, 7); //dropping the translation that gl-matrix applies and using identity to attempt to apply transforms manually to find bad actor.
 
 		device.queue.writeBuffer(uniformBuffer,0,uniformData);
 		
 		console.log(`
 [${perspective[0]} ${perspective[1]} ${perspective[2]}]
-[${perspective[3]} ${perspective[4]} ${perspective[5]}]
-[${perspective[6]} ${perspective[7]} ${perspective[8]}]`);
+[${perspective[4]} ${perspective[5]} ${perspective[6]}]
+[${perspective[8]} ${perspective[9]} ${perspective[10]}]`);
 
 		renderPass.setPipeline(pipeline);
 		renderPass.setBindGroup(0, bindGroup);
@@ -227,11 +230,11 @@ fn vertexMain(
 ) -> VertexOutput {
   var output: VertexOutput;
 
-  var scaled = vec3f(position, 1.0);
+  var scaled = vec3f(position, 1.0).xy;
 
 
   //TODO support z-index
-  output.position = vec4f(scaled, 1.0);
+  output.position = vec4f(scaled, 1.0, 1.0);
   output.texCoord = texCoord;
   return output;
 }
