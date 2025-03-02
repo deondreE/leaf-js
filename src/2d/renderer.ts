@@ -26,6 +26,11 @@ export default class Renderer {
 			0,1,0,
 			0,0,1,
 		);*/
+		const perspective = new Float32Array([
+			1,0,0,
+			0,1,0,
+			0,0,1
+		]);
 		assert(!!context);
 		context.configure({device, format});
 
@@ -180,17 +185,17 @@ export default class Renderer {
 			}]
 		});
 		const uni = new Float32Array([0, 0, 1,1,1, 256, 256]);
-		const uniformData = new Float32Array(19);
-		uniformData.set([0, 0, 1,1,1, 256, 256]);
-		console.log(perspective.byteLength/4, uniformData.byteOffset/4);
-		uniformData.set(perspective, 7); //dropping the translation that gl-matrix applies and using identity to attempt to apply transforms manually to find bad actor.
+		const uniformData = new Float32Array(9);
+		//uniformData.set([0, 0, 1,1,1, 256, 256]);
+		console.log(perspective.byteLength, uniformData.byteOffset/4);
+		uniformData.set(perspective, 0); //dropping the translation that gl-matrix applies and using identity to attempt to apply transforms manually to find bad actor.
 
 		device.queue.writeBuffer(uniformBuffer,0,uniformData);
 		
 		console.log(`
 [${perspective[0]} ${perspective[1]} ${perspective[2]}]
-[${perspective[4]} ${perspective[5]} ${perspective[6]}]
-[${perspective[8]} ${perspective[9]} ${perspective[10]}]`);
+[${perspective[3]} ${perspective[4]} ${perspective[5]}]
+[${perspective[6]} ${perspective[7]} ${perspective[8]}]`);
 
 		renderPass.setPipeline(pipeline);
 		renderPass.setBindGroup(0, bindGroup);
@@ -214,10 +219,10 @@ struct VertexOutput {
 };
 
 struct Uniforms {
-  frameOffset: vec2f,
-  frameSize: vec2f,
-  zIndex: f32,
-  spriteSize: vec2f,
+  //frameOffset: vec2f,
+  //frameSize: vec2f,
+  //zIndex: f32,
+  //spriteSize: vec2f,
   projectionMatrix: mat3x3f
 };
 
@@ -230,11 +235,15 @@ fn vertexMain(
 ) -> VertexOutput {
   var output: VertexOutput;
 
-  var scaled = vec3f(position, 1.0).xy;
+  var scaled = mat3x3f(
+  1.0,0.0,0.0,
+  0.0,1.0,0.0,
+  0.0,0.1,1.0
+  ) * vec3f(position, 1.0);
 
 
   //TODO support z-index
-  output.position = vec4f(scaled, 1.0, 1.0);
+  output.position = vec4f(scaled, 1.0);
   output.texCoord = texCoord;
   return output;
 }
