@@ -42,11 +42,11 @@ export const findGlobalFunc = <T extends Function = VoidFunction>(funcName: stri
 /**
  * Across 2d and 3d the initial steps to set up webgpu are the same.
  */
-export const initializeWebGpu = async (): Promise<[adapter: GPUAdapter, device: GPUDevice, format: GPUTextureFormat]> => {
+export const initializeWebGpu = async (): Promise<[device: GPUDevice, format: GPUTextureFormat, adapter: GPUAdapter,]> => {
   assert(!!navigator.gpu, 'No WebGPU available');
   const adapter = await navigator.gpu.requestAdapter()!;
   assert(!!adapter, "Failed to get an adapter");
   const device = await adapter.requestDevice();
   const format = navigator.gpu.getPreferredCanvasFormat();
-  return [adapter, device, format];
+  return [device, format, adapter];
 };

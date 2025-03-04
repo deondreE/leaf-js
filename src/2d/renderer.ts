@@ -1,82 +1,229 @@
 import { mat3, Mat3 } from "wgpu-matrix";
 import { assert, initializeWebGpu } from "../utils/util";
-import { Render2dDescription } from "./types";
-import { loadImgAsBitmap } from "./utils";
-import WorkQueue from "./workqueue";
-
-const projection = (width: number, height: number) => mat3.create(
-	2/width, 0, 0,
-	0, 2/height, 0,
-	-1, 1, 1
-); //uses gl-matrixes math but in webgpus-homogenous matrix. 
+import { Render2dDescription, Renderable } from "./types";
+import { LEAF_2D_BIND_GROUP_LAYOUT_DESCRIPTOR, LEAF_2D_VERTEX_LAYOUT } from "./constants";
+import ImageFrames from "./ImageFrames";
 
 export default class Renderer {
-	wrkr = WorkQueue.init(new URL("./renderer.worker.ts", import.meta.url));
-	constructor(canvas: HTMLCanvasElement){
-		//const offCanvas = canvas.transferControlToOffscreen();
+	canvas: HTMLCanvasElement;
+	context: GPUCanvasContext;
+	device: GPUDevice;
+	format: GPUTextureFormat;
+
+	observer: ResizeObserver;
+
+	projection: Mat3 = mat3.create(1,0,0,0,1,0,0,0,1);
+
+	//Idk if I really need this reference here.
+	bindGroupLayout: GPUBindGroupLayout;
+
+
+	fps: number = 1e3/32;
+	lastUpdate: number = 0;
+	animationFrame: number = 0;
+
+	//reusable parts of the pass that the sprites dont need to worry about. 
+	pipeline: GPURenderPipeline;
+	uniformBuffer: GPUBuffer;
+	quadBuffer: GPUBuffer;
+	quadIndexBuffer: GPUBuffer;
+	sampler: GPUSampler;
+
+	renderables: Renderable[] = [];
+
+	constructor(canvas: HTMLCanvasElement, device: GPUDevice, format: GPUTextureFormat){
+		this.canvas = canvas;
+		this.context = this.canvas.getContext("webgpu")!;
+		assert(!!this.context, "No WebGPU context available");
+		this.context.configure({device, format});
+
+		this.device = device;
+		this.format = format;
+
+		this.observer = new ResizeObserver(this.handleResize.bind(this));
+		this.observer.observe(canvas, {box: "device-pixel-content-box"}); //should report premultiplied pixel size if I am not mistaken.
+
+		this.bindGroupLayout = this.device.createBindGroupLayout(LEAF_2D_BIND_GROUP_LAYOUT_DESCRIPTOR);
+
+		const pipelineLayout = device.createPipelineLayout({
+			bindGroupLayouts: [this.bindGroupLayout]
+		});
+
+		const shaderModule = device.createShaderModule({
+			label: "Shader Module",
+			code: SHADER
+		})
+
+		this.pipeline = device.createRenderPipeline({
+			label: "Leaf 2d basic pipeline",
+			layout: pipelineLayout,
+			vertex: {
+				module: shaderModule,
+				entryPoint: "vertexMain",
+				buffers: [LEAF_2D_VERTEX_LAYOUT]
+			},
+			fragment: {
+				module: shaderModule,
+				entryPoint: "fragmentMain",
+				targets: [{
+					format,
+					blend: {
+						//TODO - research this property color blending may be even simpler now. 
+						color: {
+							srcFactor: "src-alpha",
+							dstFactor: "one-minus-src-alpha",
+							operation: "add"
+						},
+						alpha: {
+							srcFactor: "one",
+							dstFactor: "one-minus-src-alpha",
+							operation: "add"
+						}
+					}
+				}]
+			},
+			primitive: {
+				topology: "triangle-list"
+			}
+		});
+
+		this.quadBuffer = device.createBuffer({
+			label: "Vertex Buffer",
+			size: 64, //only 4 points
+			usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
+			mappedAtCreation: true
+		});
+
+		//its all quads so the vertex buffer is simple. 
+		new Float32Array(this.quadBuffer.getMappedRange()).set(new Float32Array([
+			// x    y u v
+			-0.5,-0.5,0,1, // 0
+			 0.5,-0.5,1,1, // 1
+			-0.5, 0.5,0,0, // 2
+			 0.5, 0.5,1,0  // 3
+		]));
+
+		this.quadBuffer.unmap();
+
+		//The indices for the quad... reduces size by half. 
+		this.quadIndexBuffer = device.createBuffer({
+			label: "Index Buffer",
+			size: 12, //only 6 Uint16,
+			usage: GPUBufferUsage.INDEX | GPUBufferUsage.COPY_DST,
+			mappedAtCreation: true
+		});
+
+		//its all quads so the vertex buffer is simple. 
+		new Uint16Array(this.quadIndexBuffer.getMappedRange()).set(new Uint16Array([
+			1,0,2,
+			1,2,3
+		]));
+
+		this.quadIndexBuffer.unmap();
+
+		this.sampler = this.device.createSampler({
+			magFilter: "nearest",
+			minFilter: "nearest"
+		});
+
+		this.uniformBuffer = device.createBuffer({
+			label: "UniformBuffer",
+			size: 48, //min size of uniform buffer for now
+			usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+		});
+
+		this.render = this.render.bind(this);
+		
+		const imgFrame = new ImageFrames("optimizedknight.png", 32);
+
+
+		imgFrame.register(this).then(()=>{
+			this.renderables.push(imgFrame);
+			this.animationFrame = requestAnimationFrame(this.render);
+		});
+		
 
 	}
+
+	createBindGroup(texture: GPUTexture, instanceBuffer: GPUBuffer){
+		return this.device.createBindGroup({
+			layout: this.bindGroupLayout,
+			entries: [
+				{
+					binding: 0,
+					resource: texture.createView()
+				},
+				{
+					binding: 1,
+					resource: this.sampler
+				},
+				{
+					binding: 2,
+					resource: {buffer: this.uniformBuffer}
+				},
+				{
+					binding: 3,
+					resource: {buffer: instanceBuffer}
+				}
+			]
+		})
+	}
+
+	handleResize(){
+		
+		const {width, height} = this.canvas.getBoundingClientRect();
+		this.canvas.width = width * devicePixelRatio;
+		this.canvas.height = height * devicePixelRatio;
+		//this is just gl-matrixes project inside a webgpu-mat3 because gl-mat3 is not homogenous.
+		this.projection = mat3.create( 
+			2/width, 0, 0,
+			0, 2/height, 0,
+			-1, 1, 1
+		);
+	}
+
+	render(time: number){
+		this.animationFrame = requestAnimationFrame(this.render);
+		const delta = time-this.lastUpdate;
+		if(delta < this.fps) return;
+		const commandEncoder = this.device.createCommandEncoder();
+
+		const renderPassDescriptor: GPURenderPassDescriptor = {
+			colorAttachments: [{
+				view: this.context.getCurrentTexture().createView(),
+				loadOp: "clear",
+				storeOp: "store",
+				clearValue: [0,0,0,1.0]
+			}]
+		}
+
+		const passEncoder = commandEncoder.beginRenderPass(renderPassDescriptor);
+		//TODO: - Iterate over each sprite and render its instances if any.
+	}
+
+	makeTexture(img: ImageData){
+		const texture = this.device.createTexture({
+			size: {width: img.width, height: img.height},
+			format: "rgba8unorm",
+			usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST | GPUTextureUsage.RENDER_ATTACHMENT
+		});
+		this.device.queue.writeTexture(
+			{texture},
+			img.data.buffer,
+			{bytesPerRow: 4 * img.width},
+			[img.width, img.height]
+		);
+	}
+
 	static async init({
 		canvas
 	}:Render2dDescription) {
 		const clientRect = canvas.getBoundingClientRect(); 
-		canvas.width = clientRect.width * devicePixelRatio;
-		canvas.height = clientRect.height * devicePixelRatio;
-		const [adapter, device, format] = await initializeWebGpu();
-		const context: GPUCanvasContext = canvas.getContext('webgpu')!;
-		
-		const perspective = projection(canvas.width, canvas.height);
-		assert(!!context);
-		context.configure({device, format});
-
-		//default context data
-		const quadData = new Float32Array([
-			// x    y  u v
-			-0.5,-0.5, 0,1,
-			 0.5,-0.5, 1,1,
-			 0.5, 0.5, 1,0,
-			-0.5,-0.5, 0,1,
-			 0.5, 0.5, 1,0,
-			-0.5, 0.5, 0,0,
-		]);
-
-		const spriteQuad = device.createBuffer({
-			label: "Sprite Quad",
-			size: quadData.byteLength,
-			usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
-			mappedAtCreation: true
-		});
-		new Float32Array(spriteQuad.getMappedRange()).set(quadData);
-		spriteQuad.unmap();
-
-		const vertexLayout: GPUVertexBufferLayout = {
-			arrayStride: 4 * 4,
-			attributes: [
-				{
-					// position
-					shaderLocation: 0,
-					offset: 0,
-					format: "float32x2"
-				},
-				{
-					shaderLocation: 1,
-					offset: 2 * 4,
-					format: "float32x2"
-				}
-			]
-		};
-		const uniformBuffer = device.createBuffer({
-			label: "Sprite uniform",
-			size: 48,
-			usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
-		});
+		const [device, format] = await initializeWebGpu(); //TODO: - do I really need the adapter anymore. 
+		return new Renderer(canvas, device, format);
+		/*
 
 		const [bitmap, size] = await loadImgAsBitmap("knight.png");
-		const texture = device.createTexture({
-			size,
-			format: "rgba8unorm",
-			usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST | GPUTextureUsage.RENDER_ATTACHMENT
-		});
 
 		device.queue.writeTexture(
 			{texture},
@@ -203,11 +350,11 @@ export default class Renderer {
 		//not ready to animate just yet. 
 		
 
-
+*/
 	}
 }
 
-const spriteShader = `
+const SHADER = `
 struct VertexOutput {
   @builtin(position) position: vec4f,
   @location(0) texCoord: vec2f
@@ -240,6 +387,6 @@ fn vertexMain(
 
 @fragment
 fn fragmentMain(input: VertexOutput) -> @location(0) vec4f {
-  return vec4f(1.0, 0.0, 0.0, 1.0);
+  return textureSample(spriteTex, spriteSampler, input.texCoord);
 }
 `;
