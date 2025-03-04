@@ -33,6 +33,8 @@ class Scene {
   start() {
     this.eventDispatcher?.on('onStart', () => {
       console.log('test');
+      this.saveModelData(this.uData);
+      // TODO: cache the given sceneData, so we don't request for it every frame.
     });
   }
 
@@ -54,8 +56,6 @@ class Scene {
   }
 
   // FIXME: Add Types for both Udata, And Model
-  // TOOD: Add Size for custom x, y, z
-  // TOOD: Add default rotation that the model will be at.
   // TOOD: Add Play, Pause Buttons for playing custom animations.
   private processUserData(uData: any): void {
     uData.models.forEach((model: any) => {
@@ -77,6 +77,25 @@ class Scene {
     } else {
       this.renderer?.primitiveCube();
     }
+  }
+
+  private saveModelData(uData: any): void {
+    const storedData = localStorage.getItem('UserDefinedScene');
+    if (storedData) {
+      try {
+        const parsedData = JSON.parse(storedData);
+        if (JSON.stringify(parsedData) === JSON.stringify(uData)) {
+          console.log('No Changes to scene data');
+          return;
+        }
+      } catch (error) {
+        console.error(error);
+      }
+    }
+
+    const saveData = JSON.stringify(uData);
+    localStorage.setItem('UserDefinedScene', saveData);
+    // TODO: add save indicator, allow for forcing of saves.
   }
 
   private createScene() {
