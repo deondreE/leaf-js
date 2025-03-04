@@ -1,0 +1,17 @@
+{
+    "folders": [
+        {
+            "path": "."
+        }
+    ],
+    "settings": {
+        "typescript.tsdk": "node_modules/typescript/lib",
+        "editor.defaultFormatter": "esbenp.prettier-vscode",
+        "editor.formatOnSave": true
+    },
+    "recommendations": [
+        "ziglang.vscode-zig",
+        "ms-vscode.vscode-typescript-next",
+        "esbenp.prettier-vscode"
+    ]
+}
