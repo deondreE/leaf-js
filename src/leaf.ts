@@ -2,11 +2,11 @@ import Renderer from './renderer.new';
 import Scene from './scene';
 import { assert } from './utils/util';
 
-console.log('Loading leaf');
 class Leaf extends HTMLCanvasElement {
-  static observedAttributes = ['src'];
+  static observedAttributes = ['src', 'particle'];
   is3D: boolean = false;
   static: boolean = false;
+  particleSim: boolean = false;
   renderer: Renderer | null = null;
   id: string = '';
 
@@ -17,39 +17,56 @@ class Leaf extends HTMLCanvasElement {
   connectedCallback() {
     this.is3D = this.getOptimisticBoolAttribute('is3D');
     this.static = this.getOptimisticBoolAttribute('static');
+    this.particleSim = this.getOptimisticBoolAttribute('particleSim');
 
     if (!this.hasAttribute('src'))
       return console.warn('leaf canvases rely on src attribute to populate');
 
     if (this.hasAttribute('src')) {
-      if (!this.checkFileType(this.getAttribute('src'))) {
+      if (!this.checkFileType(this.getAttribute('src')!)) {
         const funcName: string = this.getAttribute('src')!;
         const global = window as Record<string, any>;
         assert(funcName !== null);
 
         // Dynamic Scene
         if (typeof global[funcName] === 'function') {
-          let uData = global[funcName]();
+          let scene = global[funcName]();
+          assert(scene !== null);
 
-          // TODO: translate this val so that it can be used within the given scene.
-          let dynScene = new Scene(uData, this);
+          // If it has a particle that system needs access to it, otherwise use it here.
+          // TODO: Model scale,
+          // TODO: Custom camera position. Camera Class
+          // TODO: Multiple model support. Not sure, maybe appending to the current pipeline.
+          // TODO: Layout the model definitions for the end user, so that we can write the api around that.
 
-          console.log(uData);
+          if (scene.particle) {
+            console.log('test:', scene.particle);
+            console.log(scene.particle.emitter);
+
+            this.startParticleRenderer(scene.particle);
+          }
         }
       } else {
         // Render supported static file type.
         this.renderer = new Renderer(this);
-        this.renderer.init(this.getAttribute('src'));
+        this.renderer.init(this.getAttribute('src')!);
       }
     }
 
     if (!this.renderer && this.is3D) {
       this.id = 'webgpu-canvas';
-      // FIXME: Recognize context.
       if (this.hasAttribute('src')) {
         const src = this.getAttribute('src');
       }
     }
+  }
+
+  private createDynamicScene() {
+    let scene = new Scene('string');
+  }
+
+  private startParticleRenderer(userParticleData: any) {
+    const particleRenderer = new ParticleRenderer(this, userParticleData);
   }
 
   disconectedCallback() {

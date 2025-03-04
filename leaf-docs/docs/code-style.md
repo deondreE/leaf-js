@@ -7,32 +7,34 @@ I tend to lean twoards the way google writes cpp.
 
 ### CPP->Zig:
 
- - Snake case unless it is a class. `typedef`, `struct`  
- - Classes are camel case. 
- - 2 space indendting.
- - I hate documentation comments. Write a readme file if needed.
- - Zig -> private methods lowercase.
+- Snake case unless it is a class. `typedef`, `struct`
+- Classes are camel case.
+- 2 space indendting.
+- I hate documentation comments. Write a readme file if needed.
+- Zig -> private methods lowercase.
 
 ### Javascript->Typescript:
 
- - There are spcicfic usage for `interfaces`, use them sparilly and as needed otherwise use a `type`.
- - Stick to unix standards EOF.
- - Semicolon is required! Commas also are required.
- - Singleline variable declaration when possible.
- - var -> restricted ask first.
- - Complex types will be thrown out. Unless they are needed.
- - Global types `types.d.ts` -- ask first, even with generation...
+- There are spcicfic usage for `interfaces`, use them sparilly and as needed otherwise use a `type`.
+- Stick to unix standards EOF.
+- Semicolon is required! Commas also are required.
+- Singleline variable declaration when possible.
+- var -> restricted ask first.
+- Complex types will be thrown out. Unless they are needed.
+- Global types `types.d.ts` -- ask first, even with generation...
 
 ### General:
 
- - Api changes require approval.
- - No custom exetensions for returned files.
- - Don't use school accounts.
+- Api changes require approval.
+- No custom exetensions for returned files.
+- Don't use school accounts.
 
-##  Issue Template
+## Issue Template
+
 ```
 ----- Heading Simple Defintion of problem ------
 ----- Meat and potatoes of issues Screenshot ---
 ----- Footing version of leaf  -----------------
 ```
-> thanks for any issues and contributions! 
+
+> thanks for any issues and contributions!

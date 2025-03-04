@@ -2,6 +2,11 @@ import { mat4 } from 'gl-matrix';
 import OBJParser from './parsers/obj';
 import STLParser from './parsers/stl';
 
+import AssetBuilder from './assetloading/build';
+import { Model } from './types/scene.types';
+import { v4 as uuid } from 'uuid';
+import Camera from './camera';
+
 /** Currently Supports static file definitions. */
 class Renderer3D {
   canvas?: HTMLCanvasElement;
@@ -22,7 +27,7 @@ class Renderer3D {
     }
 
     this.device = await adapter.requestDevice();
-    this.context = this.canvas.getContext('webgpu');
+    this.context = this.canvas!.getContext('webgpu');
     this.format = navigator.gpu.getPreferredCanvasFormat();
 
     if (!this.device || !this.context || !this.format) {
@@ -37,22 +42,34 @@ class Renderer3D {
 
     // Create a texture to render to
     this.renderTexture = this.device.createTexture({
-      size: [this.canvas.width, this.canvas.height],
+      size: [this.canvas!.width, this.canvas!.height],
       format: this.format,
       usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.COPY_SRC, // Add COPY_SRC
     });
 
+    // TODO: Make this a camera class.
     // Matrix Definitions can be global context.
     const modelMatrix = mat4.create();
     const viewMatrix = mat4.create();
     const projectionMatrix = mat4.create();
     const mvpMatrix = mat4.create();
 
+    const camera = new Camera(
+      Math.PI / 4,
+      // @ts-ignore
+      this.canvas.width / this.canvas.height,
+      0.1,
+      100,
+      1,
+      'perspective',
+    );
+    camera.setup();
+
     mat4.lookAt(viewMatrix, [0, 0, 5], [0, 0, 0], [0, 1, 0]); // Camera at (0,0,5), looking at origin
     mat4.perspective(
       projectionMatrix,
       Math.PI / 4,
-      this.canvas.width / this.canvas.height,
+      this.canvas!.width / this.canvas!.height,
       0.1,
       100.0,
     ); // FOV = 45 degreess
@@ -76,15 +93,14 @@ class Renderer3D {
 
         // @ts-ignore
         this.device.queue.writeBuffer(uniformBuffer, 0, mvpMatrix.buffer);
-
         await objParser.createPipeline(shaderModule, this.format, uniformBuffer);
 
         this.render(() => {
-          const commandEncoder = this.device.createCommandEncoder();
+          const commandEncoder = this.device!.createCommandEncoder();
           const passEncoder = commandEncoder.beginRenderPass({
             colorAttachments: [
               {
-                view: this.context.getCurrentTexture().createView(),
+                view: this.context!.getCurrentTexture().createView(),
                 loadOp: 'clear',
                 storeOp: 'store',
               },
@@ -93,8 +109,20 @@ class Renderer3D {
 
           objParser.render(passEncoder);
           passEncoder.end();
-          this.device.queue.submit([commandEncoder.finish()]);
+          this.device!.queue.submit([commandEncoder.finish()]);
         });
+        // Generic Model def for saving specifically.
+        let model: Model = {
+          name: fileName,
+          id: uuid(),
+          static: true,
+          vertexBuffer: objParser.getVertexBuffer(),
+          indexBuffer: objParser.getIndexBuffer(),
+          shader: objParser.getShaderString(),
+        };
+
+        const assetBuilder = new AssetBuilder();
+        assetBuilder.buildModelScene(model);
 
         break;
       }
@@ -121,11 +149,11 @@ class Renderer3D {
         await stlParser.createPipeline(shaderModule, this.format, uniformBuffer);
 
         this.render(() => {
-          const commandEncoder = this.device.createCommandEncoder();
+          const commandEncoder = this.device!.createCommandEncoder();
           const passEncoder = commandEncoder.beginRenderPass({
             colorAttachments: [
               {
-                view: this.context.getCurrentTexture().createView(),
+                view: this.context!.getCurrentTexture().createView(),
                 loadOp: 'clear',
                 storeOp: 'store',
               },
@@ -134,7 +162,7 @@ class Renderer3D {
 
           stlParser.render(passEncoder);
           passEncoder.end();
-          this.device.queue.submit([commandEncoder.finish()]);
+          this.device!.queue.submit([commandEncoder.finish()]);
         });
 
         break;
@@ -143,10 +171,18 @@ class Renderer3D {
     }
   }
 
+  private createModelViewMatrix() {}
+
+  private createModelScaleMatrix(scaleX: number, scaleY: number, scaleZ: number) {
+    return new Float32Array([scaleX, 0, 0, 0, 0, scaleY, 0, 0, 0, 0, scaleZ, 0, 0, 0, 0, 1]);
+  }
+
   returnFileExt(fileName: string): string {
     const parts = fileName.split('.');
     return parts.length > 1 ? parts.pop() || '' : '';
   }
+
+  private cameraControls(): void {}
 
   private render(renderMethod: () => void) {
     if (typeof renderMethod !== 'function') {

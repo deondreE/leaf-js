@@ -39,6 +39,7 @@ export default class WebGPUOBJParser {
     const positions: Vec3[] = [];
     const texCoords: Vec2[] = [];
     const normals: Vec3[] = [];
+    const shaderString: string = '';
     this.vertices = [];
     this.indices = [];
 
@@ -212,8 +213,7 @@ export default class WebGPUOBJParser {
   }
 
   getShader() {
-    const shader = this.device.createShaderModule({
-      code: `
+    this.shaderString = `
             struct Uniforms {
               mvpMatrix: mat4x4<f32>,
             }
@@ -243,10 +243,25 @@ export default class WebGPUOBJParser {
                 let color = vec3<f32>(0.5, 0.5, 0.5) * (input.vNormal.z * 0.5 + 0.5);
                 return vec4<f32>(color, 1.0);
             }
-        `,
+        `;
+
+    const shader = this.device.createShaderModule({
+      code: this.shaderString,
     });
 
     return shader;
+  }
+
+  getVertexBuffer(): GPUBuffer {
+    return this.vretexBuffer;
+  }
+
+  getIndexBuffer(): GPUBuffer {
+    return this.indexBuffer;
+  }
+
+  getShaderString(): string {
+    return this.shaderString;
   }
 
   render(passEncoder: GPURenderPassEncoder): void {

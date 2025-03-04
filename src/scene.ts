@@ -1,6 +1,6 @@
 import Renderer from './renderer';
 import type { Model } from './types/scene.types';
-import EventDispatcher from './eventdispatcher'; 
+import EventDispatcher from './eventdispatcher';
 
 // NOTE: you can define a large pipeline, and there is a clean step that removes most of the unused garbage.
 
@@ -20,14 +20,14 @@ class Scene {
   }
 
   awake(f: () => {}) {
-    this.eventDispatcher?.on("onAwake", () => {
+    this.eventDispatcher?.on('onAwake', () => {
       console.log('Awake');
     });
   }
 
   /** Start is called after awake. */
   start(f: () => void) {
-    this.eventDispatcher?.on("onStart", () => {
+    this.eventDispatcher?.on('onStart', () => {
       console.log('test');
     });
   }
@@ -36,7 +36,7 @@ class Scene {
    * @param dt is the time in between frames.
    */
   update(dt: number) {
-    this.eventDispatcher?.on("onUpdate", () => {
+    this.eventDispatcher?.on('onUpdate', () => {
       console.log('Update');
     });
   }

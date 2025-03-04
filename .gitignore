@@ -15,7 +15,7 @@ test.json*
 .idea
 
 # Model files
-*.obj
+*obj
 *.fbx
 *.mtl
 *.stl

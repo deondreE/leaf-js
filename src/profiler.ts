@@ -153,9 +153,8 @@ export class Profiler extends HTMLCanvasElement {
     ctx.fillStyle = 'white';
     ctx.fillText('Animation Key Frames', padding + 5, this.height - 160);
 
-
     ctx.strokeStyle = 'yellow';
-    ctx.strokeRect(0 + padding, this.height - 150, (this.width - padding*2), 100);
+    ctx.strokeRect(0 + padding, this.height - 150, this.width - padding * 2, 100);
 
     // render the frame
     for (let i = 0; i < animationFrame.length; ++i) {

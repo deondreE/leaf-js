@@ -35,15 +35,18 @@ import pako from 'pako';
 export default class AseView extends LeafView {
   offset: number = 0;
   decoder = new TextDecoder();
+
   constructor(buffer: ArrayBuffer) {
     super(buffer);
   }
+
   inflate(len: number, s: number = 0): Uint8Array {
     return pako.inflate(this.array(len, s));
   }
 
   userData(): Omit<AseUserData, 'chunkType'> {
     const flags = this.dword();
+
     return {
       text: (flags & 1) === 1 ? this.string() : undefined,
       color: (flags & 2) === 2 ? this.quad(this.byte) : undefined,
@@ -53,6 +56,7 @@ export default class AseView extends LeafView {
 
   colorProfile(): Omit<AseColorProfile, 'chunkType'> | Omit<AseICCProfile, 'chunkType'> {
     const profileType = this.word(2) as 0 | 1 | 2;
+
     return {
       profileType,
       gamma: this.fixed(8),
@@ -65,16 +69,19 @@ export default class AseView extends LeafView {
     const firstIndex = this.dword();
     const lastIndex = this.dword(8);
     const colors = new Array<AseColorPaletteEntry>(len).fill(null);
+
     for (let i = 0; i < len; i++) {
       const hasName = this.word() === 1;
       colors[i] = { color: this.quad(this.byte), name: hasName ? this.string() : undefined };
     }
+
     return { firstIndex, lastIndex, colors };
   }
 
   readTags(): Omit<AseTags, 'chunkType'> {
     const len = this.word(8);
     const tags = new Array<AseTag>(len).fill(null);
+
     for (let i = 0; i < len; i++) {
       tags[i] = {
         range: this.pair(this.word),
@@ -84,12 +91,14 @@ export default class AseView extends LeafView {
         tagName: this.string(),
       };
     }
+
     return { tags };
   }
 
   layer(): Omit<AseLayer, 'chunkType'> {
     const flags = this.word();
     const layerType = this.word() as AseLayerType;
+
     return {
       flags,
       layerType,
@@ -110,6 +119,7 @@ export default class AseView extends LeafView {
     const celType = this.word() as 0 | 1 | 2 | 3;
     const zIndex = this.short(5);
     const base: Omit<AseCelBase, 'chunkType'> = { layerIndex, position, alpha, zIndex };
+
     switch (celType) {
       case 0:
         return {
@@ -151,6 +161,7 @@ export default class AseView extends LeafView {
   external(): Omit<AseExternalAssets, 'chunkType'> {
     const len = this.dword(8);
     const assets = new Array<AseExternalAsset>(len).fill(null);
+
     for (let i = 0; i < len; i++) {
       assets[i] = {
         assetId: this.dword(),
@@ -158,12 +169,14 @@ export default class AseView extends LeafView {
         assetPath: this.string(),
       };
     }
+
     return { assets };
   }
 
   tags(): Omit<AseTags, 'chunkType'> {
     const len = this.word(8);
     const tags = new Array<AseTag>(len).fill(null);
+
     for (let i = 0; i < len; i++) {
       tags[i] = {
         range: this.pair(this.word),
@@ -173,6 +186,7 @@ export default class AseView extends LeafView {
         tagName: this.string(),
       };
     }
+
     return { tags };
   }
 
@@ -183,6 +197,7 @@ export default class AseView extends LeafView {
     const is9Patch = (flags & 1) === 1;
     const hasPivotInfo = (flags & 2) === 2;
     const slices = new Array<AseSliceElement>(len).fill(null);
+
     for (let i = 0; i < len; i++) {
       slices[i] = {
         frameIndex: this.dword(),
@@ -197,6 +212,7 @@ export default class AseView extends LeafView {
         slices[i].pivot = this.pair(this.long);
       }
     }
+
     return { flags, slices, name };
   }
   tileset(): Omit<AseTileset, 'chunkType'> {
@@ -254,12 +270,15 @@ export default class AseView extends LeafView {
   chunk(): AseChunk | undefined {
     const end = this.offset + this.dword();
     const chunkType = this.word() as AseChunkType;
+
     if (LEGACY_TYPES.has(chunkType)) {
       this.offset = end;
       return undefined;
     }
+
     const props = this.chunker(chunkType, end);
     this.offset = end;
+
     return { chunkType, ...props } as AseChunk;
   }
 
@@ -277,9 +296,11 @@ export default class AseView extends LeafView {
     const len = this.dword();
     const elementType = this.word();
     const elements = new Array<AsePropertyTypes>(len).fill(null);
+
     for (let i = 0; i < len; i++) {
       elements[i] = this.propertyValue();
     }
+
     return elements;
   }
 
@@ -330,28 +351,34 @@ export default class AseView extends LeafView {
     const mapByteSize = this.dword();
     const len = this.dword();
     const props: AsePropertyMap = {};
+
     for (let i = 0; i < len; i++) {
       const key = this.string();
       const value = this.propertyValue();
       props[key] = value;
     }
+
     return props;
   }
 
   indexedToRGBA(indexed: Uint8Array, palette: LfQuad[]): Uint8Array {
-    const bitmap = new Uint8Array(indexed.length*4);
-    for(let i = 0; i<indexed.length; i++){
-      bitmap.set(palette[indexed[i]], i*4);
+    const bitmap = new Uint8Array(indexed.length * 4);
+
+    for (let i = 0; i < indexed.length; i++) {
+      bitmap.set(palette[indexed[i]], i * 4);
     }
+
     return bitmap;
   }
   greyToRGBA(grey: Uint8Array): Uint8Array {
-    const bitmap = new Uint8Array(grey.length*2);
-    for(let i = 0; i<grey.length; i+=2){
+    const bitmap = new Uint8Array(grey.length * 2);
+
+    for (let i = 0; i < grey.length; i += 2) {
       const v = grey[i];
-      const a = grey[i+1];
-      bitmap.set([v,v,v,a], i*2);
+      const a = grey[i + 1];
+      bitmap.set([v, v, v, a], i * 2);
     }
+
     return bitmap;
   }
 }

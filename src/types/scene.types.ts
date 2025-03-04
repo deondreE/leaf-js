@@ -1,37 +1,37 @@
-import { Vec2 } from "./math.types";
-
-/** Definition of an animation applied to a model */
-interface Animation {
-    name: string;   
-    type: 'rotation' | 'translation' | 'scale';
-    duration: string;
-
-    start(): void;
-    update(dt: number): void;
-    stop(): void;
-};
-
-interface Scene {
-    name: string;
-    models: Model[];
-    subscenes?: Scene[];
-    animations?: Animation[];
+/** */
+interface SceneTypes {
+  name: string;
+  type: string;
+  id: string;
+  models: Model[];
 }
 
-/** Definition of a model inside of a scene. */
+/** If item not defined then it not static. */
 interface Model {
-    type: "square" | "circle" | "custom";
-    id: number;
-    name: string;
-    position: Vec2;
-    size: { w: number, h: number },
-    verticies: Float32Array;
-    shaders: string[],
-    modelFile?: string;
-    startAnimation: boolean;
+  vertexBuffer?: GPUBuffer;
+  shader?: string;
+  indexBuffer?: GPUBuffer;
+  name: string;
+  id: string;
+  static: boolean;
+}
 
-    /** Apply transformation: Scale, Rotation, Transform. */
-    applyTransformation(type: 'scale' | 'rotate' | 'translate', value: { x: number, y: number, z: number }): void;  
-};
+/** Data that can effect the color directly. Default data will be applied to the renderer when it is called. */
+interface ParticleData {
+  gravity?: number;
+  rotation?: number;
+  emitter: {
+    x: number;
+    y: number;
+    z: number;
+    shape: 'cone' | 'rect' | 'default';
+  };
+  color: {
+    r: number;
+    g: number;
+    b: number;
+    a: number;
+  };
+}
 
-export type { Model, Animation, Scene };
+export type { Model, SceneTypes, ParticleData };
