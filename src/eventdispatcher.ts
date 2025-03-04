@@ -6,40 +6,40 @@ type EventCallback = () => void;
  * to the leaf canvas.
  */
 class EventDispatcher {
-    private events: Map<string, EventCallback[]> = new Map();
-    private callStack: string[] = [];
+  private events: Map<string, EventCallback[]> = new Map();
+  private callStack: string[] = [];
 
-    on(event: string, callback: EventCallback) {
-        if (!this.events.has(event)) {
-            this.events.set(event, []);
-        }
-
-        this.events.get(event)!.push(callback);
+  on(event: string, callback: EventCallback) {
+    if (!this.events.has(event)) {
+      this.events.set(event, []);
     }
 
-    off(event: string, callback: EventCallback) {
-        if (this.events.has(event)) {
-            this.events.set(
-                event,
-                this.events.get(event)!.filter(cb => cb !== callback)
-            );
-        }
-    }
+    this.events.get(event)!.push(callback);
+  }
 
-    dispatch(event: string) {
-        this.callStack.push(event);
-        
-        if (this.events.has(event)) {
-            this.events.get(event)?.forEach(callback => callback());
-        }
+  off(event: string, callback: EventCallback) {
+    if (this.events.has(event)) {
+      this.events.set(
+        event,
+        this.events.get(event)!.filter((cb) => cb !== callback),
+      );
     }
+  }
 
-    /**
-     * Will return the event call stack for rendering inside of the profiler.
-     */
-    get getLeafCallStack(): string[] {
-        return [...this.callStack];
+  dispatch(event: string) {
+    this.callStack.push(event);
+
+    if (this.events.has(event)) {
+      this.events.get(event)?.forEach((callback) => callback());
     }
+  }
+
+  /**
+   * Will return the event call stack for rendering inside of the profiler.
+   */
+  get getLeafCallStack(): string[] {
+    return [...this.callStack];
+  }
 }
 
 export default EventDispatcher;

@@ -33,6 +33,8 @@ class Leaf extends HTMLCanvasElement {
           let scene = global[funcName]();
           assert(scene !== null);
 
+          console.log(scene);
+          let dynScene = new Scene(scene, this);
           // If it has a particle that system needs access to it, otherwise use it here.
           // TODO: Model scale,
           // TODO: Custom camera position. Camera Class
@@ -59,10 +61,6 @@ class Leaf extends HTMLCanvasElement {
         const src = this.getAttribute('src');
       }
     }
-  }
-
-  private createDynamicScene() {
-    let scene = new Scene('string');
   }
 
   private startParticleRenderer(userParticleData: any) {

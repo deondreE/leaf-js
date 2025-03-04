@@ -10,9 +10,9 @@ class Camera {
   zoom: number = 1;
 
   viewMatrix: any;
-    pMatrix: any;
-    mvpMatrix: any;
-    mMatrix: any;
+  pMatrix: any;
+  mvpMatrix: any;
+  mMatrix: any;
 
   DEFAULT_UP: any = vec3.create(0, 1, 0);
 
@@ -34,13 +34,13 @@ class Camera {
 
   setup(): void {
     switch (this.type) {
-        case 'perspective':
-            break;
-        case 'orthographic':
-            this.pMatrix = this.createOrthographicProjection(-1, 1, -1, 1, this.near, this.far);
-            break;
+      case 'perspective':
+        break;
+      case 'orthographic':
+        this.pMatrix = this.createOrthographicProjection(-1, 1, -1, 1, this.near, this.far);
+        break;
     }
-}
+  }
 
   createOrthographicProjection(
     left: number,

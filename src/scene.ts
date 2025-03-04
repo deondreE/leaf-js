@@ -1,4 +1,4 @@
-import Renderer from './renderer';
+import Renderer3D from './renderer.new';
 import type { Model } from './types/scene.types';
 import EventDispatcher from './eventdispatcher';
 
@@ -10,13 +10,16 @@ class Scene {
   canvas: HTMLCanvasElement | null = null;
   uData: any | null = null;
   children: Map<Model, string> = new Map<Model, string>();
-  renderer: Renderer | null = null;
+  renderer: Renderer3D | null = null;
   eventDispatcher: EventDispatcher | null = null;
 
   constructor(uData: any, canvas: HTMLCanvasElement) {
     this.uData = uData;
     this.canvas = canvas;
+    this.renderer = new Renderer3D(canvas);
     this.eventDispatcher = new EventDispatcher();
+
+    this.processUserData(uData);
   }
 
   awake(f: () => {}) {
@@ -49,9 +52,18 @@ class Scene {
     this.update(dt);
   }
 
-  /** Checks if the current context of the scene is static. */
-  private checkStatic(): boolean {
-    return true;
+  // FIXME: Add Types for both Udata, And Model
+  private processUserData(uData: any): void {
+    uData.models.forEach((model: any) => {
+      switch (model.type) {
+        case 'cube': {
+          this.renderer?.primitiveCube();
+          break;
+        }
+        default:
+          console.log('Unsupported Model Type');
+      }
+    });
   }
 
   private export() {}

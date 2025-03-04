@@ -10,13 +10,7 @@ Allowing for support of all major runtimes in one place is super important for s
 
 ## Suported Languages
 
-Leaf will be abstracted into general language binaries, overall leaf will be written in [zig](), but there will be languages availible if you don't want to use leaf in zig; These languages are:
-    - [Python](https://www.python.org/)
-    - [Rust](https://www.rust-lang.org/)
-    - [Javascript](https://developer.mozilla.org/en-US/docs/Web/JavaScript)
-    - [Zig](https://ziglang.org/documentation/0.13.0/)
-    - [C++](https://en.cppreference.com/w/)
-    - [C](https://en.wikipedia.org/wiki/C_(programming_language))
+Leaf will be abstracted into general language binaries, overall leaf will be written in [zig](), but there will be languages availible if you don't want to use leaf in zig; These languages are: - [Python](https://www.python.org/) - [Rust](https://www.rust-lang.org/) - [Javascript](https://developer.mozilla.org/en-US/docs/Web/JavaScript) - [Zig](https://ziglang.org/documentation/0.13.0/) - [C++](https://en.cppreference.com/w/) - [C](<https://en.wikipedia.org/wiki/C_(programming_language)>)
 
 ## Why Zig
 
@@ -31,7 +25,7 @@ Zig also allows us to create a super simple import scheme for people who want to
 1. Cross platform support, operating systems act differently that why these libraries exist. Taking advantage of that will be difficult while staying in the context of leaf.
 2. Giving control to the developer outside of Zig. -> Languauge abstractions can be tricky, normally its like run this function not nesssisary run this process.
 3. Tastefull verbosity -> Somethings are just meant to look super crazy and complex when in reality they really are not at all.
-4. Bigendian vs Littleendian 
+4. Bigendian vs Littleendian
 5. Making the api share a schema rather then making abstractions per lang supported.
 
 ## Roadmap to leaf

@@ -171,6 +171,150 @@ class Renderer3D {
     }
   }
 
+  /** Renders the default cube for user data manip */
+  async primitiveCube() {
+    console.log('Rendering cube...');
+
+    const adapter = await navigator.gpu.requestAdapter();
+    if (!adapter) {
+      console.error('No WebGPU adapter found.');
+      return;
+    }
+
+    this.device = await adapter.requestDevice();
+    this.context = this.canvas!.getContext('webgpu');
+    const format = navigator.gpu.getPreferredCanvasFormat();
+
+    this.context?.configure({
+      device: this.device,
+      format: format,
+    });
+
+    // TODO: Use model file defs.
+    const vertexData = new Float32Array([
+      // Cube vertices (position x, y, z)
+      -0.5, -0.5, -0.5, 0.5, -0.5, -0.5, 0.5, 0.5, -0.5, -0.5, 0.5, -0.5, -0.5, -0.5, 0.5, 0.5,
+      -0.5, 0.5, 0.5, 0.5, 0.5, -0.5, 0.5, 0.5,
+    ]);
+
+    const indexData = new Uint16Array([
+      0,
+      1,
+      2,
+      2,
+      3,
+      0, // Front face
+      4,
+      5,
+      6,
+      6,
+      7,
+      4, // Back face
+      0,
+      4,
+      7,
+      7,
+      3,
+      0, // Left face
+      1,
+      5,
+      6,
+      6,
+      2,
+      1, // Right face
+      3,
+      2,
+      6,
+      6,
+      7,
+      3, // Top face
+      0,
+      1,
+      5,
+      5,
+      4,
+      0, // Bottom face
+    ]);
+
+    const vertexBuffer = this.device.createBuffer({
+      size: vertexData.byteLength,
+      usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
+    });
+
+    this.device.queue.writeBuffer(vertexBuffer, 0, vertexData);
+
+    const indexBuffer = this.device.createBuffer({
+      size: indexData.byteLength,
+      usage: GPUBufferUsage.INDEX | GPUBufferUsage.COPY_DST,
+    });
+
+    this.device.queue.writeBuffer(indexBuffer, 0, indexData);
+
+    const shaderModule = this.device.createShaderModule({
+      code: `
+        struct VertexInput {
+            @location(0) position: vec3<f32>,
+        };
+
+        struct VertexOutput {
+            @builtin(position) Position: vec4<f32>,
+        };
+
+        @vertex
+        fn vs_main(input: VertexInput) -> VertexOutput {
+            var output: VertexOutput;
+            output.Position = vec4<f32>(input.position, 1.0);
+            return output;
+        }
+
+        @fragment
+        fn fs_main() -> @location(0) vec4<f32> {
+            return vec4<f32>(0.6, 0.6, 0.9, 1.0);
+        }
+      `,
+    });
+
+    const pipeline = this.device.createRenderPipeline({
+      layout: 'auto',
+      vertex: {
+        module: shaderModule,
+        entryPoint: 'vs_main',
+        buffers: [
+          {
+            arrayStride: 3 * 4,
+            attributes: [{ shaderLocation: 0, offset: 0, format: 'float32x3' }],
+          },
+        ],
+      },
+      fragment: {
+        module: shaderModule,
+        entryPoint: 'fs_main',
+        targets: [{ format }],
+      },
+      primitive: { topology: 'triangle-list' },
+    });
+
+    const commandEncoder = this.device.createCommandEncoder();
+    const passEncoder = commandEncoder.beginRenderPass({
+      colorAttachments: [
+        {
+          view: this.context!.getCurrentTexture().createView(),
+          loadOp: 'clear',
+          storeOp: 'store',
+          clearValue: [0.1, 0.1, 0.1, 1],
+        },
+      ],
+    });
+
+    passEncoder.setPipeline(pipeline);
+    passEncoder.setVertexBuffer(0, vertexBuffer);
+    passEncoder.setIndexBuffer(indexBuffer, 'uint16');
+    passEncoder.drawIndexed(indexData.length);
+
+    passEncoder.end();
+    this.device.queue.submit([commandEncoder.finish()]);
+  }
+
   private createModelViewMatrix() {}
 
   private createModelScaleMatrix(scaleX: number, scaleY: number, scaleZ: number) {

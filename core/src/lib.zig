@@ -1,5 +1,8 @@
-extern fn print(i32) void;
+extern fn print(u8) void;
 
-export fn dispatch(a: i32, b: u8) void {
-    print(a + b);
+/// Dispatchs functions based on numerical input, allowing for parsing to be done inside of zig, rather then inside of Typescript. Returns `void` takes `u8`.
+export fn dispatch(callType: u8) void {
+    switch (callType) {
+        0 => print(u8),
+    }
 }
