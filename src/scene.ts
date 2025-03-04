@@ -59,6 +59,7 @@ class Scene {
   // TOOD: Add Play, Pause Buttons for playing custom animations.
   private processUserData(uData: any): void {
     uData.models.forEach((model: any) => {
+      console.log(model);
       switch (model.type) {
         case 'cube': {
           this.cube(model);
