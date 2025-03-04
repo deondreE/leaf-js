@@ -15,3 +15,8 @@ h1 {
   color: #ccc;
   margin: 30px 30px;
 }
+
+#scene-controls {
+  position: fixed;
+  top: 0;
+}

@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Worky</title>
+    <title>Leaf Example</title>
   </head>
   <body>
     <canvas is="leaf-js" src="initScene" width="1000" height="1000" id="webgpu-canvas"></canvas>
@@ -13,15 +13,17 @@
   <script src="./src/leaf.ts" type="module"></script>
   <script>
     function initScene() {
-      let test = {
+      let sceneDef = {
         models: [
           {
             type: 'cube',
+            texture: './test.jpg',
+            scale: 0.8,
           },
         ],
       };
 
-      return test;
+      return sceneDef;
       // let scene = {
       //   particle: {
       //     gravity: -0.0001,

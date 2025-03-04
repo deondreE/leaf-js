@@ -1,4 +1,5 @@
 import Renderer from './renderer.new';
+import ParticleRenderer from './renderer.particle';
 import Scene from './scene';
 import { assert } from './utils/util';
 

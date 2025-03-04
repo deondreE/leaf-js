@@ -6,6 +6,7 @@ import AssetBuilder from './assetloading/build';
 import { Model } from './types/scene.types';
 import { v4 as uuid } from 'uuid';
 import Camera from './camera';
+import { createCubeIndexData, createCubeVertexArray } from './meshes/cube';
 
 /** Currently Supports static file definitions. */
 class Renderer3D {
@@ -172,7 +173,7 @@ class Renderer3D {
   }
 
   /** Renders the default cube for user data manip */
-  async primitiveCube() {
+  async primitiveCube(scale?: number) {
     console.log('Rendering cube...');
 
     const adapter = await navigator.gpu.requestAdapter();
@@ -190,51 +191,8 @@ class Renderer3D {
       format: format,
     });
 
-    // TODO: Use model file defs.
-    const vertexData = new Float32Array([
-      // Cube vertices (position x, y, z)
-      -0.5, -0.5, -0.5, 0.5, -0.5, -0.5, 0.5, 0.5, -0.5, -0.5, 0.5, -0.5, -0.5, -0.5, 0.5, 0.5,
-      -0.5, 0.5, 0.5, 0.5, 0.5, -0.5, 0.5, 0.5,
-    ]);
-
-    const indexData = new Uint16Array([
-      0,
-      1,
-      2,
-      2,
-      3,
-      0, // Front face
-      4,
-      5,
-      6,
-      6,
-      7,
-      4, // Back face
-      0,
-      4,
-      7,
-      7,
-      3,
-      0, // Left face
-      1,
-      5,
-      6,
-      6,
-      2,
-      1, // Right face
-      3,
-      2,
-      6,
-      6,
-      7,
-      3, // Top face
-      0,
-      1,
-      5,
-      5,
-      4,
-      0, // Bottom face
-    ]);
+    const vertexData = createCubeVertexArray(scale ? scale : 0.5);
+    const indexData = createCubeIndexData();
 
     const vertexBuffer = this.device.createBuffer({
       size: vertexData.byteLength,
@@ -254,16 +212,19 @@ class Renderer3D {
       code: `
         struct VertexInput {
             @location(0) position: vec3<f32>,
+            @location(1) uv: vec2<f32>,
         };
 
         struct VertexOutput {
             @builtin(position) Position: vec4<f32>,
+            @location(1) uv: vec2<f32>,
         };
 
         @vertex
         fn vs_main(input: VertexInput) -> VertexOutput {
             var output: VertexOutput;
             output.Position = vec4<f32>(input.position, 1.0);
+            output.uv = input.uv; 
             return output;
         }
 
@@ -281,8 +242,11 @@ class Renderer3D {
         entryPoint: 'vs_main',
         buffers: [
           {
-            arrayStride: 3 * 4,
-            attributes: [{ shaderLocation: 0, offset: 0, format: 'float32x3' }],
+            arrayStride: 5 * 4,
+            attributes: [
+              { shaderLocation: 0, offset: 0, format: 'float32x3' },
+              { shaderLocation: 1, offset: 3 * 4, format: 'float32x2' },
+            ],
           },
         ],
       },
