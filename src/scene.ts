@@ -72,7 +72,7 @@ class Scene {
 
   private cube(modelData: any) {
     if (modelData.scale <= 1) {
-      this.renderer?.primitiveCube(modelData.scale);
+      this.renderer?.primitiveCube(modelData.scale, modelData.rotation);
     } else {
       this.renderer?.primitiveCube();
     }

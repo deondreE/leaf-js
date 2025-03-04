@@ -1,4 +1,4 @@
-import { mat4 } from 'gl-matrix';
+import { mat4, quat } from 'gl-matrix';
 import OBJParser from './parsers/obj';
 import STLParser from './parsers/stl';
 
@@ -173,7 +173,7 @@ class Renderer3D {
   }
 
   /** Renders the default cube for user data manip */
-  async primitiveCube(scale?: number) {
+  async primitiveCube(scale?: number, rotation?: { x: number; y: number; z: number }) {
     console.log('Rendering cube...');
 
     const adapter = await navigator.gpu.requestAdapter();
@@ -208,6 +208,54 @@ class Renderer3D {
 
     this.device.queue.writeBuffer(indexBuffer, 0, indexData);
 
+    const rotationMatrix = mat4.create();
+    const rotationQuat = quat.create();
+
+    if (rotation) {
+      quat.fromEuler(rotationQuat, rotation.x, rotation.y, rotation.z);
+      mat4.fromQuat(rotationMatrix, rotationQuat);
+    }
+
+    const uniformBuffer = this.device.createBuffer({
+      size: 80,
+      usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+    });
+
+    const uniformBindGroupLayout = this.device.createBindGroupLayout({
+      entries: [
+        {
+          binding: 0,
+          visibility: GPUShaderStage.VERTEX,
+          buffer: {},
+        },
+      ],
+    });
+
+    const uniformBindGroup = this.device.createBindGroup({
+      layout: uniformBindGroupLayout,
+      entries: [
+        {
+          binding: 0,
+          resource: {
+            buffer: uniformBuffer,
+          },
+        },
+      ],
+    });
+
+    const uniformData = new Float32Array(17); // 16 floats for matrix + 1 for scale;
+    uniformData.set(rotationMatrix, 0);
+    // @ts-ignore
+    uniformData[16] = scale;
+
+    this.device.queue.writeBuffer(
+      uniformBuffer,
+      0,
+      uniformData.buffer,
+      uniformData.byteOffset,
+      uniformData.byteLength,
+    );
+
     const shaderModule = this.device.createShaderModule({
       code: `
         struct VertexInput {
@@ -220,23 +268,34 @@ class Renderer3D {
             @location(1) uv: vec2<f32>,
         };
 
+        struct Uniforms {
+            rotationMatrix: mat4x4<f32>,
+            scale: f32,
+        };
+
+        @group(0) @binding(0) var<uniform> uniforms: Uniforms;
+
         @vertex
         fn vs_main(input: VertexInput) -> VertexOutput {
             var output: VertexOutput;
-            output.Position = vec4<f32>(input.position, 1.0);
-            output.uv = input.uv; 
+            let scaledPosition = input.position * uniforms.scale;
+            let rotatedPosition = uniforms.rotationMatrix * vec4<f32>(scaledPosition, 1.0);
+            output.Position = rotatedPosition;
+            output.uv = input.uv;
             return output;
         }
 
         @fragment
-        fn fs_main() -> @location(0) vec4<f32> {
+        fn fs_main(input: VertexOutput) -> @location(0) vec4<f32> {
             return vec4<f32>(0.6, 0.6, 0.9, 1.0);
         }
-      `,
+    `,
     });
 
     const pipeline = this.device.createRenderPipeline({
-      layout: 'auto',
+      layout: this.device.createPipelineLayout({
+        bindGroupLayouts: [uniformBindGroupLayout],
+      }),
       vertex: {
         module: shaderModule,
         entryPoint: 'vs_main',
@@ -259,10 +318,11 @@ class Renderer3D {
     });
 
     const commandEncoder = this.device.createCommandEncoder();
+    const textureView = this.context!.getCurrentTexture().createView();
     const passEncoder = commandEncoder.beginRenderPass({
       colorAttachments: [
         {
-          view: this.context!.getCurrentTexture().createView(),
+          view: textureView,
           loadOp: 'clear',
           storeOp: 'store',
           clearValue: [0.1, 0.1, 0.1, 1],
@@ -271,6 +331,7 @@ class Renderer3D {
     });
 
     passEncoder.setPipeline(pipeline);
+    passEncoder.setBindGroup(0, uniformBindGroup);
     passEncoder.setVertexBuffer(0, vertexBuffer);
     passEncoder.setIndexBuffer(indexBuffer, 'uint16');
     passEncoder.drawIndexed(indexData.length);
