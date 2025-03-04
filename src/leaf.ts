@@ -1,4 +1,5 @@
 import Renderer from './renderer.new';
+import Scene from './scene';
 import { assert } from './utils/util';
 
 console.log('Loading leaf');
@@ -7,7 +8,7 @@ class Leaf extends HTMLCanvasElement {
   is3D: boolean = false;
   static: boolean = false;
   renderer: Renderer | null = null;
-  id: string;
+  id: string = '';
 
   constructor() {
     super();
@@ -26,9 +27,14 @@ class Leaf extends HTMLCanvasElement {
         const global = window as Record<string, any>;
         assert(funcName !== null);
 
+        // Dynamic Scene
         if (typeof global[funcName] === 'function') {
-          let v = global[funcName]();
-          console.log(v);
+          let uData = global[funcName]();
+
+          // TODO: translate this val so that it can be used within the given scene.
+          let dynScene = new Scene(uData, this);
+
+          console.log(uData);
         }
       } else {
         // Render supported static file type.
