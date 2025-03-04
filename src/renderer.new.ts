@@ -173,7 +173,11 @@ class Renderer3D {
   }
 
   /** Renders the default cube for user data manip */
-  async primitiveCube(scale?: number, rotation?: { x: number; y: number; z: number }) {
+  async primitiveCube(
+    scale?: number,
+    rotation?: { x: number; y: number; z: number },
+    color?: { r: number; g: number; b: number; a: number },
+  ) {
     console.log('Rendering cube...');
 
     const adapter = await navigator.gpu.requestAdapter();
@@ -287,7 +291,7 @@ class Renderer3D {
 
         @fragment
         fn fs_main(input: VertexOutput) -> @location(0) vec4<f32> {
-            return vec4<f32>(0.6, 0.6, 0.9, 1.0);
+            return vec4<f32>(${(color?.r, color?.g, color?.b, color?.a)});
         }
     `,
     });

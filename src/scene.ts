@@ -72,8 +72,8 @@ class Scene {
   }
 
   private cube(modelData: any) {
-    if (modelData.scale <= 1) {
-      this.renderer?.primitiveCube(modelData.scale, modelData.rotation);
+    if (modelData.scale <= 1 && modelData.rotation !== undefined && modelData.color !== undefined) {
+      this.renderer?.primitiveCube(modelData.scale, modelData.rotation, modelData.color);
     } else {
       this.renderer?.primitiveCube();
     }
