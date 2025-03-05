@@ -91,3 +91,32 @@ Supported file formats in leaf currently.
 - PNG, JPEG
 - SVG
 - [Aesprite](https://github.com/aseprite/aseprite/blob/main/docs/ase-file-specs.md)
+
+# Scene
+
+- `scale`: A floating point value between 0 and 1.
+- `color`: RGBA default color is a lilac purple. All RGB values are between 0 and 1 I think.
+- `rotation`: XYZ dyn rotation, has support for math functions as long as they return a whole number, has support for radient rotation and quaternion rotation.
+- `position`: XYZ must be whole number position.
+
+### TODO
+
+- `animation`: Support for animations applied to the object inisde of the scene.
+  - `duration`: Time that animation takes
+  - `effect`: Object that allows you to define the effect of an animation
+    - `scale`: effect the scale over the alloted duration.
+    - `rotation`: XYZ effect the rotation over the alloted time.
+    - `color`: RGBA effect the color over the alloted duration.
+- `particles`: This technically works its just not in the scene system yet.
+  - `type`: The type of particle rendering.
+    - `global`: Large amount of particles inside a single scene allows for more complex visualizations.
+    - `emitter`: Emiited from a single location or multiple location naturally a smaller amount of particles.
+  - `particleAmount`: The MAX amount of particles in a given scene.
+  - `pColor`: The color of all particles, can be a mathmatical function just needs to return a definition of RGBA.
+  - `startPos`: Starting poistion of global particles.
+  - `cShader`: Allows for custom compute shaders.
+  - `emmitter`: The starting position of emmitter type particles
+    - `shape`: The shape that the particles will conform to.
+      - `cone`: Cone shape
+      - `square`: Square shape
+      - `sphere`: Sphere shape.
