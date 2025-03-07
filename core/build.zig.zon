@@ -27,6 +27,14 @@
             .url = "git+https://github.com/zig-gamedev/zglfw.git#4d04fdac888c0f6c1c858ba343d33b19aa499cef",
             .hash = "1220ca0fc58588dbcc38ecfb7dab23f281ba55a8dc76d6efd32afd881e96ffd13605",
         },
+        .vulkan = .{
+            .url = "git+https://github.com/andrewrk/vulkan-zig.git#b6e589d62bc1d9070c47d73ce942168fb92624c8",
+            .hash = "12201e484e173e70634e664864763223427703e677f28c63ebec9332513c8ca5121c",
+        },
+        .vulkan_headers = .{
+            .url = "https://github.com/KhronosGroup/Vulkan-Headers/archive/v1.3.283.tar.gz",
+            .hash = "1220a7e73d72a0d56bc2a65f9d8999a7c019e42260a0744c408d1cded111bc205e10",
+        },
     },
     .paths = .{
         "build.zig",

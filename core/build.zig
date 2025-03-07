@@ -5,6 +5,7 @@ pub fn build(b: *std.Build) void {
 
     const optimize = b.standardOptimizeOption(.{});
 
+    const registry = b.dependency("vulkan_headers", .{}).path("registry/vk.xml");
     const lib = b.addStaticLibrary(.{
         .name = "core",
         .root_source_file = b.path("src/root.zig"),
@@ -13,24 +14,17 @@ pub fn build(b: *std.Build) void {
     });
     b.installArtifact(lib);
 
-    const exe = b.addExecutable(.{
-        .name = "core",
-        .root_source_file = b.path("src/main.zig"),
-        .target = target,
-        .optimize = optimize,
-    });
+    const exe = b.addExecutable(.{ .name = "core", .root_source_file = b.path("src/main.zig"), .target = target, .optimize = optimize, .link_libc = true });
 
     const zglfw = b.dependency("zglfw", .{});
     exe.root_module.addImport("zglfw", zglfw.module("root"));
+    exe.linkSystemLibrary("vulkan");
     exe.linkLibrary(zglfw.artifact("glfw"));
-    // Widows specific build
-    if (target.result.os.tag == .windows) {
-        lib.linkSystemLibrary("Python313");
-    } else {
-        @panic("Unsupported Platform!");
-    }
-
     b.installArtifact(exe);
+
+    const vk_gen = b.dependency("vulkan", .{}).artifact("vulkan-zig-generator");
+    const vk_generate_command = b.addRunArtifact(vk_gen);
+    vk_generate_command.addFileArg(registry);
 
     const run_cmd = b.addRunArtifact(exe);
 
