@@ -18,7 +18,6 @@ pub fn build(b: *std.Build) void {
 
     const zglfw = b.dependency("zglfw", .{});
     exe.root_module.addImport("zglfw", zglfw.module("root"));
-    exe.linkSystemLibrary("vulkan");
     exe.linkLibrary(zglfw.artifact("glfw"));
     b.installArtifact(exe);
 
