@@ -23,7 +23,12 @@ pub fn build(b: *std.Build) void {
     const zglfw = b.dependency("zglfw", .{});
     exe.root_module.addImport("zglfw", zglfw.module("root"));
     exe.linkLibrary(zglfw.artifact("glfw"));
-    if (target.result.os.tag != .emscripten) {}
+    // Widows specific build
+    if (target.result.os.tag == .windows) {
+        lib.linkSystemLibrary("Python313");
+    } else {
+        @panic("Unsupported Platform!");
+    }
 
     b.installArtifact(exe);
 
