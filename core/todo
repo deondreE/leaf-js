@@ -1,0 +1,19 @@
+Explain leaf more as a simulation engine, allowing for the processing of animations, games, model rendering to be as
+simple as possible, wether you render one thing or multiple is functions the same and just as simple. 
+
+Required Library list
+
+Immeidate mode gui lib, supporting all platforms in zig.
+ - Requires Gizmo support as well.
+Compiler for all shader langauges.
+ - GLSL
+ - HLSL
+ - WSGL
+Program dispatcher for abstracting zig calls in other languages.
+ - Rust
+ - Python
+ - Typescript 
+ - Lua
+Parser / Serializer for TOML, AESPRITE, FBX, OBJ, STL written in pure zig.
+ - zig
+Math lib in zig. Probably a cimport.
