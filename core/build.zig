@@ -21,9 +21,11 @@ pub fn build(b: *std.Build) void {
         .target = target,
         .optimize = optimize,
     });
+    const ziglm = b.dependency("ziglm", .{});
 
     exe.root_module.addImport("zglfw", zglfw.module("root"));
     exe.root_module.addImport("zgl", zgl.module("zgl"));
+    exe.root_module.addImport("ziglm", ziglm.module("ziglm"));
     exe.linkLibrary(zglfw.artifact("glfw"));
 
     b.installArtifact(exe);

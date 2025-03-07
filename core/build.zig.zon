@@ -39,6 +39,10 @@
             .url = "https://github.com/ziglibs/zgl/archive/d8b25ff.tar.gz",
             .hash = "12205cfce3b6a70f152447e39f6f74a4a5f3ccd6abca33ea6aaadb675797dc3329e9",
         },
+        .ziglm = .{
+            .url = "git+https://github.com/deondreE/ziglm.git#4967be7b8565af82640f00eaecb8a7d7a7384486",
+            .hash = "12206ee04df124cfee5783ab67fe75e79c43c34b239e11d8c3127f8d78fb1b00c232",
+        },
     },
     .paths = .{
         "build.zig",
