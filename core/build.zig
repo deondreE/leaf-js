@@ -17,8 +17,15 @@ pub fn build(b: *std.Build) void {
     const exe = b.addExecutable(.{ .name = "core", .root_source_file = b.path("src/main.zig"), .target = target, .optimize = optimize, .link_libc = true });
 
     const zglfw = b.dependency("zglfw", .{});
+    const zgl = b.dependency("zgl", .{
+        .target = target,
+        .optimize = optimize,
+    });
+
     exe.root_module.addImport("zglfw", zglfw.module("root"));
+    exe.root_module.addImport("zgl", zgl.module("zgl"));
     exe.linkLibrary(zglfw.artifact("glfw"));
+
     b.installArtifact(exe);
 
     const vk_gen = b.dependency("vulkan", .{}).artifact("vulkan-zig-generator");
