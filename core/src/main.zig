@@ -1,6 +1,7 @@
 const std = @import("std");
+const glfw = @import("zglfw");
 
-pub fn main() !void {
+pub fn write_wasm_file() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
     const allocator = gpa.allocator();
 
@@ -25,4 +26,18 @@ pub fn main() !void {
     try writer.writeAll(wasm_buffer);
 
     std.debug.print("Wrote WASM data to {any}\n", .{text_file_path});
+}
+
+pub fn main() !void {
+    try glfw.init();
+    defer glfw.terminate();
+
+    const window = try glfw.createWindow(600, 600, "zig test", null);
+    defer glfw.destroyWindow(window);
+
+    while (!window.shouldClose()) {
+        glfw.pollEvents();
+
+        window.swapBuffers();
+    }
 }

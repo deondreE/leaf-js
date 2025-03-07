@@ -3,11 +3,8 @@ const std = @import("std");
 pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
-
     const lib = b.addStaticLibrary(.{
-        .name = "platform",
-        // In this case the main source file is merely a path, however, in more
-        // complicated build scripts, this could be a generated file.
+        .name = "leafplatform",
         .root_source_file = b.path("src/root.zig"),
         .target = target,
         .optimize = optimize,
@@ -15,12 +12,22 @@ pub fn build(b: *std.Build) void {
     b.installArtifact(lib);
 
     const exe = b.addExecutable(.{
-        .name = "platform",
+        .name = "leafplatformtest",
         .root_source_file = b.path("src/main.zig"),
         .target = target,
         .optimize = optimize,
     });
     b.installArtifact(exe);
+
+    lib.addCSourceFiles(.{
+        .root = b.path("lib"),
+        .files = &.{"src/platform.c"},
+    });
+    lib.linkLibC();
+    b.installArtifact(lib);
+
+    const module = b.addModule("lPlatform", .{ .root_source_file = .{ .path = "src/main.zig" } });
+    module.addIncludePath(b.path(""));
 
     const run_cmd = b.addRunArtifact(exe);
     run_cmd.step.dependOn(b.getInstallStep());

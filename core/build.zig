@@ -19,6 +19,12 @@ pub fn build(b: *std.Build) void {
         .target = target,
         .optimize = optimize,
     });
+
+    const zglfw = b.dependency("zglfw", .{});
+    exe.root_module.addImport("zglfw", zglfw.module("root"));
+    exe.linkLibrary(zglfw.artifact("glfw"));
+    if (target.result.os.tag != .emscripten) {}
+
     b.installArtifact(exe);
 
     const run_cmd = b.addRunArtifact(exe);

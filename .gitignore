@@ -30,6 +30,7 @@ output.txt
 
 *.egg-info
 dist
+build
 
 # 2D files
 *.aseprite
