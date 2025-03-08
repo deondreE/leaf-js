@@ -16,6 +16,6 @@ def build_wasm():
     else:
         print("Build Broke!")
         print(result.stderr)
-    
+        
 if __name__ == "__main__":
     build_wasm()
