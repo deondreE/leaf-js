@@ -10,7 +10,6 @@
     <canvas is="leaf-js" src="initScene" width="1000" height="1000" id="webgpu-canvas"></canvas>
     <canvas is="l-profiler" width="400" height="300" target-id="webgpu-canvas"></canvas>
   </body>
-  <script src="./src/profiler.ts" type="module"></script>
   <script src="./src/leaf.ts" type="module"></script>
   <script>
     function initScene() {
@@ -21,7 +20,7 @@
             texture: './test.jpg',
             scale: 0.8,
             rotation: { x: 0, y: 0, z: 45 },
-            color: { r: 0, b: 0, g: 0, a: 1 },
+            color: { r: 0, b: 1, g: 0, a: 1 },
             animation: {
               effect: {
                 type: 'scale',

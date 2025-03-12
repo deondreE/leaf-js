@@ -4,7 +4,7 @@
  * @file
  */
 
-export const DEFAULT_VIEW_FRUSTRUM: number = (Math.PI * 2) / 5;
+export const DEFAULT_VIEW_FRUSTRUM: number = (Math.PI * 2) / 4;
 export const DEFAULT_PIPELINE_BUFFERS: GPUVertexBufferLayout[] = [
   {
     arrayStride: 0x28,
@@ -34,4 +34,4 @@ export const DEFAULT_DEPTH_STENCIL: GPUDepthStencilState = {
   format: 'depth32float',
 };
 
-export const SUPPORTED_FILETYPES = new Set(['.obj', '.fbx', '.aseprite', '.ase']);
+export const SUPPORTED_FILETYPES = new Set(['.obj', '.stl', '.aseprite', '.ase']);
