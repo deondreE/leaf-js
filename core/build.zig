@@ -24,6 +24,7 @@ pub fn build(b: *std.Build) void {
     const ziglm = b.dependency("ziglm", .{});
 
     exe.root_module.addImport("zglfw", zglfw.module("root"));
+    exe.linkLibC();
     exe.root_module.addImport("zgl", zgl.module("zgl"));
     exe.root_module.addImport("ziglm", ziglm.module("ziglm"));
     exe.linkLibrary(zglfw.artifact("glfw"));
