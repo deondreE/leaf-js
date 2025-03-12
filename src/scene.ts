@@ -95,12 +95,30 @@ class Scene {
 
     const saveData = JSON.stringify(uData);
     localStorage.setItem('UserDefinedScene', saveData);
-    // TODO: add save indicator, allow for forcing of saves.
+    this.showSaveLoader();
+  }
+
+  // FIXME: All additions to the HTML here should be appended to the canvas.
+  private showSaveLoader() {
+    console.log('Showing Loader');
+
+    const saveLoaderContainer = document.createElement('div');
+    saveLoaderContainer.className = 'save-loader';
+
+    const loader = document.createElement('div');
+    loader.className = 'loader';
+
+    saveLoaderContainer.appendChild(loader);
+
+    const scene = document.getElementById('scene-controls');
+    scene?.appendChild(saveLoaderContainer);
   }
 
   private createScene() {
+    const container = document.createElement('div');
     const sceneDiv = document.createElement('div');
     sceneDiv.id = 'scene-controls';
+    sceneDiv.className = 'scene-controls';
 
     const pauseButton = document.createElement('button');
     pauseButton.innerHTML = `Pause`;
@@ -115,15 +133,8 @@ class Scene {
       this.start();
     });
 
-    const blankButton = document.createElement('button');
-    blankButton.textContent = '';
-    blankButton.addEventListener('click', () => {
-      console.log('Blank button clicked');
-    });
-
     sceneDiv.appendChild(pauseButton);
     sceneDiv.appendChild(playButton);
-    sceneDiv.appendChild(blankButton);
 
     document.body.appendChild(sceneDiv);
   }

@@ -8,7 +8,9 @@ import { v4 as uuid } from 'uuid';
 import Camera from './camera';
 import { createCubeIndexData, createCubeVertexArray } from './meshes/cube';
 
-/** Currently Supports static file definitions. */
+/** Renderer for the 3d context
+ * Required canvas and canvas alone.
+ */
 class Renderer3D {
   canvas?: HTMLCanvasElement;
   device: GPUDevice | null = null;
@@ -41,15 +43,12 @@ class Renderer3D {
       format: this.format,
     });
 
-    // Create a texture to render to
     this.renderTexture = this.device.createTexture({
       size: [this.canvas!.width, this.canvas!.height],
       format: this.format,
       usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.COPY_SRC, // Add COPY_SRC
     });
 
-    // TODO: Make this a camera class.
-    // Matrix Definitions can be global context.
     const modelMatrix = mat4.create();
     const viewMatrix = mat4.create();
     const projectionMatrix = mat4.create();
@@ -66,6 +65,7 @@ class Renderer3D {
     );
     camera.setup();
 
+    // FIXME: Move this to a camera class, that can be controlled by the user.
     mat4.lookAt(viewMatrix, [0, 0, 5], [0, 0, 0], [0, 1, 0]); // Camera at (0,0,5), looking at origin
     mat4.perspective(
       projectionMatrix,
@@ -77,7 +77,7 @@ class Renderer3D {
     mat4.multiply(mvpMatrix, projectionMatrix, viewMatrix);
     mat4.multiply(mvpMatrix, mvpMatrix, modelMatrix);
 
-    console.log(this.returnFileExt(fileName));
+    // console.log(this.returnFileExt(fileName));
     switch (this.returnFileExt(fileName)) {
       case 'obj': {
         const objParser = new OBJParser(this.device);
@@ -112,7 +112,7 @@ class Renderer3D {
           passEncoder.end();
           this.device!.queue.submit([commandEncoder.finish()]);
         });
-        // Generic Model def for saving specifically.
+
         let model: Model = {
           name: fileName,
           id: uuid(),
@@ -172,7 +172,15 @@ class Renderer3D {
     }
   }
 
-  /** Renders the default cube for user data manip */
+  /** Rips the file extension of a model. */
+  returnFileExt(fileName: string): string {
+    const parts = fileName.split('.');
+    return parts.length > 1 ? parts.pop() || '' : '';
+  }
+
+  /** Renders a primitive cube, for the user to effect with a dynamic scene.
+   * @returns pipeline, shader, vertexBuffer, indexBuffer all in memory.
+   */
   async primitiveCube(
     scale?: number,
     rotation?: { x: number; y: number; z: number },
@@ -344,19 +352,14 @@ class Renderer3D {
     this.device.queue.submit([commandEncoder.finish()]);
   }
 
-  private createModelViewMatrix() {}
-
+  /** Strictly is used for when models are imported through files. */
   private createModelScaleMatrix(scaleX: number, scaleY: number, scaleZ: number) {
     return new Float32Array([scaleX, 0, 0, 0, 0, scaleY, 0, 0, 0, 0, scaleZ, 0, 0, 0, 0, 1]);
   }
 
-  returnFileExt(fileName: string): string {
-    const parts = fileName.split('.');
-    return parts.length > 1 ? parts.pop() || '' : '';
-  }
-
-  private cameraControls(): void {}
-
+  /** Required for animation due to needed some kind of function call.
+   * @returns void
+   */
   private render(renderMethod: () => void) {
     if (typeof renderMethod !== 'function') {
       console.error('renderMethod must be a function');

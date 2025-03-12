@@ -4,19 +4,55 @@ body {
   margin: 0;
 }
 
-canvas {
-  width: 100%;
-  height: 100%;
-  display: block;
-}
-
 h1 {
   position: absolute;
   color: #ccc;
   margin: 30px 30px;
 }
 
-#scene-controls {
+.scene-controls {
+  display: flex;
+  justify-content: space-around;
   position: fixed;
+  z-index: 10;
+  padding: 10px;
   top: 0;
+}
+
+.loader {
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #f39bc7;
+  border-radius: 50%;
+  width: 10px;
+  margin-top: 10px;
+  animation: spin 1s linear infinite;
+}
+
+.scene-controls button {
+  background-color: red;
+  color: white;
+  margin-right: 3em;
+  width: 80px;
+  height: 30px;
+  border: 2px solid black;
+  border-radius: 5px;
+}
+
+.scene-controls:hover {
+  cursor: pointer;
+}
+
+#loader {
+  position: relative;
+  top: 50%;
+  left: 50%;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
