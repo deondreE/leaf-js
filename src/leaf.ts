@@ -3,6 +3,16 @@ import ParticleRenderer from './renderer.particle';
 import Scene from './scene';
 import { assert } from './utils/util';
 
+/**
+ * `Leaf` is a custom HTMLCanvasElement that extends the native HTMLCanvasElement.
+ *
+ * This class allows for enhanced or customized functionality for canvas elements,
+ * providing additional methods or properties specific to the implementation.
+ * It can be used like a regular canvas element in HTML, but with added capabilities
+ * defined in this class.
+ *
+ * @extends HTMLCanvasElement
+ */
 class Leaf extends HTMLCanvasElement {
   static observedAttributes = ['src', 'particle'];
   is3D: boolean = false;
@@ -37,7 +47,6 @@ class Leaf extends HTMLCanvasElement {
           console.log(scene);
           let dynScene = new Scene(scene, this);
           // If it has a particle that system needs access to it, otherwise use it here.
-          // TODO: Model scale,
           // TODO: Custom camera position. Camera Class
           // TODO: Multiple model support. Not sure, maybe appending to the current pipeline.
           // TODO: Layout the model definitions for the end user, so that we can write the api around that.
@@ -76,7 +85,6 @@ class Leaf extends HTMLCanvasElement {
     console.log('Time to transfer context');
   }
 
-  /** Returns a file type */
   checkFileType(possibleFile: string): boolean {
     const parts = possibleFile.split('.');
     if (parts.length < 2) {

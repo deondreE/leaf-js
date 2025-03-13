@@ -1,12 +1,12 @@
 export default class ParticleRenderer {
-  device: GPUDevice;
+  device: GPUDevice | null = null;
   context: GPUCanvasContext | null = null;
-  format: GPUCanvasFormat;
-  computePipeline: GPUComputePipeline;
-  particleBuffer: GPUBuffer;
-  uniformBuffer: GPUBuffer;
-  bindGroup: GPUBindGroup;
-  computeBindGroup: GPUBindGroup;
+  format: GPUTextureFormat | null = null;
+  computePipeline: GPUComputePipeline | null = null;
+  particleBuffer: GPUBuffer | null = null;
+  uniformBuffer: GPUBuffer | null = null;
+  bindGroup: GPUBindGroup | null = null;
+  computeBindGroup: GPUBindGroup | null = null;
   pipeline: GPURenderPipeline | null = null;
   canvas: HTMLCanvasElement;
   particleCount: number = 4000000;
@@ -77,7 +77,7 @@ export default class ParticleRenderer {
         particleData[i * 4 + 3] = vy;
       }
 
-      this.particleBuffer = this.device.createBuffer({
+      this.particleBuffer = this.device!.createBuffer({
         size: particleData.byteLength,
         usage: GPUBufferUsage.VERTEX | GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
         mappedAtCreation: true,
@@ -85,14 +85,14 @@ export default class ParticleRenderer {
       new Float32Array(this.particleBuffer.getMappedRange()).set(particleData);
       this.particleBuffer.unmap();
 
-      this.uniformBuffer = this.device.createBuffer({
+      this.uniformBuffer = this.device!.createBuffer({
         size: 8, // t,g
         usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
       });
     } else {
       this.particleData = new Float32Array(this.particleCount * 5); // 5 floats per particle
 
-      this.particleBuffer = this.device.createBuffer({
+      this.particleBuffer = this.device!.createBuffer({
         size: this.particleData.byteLength,
         usage: GPUBufferUsage.VERTEX | GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
         mappedAtCreation: true,
@@ -100,7 +100,7 @@ export default class ParticleRenderer {
       new Float32Array(this.particleBuffer.getMappedRange()).set(this.particleData);
       this.particleBuffer.unmap();
 
-      this.uniformBuffer = this.device.createBuffer({
+      this.uniformBuffer = this.device!.createBuffer({
         size: 8,
         usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
       });
@@ -109,23 +109,23 @@ export default class ParticleRenderer {
 
   private createPipeline() {
     if (this.simulation) {
-      const shaderModule = this.device.createShaderModule({
+      const shaderModule = this.device!.createShaderModule({
         code: `
       struct VertexInput {
           @location(0) position: vec2<f32>,
       };
-      
+
       struct VertexOutput {
           @builtin(position) position: vec4<f32>,
       };
-      
+
       @vertex
       fn vs_main(@location(0) pos: vec2<f32>) -> VertexOutput {
           var out: VertexOutput;
           out.position = vec4<f32>(pos, 0.0, 1.0);
           return out;
       }
-      
+
       @fragment
       fn fs_main() -> @location(0) vec4<f32> {
           return vec4<f32>(1.0, 1.0, 1.0, 1.0); // White particles
@@ -133,7 +133,7 @@ export default class ParticleRenderer {
       `,
       });
 
-      this.pipeline = this.device.createRenderPipeline({
+      this.pipeline = this.device!.createRenderPipeline({
         layout: 'auto',
         vertex: {
           module: shaderModule,
@@ -153,23 +153,23 @@ export default class ParticleRenderer {
         primitive: { topology: 'point-list' },
       });
 
-      this.bindGroup = this.device.createBindGroup({
+      this.bindGroup = this.device!.createBindGroup({
         layout: this.pipeline.getBindGroupLayout(0),
-        entries: [{ binding: 0, resource: { buffer: this.uniformBuffer } }],
+        entries: [{ binding: 0, resource: { buffer: this.uniformBuffer! } }],
       });
     } else {
-      const shaderModule = this.device.createShaderModule({
+      const shaderModule = this.device!.createShaderModule({
         code: `
           struct VertexInput {
             @location(0) position: vec2<f32>,
             @location(1) age: f32,
           };
-          
+
           struct VertexOutput {
             @builtin(position) position: vec4<f32>,
             @location(0) age: f32,
           };
-          
+
           @vertex
           fn vs_main(@location(0) pos: vec2<f32>, @location(1) age: f32) -> VertexOutput {
             var out: VertexOutput;
@@ -177,7 +177,7 @@ export default class ParticleRenderer {
             out.age = age;
             return out;
           }
-          
+
           @fragment
           fn fs_main(@location(0) age: f32) -> @location(0) vec4<f32> {
             let alpha = 1.0 - (age / ${this.particleLifespan});
@@ -186,7 +186,7 @@ export default class ParticleRenderer {
         `,
       });
 
-      this.pipeline = this.device.createRenderPipeline({
+      this.pipeline = this.device!.createRenderPipeline({
         layout: 'auto',
         vertex: {
           module: shaderModule,
@@ -214,7 +214,7 @@ export default class ParticleRenderer {
   private createComputePipeline() {
     const grav = this.userData ? this.userData.gravity : -0.0001;
     if (this.simulation) {
-      const computeShaderModule = this.device.createShaderModule({
+      const computeShaderModule = this.device!.createShaderModule({
         code: `
       struct Particle {
           position: vec2<f32>,
@@ -236,7 +236,7 @@ export default class ParticleRenderer {
       `,
       });
 
-      this.computePipeline = this.device.createComputePipeline({
+      this.computePipeline = this.device!.createComputePipeline({
         layout: 'auto',
         compute: {
           module: computeShaderModule,
@@ -244,15 +244,15 @@ export default class ParticleRenderer {
         },
       });
 
-      this.computeBindGroup = this.device.createBindGroup({
+      this.computeBindGroup = this.device!.createBindGroup({
         layout: this.computePipeline.getBindGroupLayout(0),
         entries: [
-          { binding: 0, resource: { buffer: this.particleBuffer } },
-          { binding: 1, resource: { buffer: this.uniformBuffer } },
+          { binding: 0, resource: { buffer: this.particleBuffer! } },
+          { binding: 1, resource: { buffer: this.uniformBuffer! } },
         ],
       });
     } else {
-      const temp = this.device.createShaderModule({
+      const temp = this.device!.createShaderModule({
         code: `
       struct Particle {
           position: vec2<f32>,
@@ -276,7 +276,7 @@ export default class ParticleRenderer {
       `,
       });
 
-      this.computePipeline = this.device.createComputePipeline({
+      this.computePipeline = this.device!.createComputePipeline({
         layout: 'auto',
         compute: {
           module: temp,
@@ -284,11 +284,11 @@ export default class ParticleRenderer {
         },
       });
 
-      this.computeBindGroup = this.device.createBindGroup({
+      this.computeBindGroup = this.device!.createBindGroup({
         layout: this.computePipeline.getBindGroupLayout(0),
         entries: [
-          { binding: 0, resource: { buffer: this.particleBuffer } },
-          { binding: 1, resource: { buffer: this.uniformBuffer } },
+          { binding: 0, resource: { buffer: this.particleBuffer! } },
+          { binding: 1, resource: { buffer: this.uniformBuffer! } },
         ],
       });
     }
@@ -325,40 +325,40 @@ export default class ParticleRenderer {
       this.time += deltaTime;
 
       const tData = new Float32Array([this.time]);
-      this.device.queue.writeBuffer(this.uniformBuffer, 0, tData);
+      this.device!.queue.writeBuffer(this.uniformBuffer!, 0, tData);
 
-      const commandEncoder = this.device.createCommandEncoder();
+      const commandEncoder = this.device!.createCommandEncoder();
       const pass = commandEncoder.beginComputePass();
-      pass.setPipeline(this.computePipeline);
+      pass.setPipeline(this.computePipeline!);
       pass.setBindGroup(0, this.computeBindGroup);
       pass.dispatchWorkgroups(Math.ceil(this.particleCount / 64));
       pass.end();
 
-      this.device.queue.submit([commandEncoder.finish()]);
+      this.device!.queue.submit([commandEncoder.finish()]);
     } else {
       this.time += deltaTime;
 
       this.emitParticles(deltaTime);
 
       const timeData = new Float32Array([this.time]);
-      this.device.queue.writeBuffer(this.uniformBuffer, 0, timeData);
+      this.device!.queue.writeBuffer(this.uniformBuffer!, 0, timeData);
 
-      const commandEncoder = this.device.createCommandEncoder();
+      const commandEncoder = this.device!.createCommandEncoder();
       const pass = commandEncoder.beginComputePass();
-      pass.setPipeline(this.computePipeline);
+      pass.setPipeline(this.computePipeline!);
       pass.setBindGroup(0, this.computeBindGroup);
       pass.dispatchWorkgroups(Math.ceil(this.particleCount / 64));
       pass.end();
 
-      this.device.queue.writeBuffer(
-        this.particleBuffer,
+      this.device!.queue.writeBuffer(
+        this.particleBuffer!,
         0,
         this.particleData.buffer,
         0,
         this.particleData.byteLength,
       );
 
-      this.device.queue.submit([commandEncoder.finish()]);
+      this.device!.queue.submit([commandEncoder.finish()]);
     }
   }
 
@@ -373,7 +373,8 @@ export default class ParticleRenderer {
         },
       ],
     };
-    const commandEncoder = this.device.createCommandEncoder();
+    const commandEncoder = this.device!.createCommandEncoder();
+    // @ts-ignore
     const passEncoder = commandEncoder.beginRenderPass(renderPassDescriptor);
     if (this.simulation) {
       passEncoder.setPipeline(this.pipeline!);
@@ -381,14 +382,14 @@ export default class ParticleRenderer {
       passEncoder.draw(this.aliveParticles);
       passEncoder.end();
 
-      this.device.queue.submit([commandEncoder.finish()]);
+      this.device!.queue.submit([commandEncoder.finish()]);
     } else {
       passEncoder.setPipeline(this.pipeline!);
       passEncoder.setVertexBuffer(0, this.particleBuffer);
       passEncoder.draw(this.aliveParticles); // Only draw alive particles
       passEncoder.end();
 
-      this.device.queue.submit([commandEncoder.finish()]);
+      this.device!.queue.submit([commandEncoder.finish()]);
     }
   }
 
