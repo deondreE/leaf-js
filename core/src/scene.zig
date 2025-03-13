@@ -1,23 +1,11 @@
 const std = @import("std");
-
-pub const Vec3 = struct {
-    x: f32,
-    y: f32,
-    z: f32,
-};
-
-pub const Vec4 = struct {
-    r: f32,
-    g: f32,
-    b: f32,
-    a: f32,
-};
+const math = @import("math.zig");
 
 pub const Model = struct {
     model_type: []const u8,
-    position: Vec3,
-    scale: Vec3,
-    color: Vec4,
+    position: math.Vec3,
+    scale: math.Vec3,
+    color: math.Vec4,
 };
 
 pub const Scene = struct {
