@@ -3,6 +3,17 @@
   "version": "2.0.0",
   "type": "module",
   "description": "A performant 3d javascript library",
+  "main": "dist/bundle.js",
+  "module": "dist/bundle.js",
+  "types": "dist/types/index.d.ts",
+  "files": [
+    "dist/",
+    "dist/*.wasm",
+    "dist/types/*.d.ts"
+  ],
+  "exports": {
+    "import": "./dist/index.js"
+  },
   "source": "src/index.ts",
   "scripts": {
     "dev": "vite",
@@ -18,6 +29,8 @@
     "@rollup/plugin-commonjs": "^28.0.2",
     "@rollup/plugin-node-resolve": "^16.0.0",
     "@rollup/plugin-typescript": "^12.1.2",
+    "@rollup/plugin-url": "^8.0.2",
+    "@rollup/plugin-wasm": "^6.2.2",
     "@types/node": "^22.13.2",
     "@types/uuid": "^10.0.0",
     "@webgpu/types": "^0.1.52",

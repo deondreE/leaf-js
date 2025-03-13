@@ -20,6 +20,9 @@ test.json*
 *.mtl
 *.stl
 
+# MACOS
+.DS_STORE
+
 # zig
 .zig-cache
 zig-out

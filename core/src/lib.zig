@@ -1,5 +1,5 @@
 const std = @import("std");
-const toml = @import("./parsers/toml.zig");
+const toml = @import("toml.zig");
 
 extern fn print(u8) void;
 

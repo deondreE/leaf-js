@@ -4,6 +4,7 @@ export * from './leaf';
 export * from './profiler';
 export * from './renderer.new';
 export * from './utils/util';
+export * from './utils/wasmload';
 export * from './constants';
 
 // meshes
@@ -13,3 +14,5 @@ export * from './meshes/quad';
 
 export * from './assetloading/build';
 export * from './assetloading/load';
+
+export * from './dispatcher';
