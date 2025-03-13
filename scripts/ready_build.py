@@ -2,7 +2,7 @@ import os
 import shutil
 
 def ready_build():
-    src_file_paths = ["../core/lib.wasm", "../src/style.css"]
+    src_file_paths = ["./core/lib.wasm", "./src/style.css"]
     dist_dir = "dist"
 
     os.makedirs(dist_dir, exist_ok=True)
