@@ -1,11 +1,14 @@
 const fs = require('fs');
-const source = fs.readFileSync("./lib.wasm");
+const source = fs.readFileSync('./lib.wasm');
 const typedArray = new Uint8Array(source);
 
 WebAssembly.instantiate(typedArray, {
   env: {
-    print: (result) => { console.log(`The result is ${result}`); }
-  }}).then(result => {
+    print: (result) => {
+      console.log(`The result is ${result}`);
+    },
+  },
+}).then((result) => {
   const dispatch = result.instance.exports.dispatch;
   dispatch(100);
 });

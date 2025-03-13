@@ -34,6 +34,7 @@
     "@types/node": "^22.13.2",
     "@types/uuid": "^10.0.0",
     "@webgpu/types": "^0.1.52",
+    "oxlint": "^0.15.15",
     "prettier": "^3.5.1",
     "rollup": "^4.34.8",
     "rollup-plugin-typescript3": "^3.0.5",
@@ -47,7 +48,7 @@
     "pako": "^2.1.0",
     "rollup-plugin-typescript2": "^0.36.0",
     "uuid": "^11.1.0",
-    "vitest": "^3.0.5",
+    "vitest": "^3.0.8",
     "wgpu-matrix": "^3.3.0"
   }
 }

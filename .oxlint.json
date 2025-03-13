@@ -1,0 +1,22 @@
+{
+  "rules": [
+    {
+      "name": "Line Length",
+      "severity": "warning",
+      "max_length": 120
+    },
+    {
+      "name": "Unused Variables",
+      "severity": "error"
+    },
+    {
+      "name": "Method Length",
+      "severity": "warning",
+      "max_length": 50
+    },
+    {
+      "name": "Commented Code",
+      "severity": "info"
+    }
+  ]
+}
