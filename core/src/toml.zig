@@ -1,6 +1,7 @@
 const std = @import("std");
 const testing = std.testing;
-const scene = @import("./scene.zig");
+const scene = @import("scene.zig");
+const math = @import("math.zig");
 
 const TokenType = enum {
     identifier,
@@ -179,9 +180,9 @@ pub const TomlParser = struct {
             .scene = scene.Scene{
                 .models = scene.Model{
                     .model_type = "",
-                    .position = scene.Vec3{ .x = 0, .y = 0, .z = 0 },
-                    .scale = scene.Vec3{ .x = 1, .y = 1, .z = 1 },
-                    .color = scene.Vec4{ .r = 1, .g = 1, .b = 1, .a = 1 },
+                    .position = math.Vec3{ .x = 0, .y = 0, .z = 0 },
+                    .scale = math.Vec3{ .x = 1, .y = 1, .z = 1 },
+                    .color = math.Vec4{ .r = 1, .g = 1, .b = 1, .a = 1 },
                 },
             },
         };
@@ -228,18 +229,18 @@ pub const TomlParser = struct {
     }
 };
 
-fn parseVec3(input: []const u8) scene.Vec3 {
+fn parseVec3(input: []const u8) math.Vec3 {
     var iter = std.mem.tokenize(u8, input, ", ");
-    return scene.Vec3{
+    return math.Vec3{
         .x = parseFloat(iter.next().?),
         .y = parseFloat(iter.next().?),
         .z = parseFloat(iter.next().?),
     };
 }
 
-fn parseVec4(input: []const u8) scene.Vec4 {
+fn parseVec4(input: []const u8) math.Vec4 {
     var iter = std.mem.tokenize(u8, input, ", ");
-    return scene.Vec4{
+    return math.Vec4{
         .r = parseFloat(iter.next().?),
         .g = parseFloat(iter.next().?),
         .b = parseFloat(iter.next().?),
