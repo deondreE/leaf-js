@@ -185,6 +185,14 @@ class Renderer3D {
     scale?: number,
     rotation?: { x: number; y: number; z: number },
     color?: { r: number; g: number; b: number; a: number },
+    animation?: {
+      effect: {
+        type: string;
+        start: { x: number; y: number; z: number };
+        to: { x: number; y: number; z: number };
+      };
+      timeScale?: string | 'infinite';
+    },
   ) {
     console.log('Rendering cube...');
 
@@ -223,11 +231,6 @@ class Renderer3D {
     const rotationMatrix = mat4.create();
     const rotationQuat = quat.create();
 
-    if (rotation) {
-      quat.fromEuler(rotationQuat, rotation.x, rotation.y, rotation.z);
-      mat4.fromQuat(rotationMatrix, rotationQuat);
-    }
-
     const uniformBuffer = this.device.createBuffer({
       size: 80,
       usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
@@ -259,14 +262,6 @@ class Renderer3D {
     uniformData.set(rotationMatrix, 0);
     // @ts-ignore
     uniformData[16] = scale;
-
-    this.device.queue.writeBuffer(
-      uniformBuffer,
-      0,
-      uniformData.buffer,
-      uniformData.byteOffset,
-      uniformData.byteLength,
-    );
 
     const shaderModule = this.device.createShaderModule({
       code: `
@@ -329,32 +324,93 @@ class Renderer3D {
       primitive: { topology: 'triangle-list' },
     });
 
-    const commandEncoder = this.device.createCommandEncoder();
-    const textureView = this.context!.getCurrentTexture().createView();
-    const passEncoder = commandEncoder.beginRenderPass({
-      colorAttachments: [
-        {
-          view: textureView,
-          loadOp: 'clear',
-          storeOp: 'store',
-          clearValue: [0.1, 0.1, 0.1, 1],
-        },
-      ],
-    });
+    if (animation) {
+      const frame = () => {
+        this.runAnimationCalc(
+          animation?.effect.type,
+          uniformBuffer,
+          uniformData,
+          animation.effect.to,
+        );
 
-    passEncoder.setPipeline(pipeline);
-    passEncoder.setBindGroup(0, uniformBindGroup);
-    passEncoder.setVertexBuffer(0, vertexBuffer);
-    passEncoder.setIndexBuffer(indexBuffer, 'uint16');
-    passEncoder.drawIndexed(indexData.length);
+        const commandEncoder = this.device!.createCommandEncoder();
+        const textureView = this.context!.getCurrentTexture().createView();
+        const passEncoder = commandEncoder.beginRenderPass({
+          colorAttachments: [
+            {
+              view: textureView,
+              loadOp: 'clear',
+              storeOp: 'store',
+              clearValue: [0.1, 0.1, 0.1, 1],
+            },
+          ],
+        });
 
-    passEncoder.end();
-    this.device.queue.submit([commandEncoder.finish()]);
+        passEncoder.setPipeline(pipeline);
+        passEncoder.setBindGroup(0, uniformBindGroup);
+        passEncoder.setVertexBuffer(0, vertexBuffer);
+        passEncoder.setIndexBuffer(indexBuffer, 'uint16');
+        passEncoder.drawIndexed(indexData.length);
+
+        passEncoder.end();
+        this.device!.queue.submit([commandEncoder.finish()]);
+        requestAnimationFrame(frame);
+      };
+
+      frame();
+    } else {
+      const commandEncoder = this.device.createCommandEncoder();
+      const textureView = this.context!.getCurrentTexture().createView();
+      const passEncoder = commandEncoder.beginRenderPass({
+        colorAttachments: [
+          {
+            view: textureView,
+            loadOp: 'clear',
+            storeOp: 'store',
+            clearValue: [0.1, 0.1, 0.1, 1],
+          },
+        ],
+      });
+
+      passEncoder.setPipeline(pipeline);
+      passEncoder.setBindGroup(0, uniformBindGroup);
+      passEncoder.setVertexBuffer(0, vertexBuffer);
+      passEncoder.setIndexBuffer(indexBuffer, 'uint16');
+      passEncoder.drawIndexed(indexData.length);
+
+      passEncoder.end();
+      this.device.queue.submit([commandEncoder.finish()]);
+    }
   }
 
-  /** Strictly is used for when models are imported through files. */
-  private createModelScaleMatrix(scaleX: number, scaleY: number, scaleZ: number) {
-    return new Float32Array([scaleX, 0, 0, 0, 0, scaleY, 0, 0, 0, 0, scaleZ, 0, 0, 0, 0, 1]);
+  private runAnimationCalc(
+    type: string,
+    uniformBuffer: GPUBuffer,
+    uniformData: Float32Array,
+    rotation: { x: number; y: number; z: number },
+  ): void {
+    switch (type) {
+      case 'rotation':
+        const rotationQuat = quat.create();
+        const rotationMatrix = mat4.create();
+
+        quat.fromEuler(rotationQuat, rotation.x, rotation.y, rotation.z);
+        mat4.fromQuat(rotationMatrix, rotationQuat);
+
+        uniformData.set(rotationMatrix, 0);
+
+        this.device!.queue.writeBuffer(
+          uniformBuffer,
+          0,
+          uniformData.buffer,
+          uniformData.byteOffset,
+          uniformData.byteLength,
+        );
+        break;
+      default:
+        console.warn(`${type}, Not implemented yet!`);
+        break;
+    }
   }
 
   /** Required for animation due to needed some kind of function call.

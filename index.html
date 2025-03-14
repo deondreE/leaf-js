@@ -8,7 +8,6 @@
   </head>
   <body>
     <canvas is="leaf-js" src="initScene" width="1000" height="1000" id="webgpu-canvas"></canvas>
-    <canvas is="l-profiler" width="400" height="300" target-id="webgpu-canvas"></canvas>
   </body>
   <script src="./src/leaf.ts" type="module"></script>
   <script>
@@ -23,11 +22,11 @@
             color: { r: 0, b: 1, g: 0, a: 1 },
             animation: {
               effect: {
-                type: 'scale',
-                start: 5,
-                to: 10,
+                type: 'rotation',
+                start: { x: 0, y: 0, z: 0 },
+                to: { x: 0, y: 45, z: 0 },
               },
-              duration: '2s',
+              timeScale: 'infinite', // once | `amount of times`
             },
           },
         ],

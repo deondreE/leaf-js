@@ -24,14 +24,14 @@ Currently we support for static file imports:
 
 | File Format | Import Supported | Animation |
 | ----------- | ---------------- | --------- |
-| .fbx        | no               | no        |
-| .stl        | yes              | no        |
-| .obj        | yes              | no        |
-| .aesprite   | yes              | yes       |
-| .jpeg       | no               | no        |
-| .png        | no               | no        |
-| .gif        | no               | no        |
-| .psd        | no               | no        |
+| .fbx        | ❎               | ❎        |
+| .stl        | ✅               | ❎        |
+| .obj        | ✅               | ❎        |
+| .aesprite   | ✅               | ✅        |
+| .jpeg       | ❎               | ❎        |
+| .png        | ❎               | ❎        |
+| .gif        | ❎               | ❎        |
+| .psd        | ❎               | ❎        |
 
 > Note: for .stl you need to check the ascii format inside of the blender output when exporting. Binary parsing for .stl does not work.
 
