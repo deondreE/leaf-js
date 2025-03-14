@@ -38,7 +38,7 @@ nav:
   - Home: index.md
   - Getting Started:
       - Understanding Leaf: Leaf.md
-      - Leaf Configuration: config.md 
+      - Leaf Configuration: config.md
       - Leaf Reference: reference.md
   - Code Style: code-style.md
   - Future Of Leaf: future.md

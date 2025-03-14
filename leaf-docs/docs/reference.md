@@ -16,13 +16,13 @@ Static scenes are driven directly by there paser. The user supplies a file forma
 
 `parse{FileType}`: parses the data from the given file, currently loads it into memory will eventually stream into chunks for more efficient processing.
 
-`getShaderString`: returns the default shader in string form, by default it is setup to return ShaderModule. 
+`getShaderString`: returns the default shader in string form, by default it is setup to return ShaderModule.
 
 `createBuffers`: Returns all required buffers and writes required data inside of them.
 
 `createPipeline`: Creates a pipeline for the general requirements of that filetype, sometimes the buffers need to be scaled based on the number of verticies, or Ghost verticies need to be added.
 
-- *UniformBuffer*: Shared across all models, shared across all buffers, is more of a dyn heap then a buffer. Stores color, rotation, scale. Anything that effects the overall object. 
+- _UniformBuffer_: Shared across all models, shared across all buffers, is more of a dyn heap then a buffer. Stores color, rotation, scale. Anything that effects the overall object.
 
 ---
 
@@ -90,7 +90,7 @@ All default files formats supported by `<img>` are supported as texture2D contex
 # Scene
 
 - `type`: Type is the type of primitive you want to apply the changes to.
-    - `cube`: Cube primitive defined in the renderer.
+  - `cube`: Cube primitive defined in the renderer.
 - `scale`: A floating point value between 0 and 1.
 - `color`: RGBA default color is a lilac purple. All RGB values are between 0 and 1 I think.
 - `rotation`: XYZ dyn rotation, has support for math functions as long as they return a whole number, has support for radient rotation and quaternion rotation.
@@ -98,7 +98,7 @@ All default files formats supported by `<img>` are supported as texture2D contex
 
 ---
 
-### Dynmaic Scene API template 
+### Dynmaic Scene API template
 
 - `animation`: Support for animations applied to the object inisde of the scene.
   - `duration`: Time that animation takes
