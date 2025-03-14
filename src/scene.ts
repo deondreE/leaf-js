@@ -2,14 +2,13 @@ import Renderer3D from './renderer.new';
 import type { Model } from './types/scene.types';
 import EventDispatcher from './eventdispatcher';
 
-  
 enum SceneState {
   ACTIVE,
   PAUSED,
   AWAKE,
   START,
   UPDATE,
-};
+}
 
 /** A Scene is defined as a collection of objects renderd in a single pass. */
 class Scene {

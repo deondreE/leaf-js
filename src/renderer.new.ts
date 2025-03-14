@@ -194,8 +194,7 @@ class Renderer3D {
       timeScale?: string | 'infinite';
     },
   ) {
-    console.log('Rendering cube...');
-
+    console.log(color);
     const adapter = await navigator.gpu.requestAdapter();
     if (!adapter) {
       console.error('No WebGPU adapter found.');
@@ -231,6 +230,11 @@ class Renderer3D {
     const rotationMatrix = mat4.create();
     const rotationQuat = quat.create();
 
+    if (rotation) {
+      quat.fromEuler(rotationQuat, rotation.x, rotation.y, rotation.z);
+      mat4.fromQuat(rotationMatrix, rotationQuat);
+    }
+
     const uniformBufferSize = 96;
     const uniformBuffer = this.device.createBuffer({
       size: uniformBufferSize,
@@ -259,7 +263,7 @@ class Renderer3D {
       ],
     });
 
-    const uniformData = new Float32Array(21); // 16 for matrix + 1 for scale + 4 for color
+    const uniformData = new Float32Array(17); // 16 for matrix + 1 for scale + 4 for color
     uniformData.set(rotationMatrix, 0);
     // @ts-ignore
     uniformData[16] = scale;
@@ -270,6 +274,7 @@ class Renderer3D {
       uniformData.byteOffset,
       uniformData.byteLength,
     );
+    console.log(uniformBuffer);
     const shaderModule = this.device.createShaderModule({
       code: `
         struct VertexInput {
@@ -364,7 +369,7 @@ class Renderer3D {
       case 'rotation':
         const rotationQuat = quat.create();
         const rotationMatrix = mat4.create();
-
+        y;
         quat.fromEuler(rotationQuat, rotation.x, rotation.y, rotation.z);
         mat4.fromQuat(rotationMatrix, rotationQuat);
 

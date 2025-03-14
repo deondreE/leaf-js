@@ -17,74 +17,25 @@
           {
             type: 'cube',
             texture: './test.jpg',
-            scale: 0.8,
-            rotation: { x: 0, y: 0, z: 45 },
+            scale: 0.6,
+            rotation: { x: 25, y: 45, z: 45 },
             color: { r: 0.0, b: 1.0, g: 0.0, a: 1.0 },
             animation: {
               effect: {
                 type: 'rotation',
                 start: { x: 0, y: 0, z: 0 },
-                to: { x: 0, y: 45, z: 0 },
+                to: { x: 0, y: 0, z: 0 },
               },
               timeScale: 'infinite', // once | `amount of times`
             },
           },
         ],
-      };
+        particles: [
+          { name: 'test', size: 1, amount: 100, do: 'fall' }, 
+        ],      
+    };
 
-      return sceneDef;
-      // let scene = {
-      //   particle: {
-      //     gravity: -0.0001,
-      //     emitter: {
-      //       startPos: {
-      //         z: 0,
-      //         y: 0,
-      //         x: 0,
-      //       },
-      //       emissionRate: 0,
-      //       overTimeEffects: {
-      //         rotationOverTime: {
-      //           z: 0,
-      //           y: 0,
-      //           x: 0,
-      //         },
-      //         velocityOverTime: {
-      //           z: 0,
-      //           y: 0,
-      //           x: 0,
-      //         },
-      //         colorOverTime: {
-      //           startColor: {
-      //             r: 0,
-      //             g: 0,
-      //             b: 0,
-      //             a: 0,
-      //           },
-      //           endColor: {
-      //             r: 0,
-      //             g: 0,
-      //             b: 0,
-      //             a: 0,
-      //           },
-      //         },
-      //         sizeOverTime: {
-      //           startSize: {
-      //             w: 0,
-      //             h: 0,
-      //           },
-      //           endSize: {
-      //             w: 0,
-      //             h: 0,
-      //           },
-      //         },
-      //       },
-      //       shape: 'default',
-      //     },
-      //     particleCount: 4_000_000,
-      //   },
-      // };
-      // return scene;
-    }
+    return sceneDef;
+   } 
   </script>
 </html>
