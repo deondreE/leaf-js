@@ -2,29 +2,29 @@
 
 This is a general reference of the inner workings of the leaf system.
 
+Leaf store all information in the form of TOML, allowing for data to be simply abstracted from one source of truth.
+
+---
+
 ## Static Scenes
 
 Scenes that are not modified at runtime will write to file at buildtime.
 
-> Static scenes are built to .YAML. Depending on the parser.
+> Note: static scenes are built to a .TOML format making then about 2kb in size and it allows for us to store all information directly on the client instead of reading the info in realtime.
 
 Static scenes are driven directly by there paser. The user supplies a file format then a parse function is run on that specific file type. After that everything required for rendering is defined within the parsers class.
 
 `parse{FileType}`: parses the data from the given file, currently loads it into memory will eventually stream into chunks for more efficient processing.
 
-`getShaderString`: This is specifically for dyn scenes.
+`getShaderString`: returns the default shader in string form, by default it is setup to return ShaderModule. 
 
-`createBuffers`: Returns all required buffers and their required data inside of them.
+`createBuffers`: Returns all required buffers and writes required data inside of them.
 
-`createPipeline`: Creates a pipeline for the specific requirements of that file type.
+`createPipeline`: Creates a pipeline for the general requirements of that filetype, sometimes the buffers need to be scaled based on the number of verticies, or Ghost verticies need to be added.
 
-`render`: Renders the object.
+- *UniformBuffer*: Shared across all models, shared across all buffers, is more of a dyn heap then a buffer. Stores color, rotation, scale. Anything that effects the overall object. 
 
-- VertexBuffer: Defined inside the parser class returned from the parsing of the file
-- UniformBuffer: Shared across all models, but unqiue due to js implemenatation of buffer.
-- MVPBuffer: The Model View Player buffer is a single defined buffer shared across a single instance.
-
-> painpoints: Too much memory usage.
+---
 
 ## Rendering
 
@@ -36,11 +36,9 @@ The end-user, can communicated with the renderer, but by default will not have a
 
 `OnLeafLoad`: checks all enqueued scenes for compliant pipelineDescriptor.
 
-`On initialization`: the type of renderer is just an enum, and a switch will be used to pick out "context".
-
-`On intialization`: If there is no selector provided leaf will create a `default` canvas, and call `injectDOM` which would be identical to `document.querySelector`.
-
 `On intialization`: The default canvas is a Leaf-Canvas which is specified as a web component allowing for all child scenes to read a default pipeline.
+
+---
 
 ## Event System
 
@@ -50,32 +48,25 @@ Will extend the existing event system allowing for custom events only when neede
 
 > See: [This](https://developer.mozilla.org/en-US/docs/Web/Events/Creating_and_triggering_events) for extending the event system.
 
+---
+
 ## Profiler
 
-> Model bounding profiler, collisions.
-> Vertexcount, fps count.
+The profiler is required becuase the general `performance` api does not track the canvas context alone.
 
-Lazy collection of every dataset required.
+> Vertexcount, fps count, frame-time, memory usage.
 
-`on render`: context is rendered using console.trace().
-
-`on error`: Translate the error so that they are not as scary.
-
-## Model
-
-Navigation Meshes:
-
-- Cube -> Cube mesh default
-- Capsule
-- Plane
+---
 
 ## Particles
 
 Particles are more complex then traditional rendering, I want to use icospheres the user provides some level of data that they want to render then some positional data and some color. Physics based functions are not supported in its current state.
 
-Particles in thier final state wil use signals to communicate with some dispatcher about what they are going to do or are currrently doing.
+Paticles will communicate with one another through the an implementation of the signal system. Making the process of creating and tracking particles seamless.
 
-## File formats
+---
+
+## Supported File formats
 
 Supported file formats in leaf currently.
 
@@ -87,19 +78,27 @@ Supported file formats in leaf currently.
 
 2d:
 
+All default files formats supported by `<img>` are supported as texture2D context.
+
 - GIF
 - PNG, JPEG
 - SVG
 - [Aesprite](https://github.com/aseprite/aseprite/blob/main/docs/ase-file-specs.md)
 
+---
+
 # Scene
 
+- `type`: Type is the type of primitive you want to apply the changes to.
+    - `cube`: Cube primitive defined in the renderer.
 - `scale`: A floating point value between 0 and 1.
 - `color`: RGBA default color is a lilac purple. All RGB values are between 0 and 1 I think.
 - `rotation`: XYZ dyn rotation, has support for math functions as long as they return a whole number, has support for radient rotation and quaternion rotation.
 - `position`: XYZ must be whole number position.
 
-### TODO
+---
+
+### Dynmaic Scene API template 
 
 - `animation`: Support for animations applied to the object inisde of the scene.
   - `duration`: Time that animation takes
@@ -112,9 +111,9 @@ Supported file formats in leaf currently.
     - `global`: Large amount of particles inside a single scene allows for more complex visualizations.
     - `emitter`: Emiited from a single location or multiple location naturally a smaller amount of particles.
   - `particleAmount`: The MAX amount of particles in a given scene.
-  - `pColor`: The color of all particles, can be a mathmatical function just needs to return a definition of RGBA.
+  - `color`: The color of all particles, can be a mathmatical function just needs to return a definition of RGBA.
   - `startPos`: Starting poistion of global particles.
-  - `cShader`: Allows for custom compute shaders.
+  - `shader`: Allows for custom compute shaders.
   - `emmitter`: The starting position of emmitter type particles
     - `shape`: The shape that the particles will conform to.
       - `cone`: Cone shape
