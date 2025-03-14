@@ -2,7 +2,14 @@ import Renderer3D from './renderer.new';
 import type { Model } from './types/scene.types';
 import EventDispatcher from './eventdispatcher';
 
-// NOTE: you can define a large pipeline, and there is a clean step that removes most of the unused garbage.
+  
+enum SceneState {
+  ACTIVE,
+  PAUSED,
+  AWAKE,
+  START,
+  UPDATE,
+};
 
 /** A Scene is defined as a collection of objects renderd in a single pass. */
 class Scene {
@@ -12,34 +19,39 @@ class Scene {
   children: Map<Model, string> = new Map<Model, string>();
   renderer: Renderer3D | null = null;
   eventDispatcher: EventDispatcher | null = null;
+  state: SceneState;
 
   constructor(uData: any, canvas: HTMLCanvasElement) {
     this.uData = uData;
     this.canvas = canvas;
     this.renderer = new Renderer3D(canvas);
     this.eventDispatcher = new EventDispatcher();
+    this.state = SceneState.AWAKE;
 
     this.processUserData(uData);
     this.createScene();
   }
 
+  /** Can be user provided, but often won't be.
+   * @internal
+   */
   awake(f: () => {}) {
     this.eventDispatcher?.on('onAwake', () => {
       console.log('Awake');
     });
   }
 
-  /** Start is called after awake. */
+  /* Can be user provided, but currently just adds to the event stack.
+   @internal
+  */
   start() {
     this.eventDispatcher?.on('onStart', () => {
-      console.log('test');
       this.saveModelData(this.uData);
-      // TODO: cache the given sceneData, so we don't request for it every frame.
     });
   }
 
-  /** Update is called everyframe based on deltatime.
-   * @param dt is the time in between frames.
+  /* Can be user provided, but currently just adds to the event stack.
+   * @internal
    */
   update(dt: number) {
     this.eventDispatcher?.on('onUpdate', () => {
@@ -47,9 +59,9 @@ class Scene {
     });
   }
 
-  /**
-   * Render is the "true" render call, this will trigger update inside of it.
-   */
+  /** Calls the user render function
+    @internal
+  */
   render() {
     let dt = 120 / 0.1;
     this.update(dt);
@@ -84,7 +96,7 @@ class Scene {
     }
   }
 
-  private saveModelData(uData: any): void {
+  private saveModelData(uData: any, method?: string): void {
     const storedData = localStorage.getItem('UserDefinedScene');
     if (storedData) {
       try {
@@ -103,10 +115,7 @@ class Scene {
     this.showSaveLoader();
   }
 
-  // FIXME: All additions to the HTML here should be appended to the canvas.
   private showSaveLoader() {
-    console.log('Showing Loader');
-
     const saveLoaderContainer = document.createElement('div');
     saveLoaderContainer.className = 'save-loader';
 
@@ -119,6 +128,9 @@ class Scene {
     scene?.appendChild(saveLoaderContainer);
   }
 
+  // ================
+  // User Interface
+  // ================
   private createScene() {
     const container = document.createElement('div');
     const sceneDiv = document.createElement('div');

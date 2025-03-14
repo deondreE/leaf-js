@@ -231,8 +231,9 @@ class Renderer3D {
     const rotationMatrix = mat4.create();
     const rotationQuat = quat.create();
 
+    const uniformBufferSize = 96;
     const uniformBuffer = this.device.createBuffer({
-      size: 80,
+      size: uniformBufferSize,
       usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
     });
 
@@ -240,8 +241,8 @@ class Renderer3D {
       entries: [
         {
           binding: 0,
-          visibility: GPUShaderStage.VERTEX,
-          buffer: {},
+          visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
+          buffer: { type: 'uniform' },
         },
       ],
     });
@@ -258,11 +259,17 @@ class Renderer3D {
       ],
     });
 
-    const uniformData = new Float32Array(17); // 16 floats for matrix + 1 for scale;
+    const uniformData = new Float32Array(21); // 16 for matrix + 1 for scale + 4 for color
     uniformData.set(rotationMatrix, 0);
     // @ts-ignore
     uniformData[16] = scale;
-
+    this.device!.queue.writeBuffer(
+      uniformBuffer,
+      0,
+      uniformData.buffer,
+      uniformData.byteOffset,
+      uniformData.byteLength,
+    );
     const shaderModule = this.device.createShaderModule({
       code: `
         struct VertexInput {
@@ -294,7 +301,7 @@ class Renderer3D {
 
         @fragment
         fn fs_main(input: VertexOutput) -> @location(0) vec4<f32> {
-            return vec4<f32>(${(color?.r, color?.g, color?.b, color?.a)});
+          return vec4<f32>(${(color?.r, color?.g, color?.b, color?.a)});
         }
     `,
     });
@@ -324,63 +331,27 @@ class Renderer3D {
       primitive: { topology: 'triangle-list' },
     });
 
-    if (animation) {
-      const frame = () => {
-        this.runAnimationCalc(
-          animation?.effect.type,
-          uniformBuffer,
-          uniformData,
-          animation.effect.to,
-        );
+    const commandEncoder = this.device.createCommandEncoder();
+    const textureView = this.context!.getCurrentTexture().createView();
+    const passEncoder = commandEncoder.beginRenderPass({
+      colorAttachments: [
+        {
+          view: textureView,
+          loadOp: 'clear',
+          storeOp: 'store',
+          clearValue: [0.1, 0.1, 0.1, 1],
+        },
+      ],
+    });
 
-        const commandEncoder = this.device!.createCommandEncoder();
-        const textureView = this.context!.getCurrentTexture().createView();
-        const passEncoder = commandEncoder.beginRenderPass({
-          colorAttachments: [
-            {
-              view: textureView,
-              loadOp: 'clear',
-              storeOp: 'store',
-              clearValue: [0.1, 0.1, 0.1, 1],
-            },
-          ],
-        });
+    passEncoder.setPipeline(pipeline);
+    passEncoder.setBindGroup(0, uniformBindGroup);
+    passEncoder.setVertexBuffer(0, vertexBuffer);
+    passEncoder.setIndexBuffer(indexBuffer, 'uint16');
+    passEncoder.drawIndexed(indexData.length);
 
-        passEncoder.setPipeline(pipeline);
-        passEncoder.setBindGroup(0, uniformBindGroup);
-        passEncoder.setVertexBuffer(0, vertexBuffer);
-        passEncoder.setIndexBuffer(indexBuffer, 'uint16');
-        passEncoder.drawIndexed(indexData.length);
-
-        passEncoder.end();
-        this.device!.queue.submit([commandEncoder.finish()]);
-        requestAnimationFrame(frame);
-      };
-
-      frame();
-    } else {
-      const commandEncoder = this.device.createCommandEncoder();
-      const textureView = this.context!.getCurrentTexture().createView();
-      const passEncoder = commandEncoder.beginRenderPass({
-        colorAttachments: [
-          {
-            view: textureView,
-            loadOp: 'clear',
-            storeOp: 'store',
-            clearValue: [0.1, 0.1, 0.1, 1],
-          },
-        ],
-      });
-
-      passEncoder.setPipeline(pipeline);
-      passEncoder.setBindGroup(0, uniformBindGroup);
-      passEncoder.setVertexBuffer(0, vertexBuffer);
-      passEncoder.setIndexBuffer(indexBuffer, 'uint16');
-      passEncoder.drawIndexed(indexData.length);
-
-      passEncoder.end();
-      this.device.queue.submit([commandEncoder.finish()]);
-    }
+    passEncoder.end();
+    this.device.queue.submit([commandEncoder.finish()]);
   }
 
   private runAnimationCalc(
