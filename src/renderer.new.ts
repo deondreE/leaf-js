@@ -7,6 +7,7 @@ import { Model } from './types/scene.types';
 import { v4 as uuid } from 'uuid';
 import Camera from './camera';
 import { createCubeIndexData, createCubeVertexArray } from './meshes/cube';
+import { vec4 } from 'wgpu-matrix';
 
 /** Renderer for the 3d context
  * Required canvas and canvas alone.
@@ -17,6 +18,8 @@ class Renderer3D {
   context: GPUCanvasContext | null = null;
   format: GPUTextureFormat | null = null;
   renderTexture: GPUTexture | null = null;
+  mouseX: number | null = null;
+  mouseY: number | null = null;
 
   constructor(canvas: HTMLCanvasElement) {
     this.canvas = canvas;
@@ -193,6 +196,7 @@ class Renderer3D {
       };
       timeScale?: string | 'infinite';
     },
+    interactable?: boolean,
   ) {
     console.log(color);
     const adapter = await navigator.gpu.requestAdapter();
@@ -263,10 +267,27 @@ class Renderer3D {
       ],
     });
 
-    const uniformData = new Float32Array(17); // 16 for matrix + 1 for scale + 4 for color
+    const modelMatrix = mat4.create();
+
+    const isMouseOverCube = (mouseX: number, mouseY: number, modelMatrix: mat4): boolean => {
+      const inverseMatrix =  mat4.create();
+      mat4.invert(inverseMatrix, modelMatrix);
+
+      const localMouse = vec4.fromValues(mouseX, mouseY, 0, 1);
+      vec4.transformMat4(localMouse, localMouse, inverseMatrix);
+
+      return (
+        localMouse[0] >= -0.5 && localMouse[0] <= 0.5 &&
+        localMouse[1] >= -0.5 && localMouse[1] <= 0.5
+      )
+    };
+
+    const uniformData = new Float32Array(18); // 16 for matrix + 1 for scale + 4 for color
     uniformData.set(rotationMatrix, 0);
     // @ts-ignore
     uniformData[16] = scale;
+    uniformData[17] = 0;
+   
     this.device!.queue.writeBuffer(
       uniformBuffer,
       0,
@@ -274,7 +295,31 @@ class Renderer3D {
       uniformData.byteOffset,
       uniformData.byteLength,
     );
-    console.log(uniformBuffer);
+
+    if (interactable) {      
+      this.canvas!.addEventListener('mousemove', (event) => {
+        const rect = this.canvas!.getBoundingClientRect();
+        this.mouseX = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+        this.mouseY = ((event.clientY - rect.top) / rect.height) * 2 - 1;
+      });
+
+      // render is not being called every frame. 
+      const render = (() => {
+        const isHovered = isMouseOverCube(this.mouseX!, this.mouseY!, rotationMatrix);
+        uniformData[17] = isHovered ? 0 : 1;
+
+        this.device!.queue.writeBuffer(
+          uniformBuffer,
+          0,
+          uniformData.buffer,
+        );
+
+        requestAnimationFrame(render);
+      });
+
+      render();
+    }
+
     const shaderModule = this.device.createShaderModule({
       code: `
         struct VertexInput {
@@ -290,6 +335,7 @@ class Renderer3D {
         struct Uniforms {
             rotationMatrix: mat4x4<f32>,
             scale: f32,
+            interactable: f32,
         };
 
         @group(0) @binding(0) var<uniform> uniforms: Uniforms;
@@ -306,7 +352,13 @@ class Renderer3D {
 
         @fragment
         fn fs_main(input: VertexOutput) -> @location(0) vec4<f32> {
-          return vec4<f32>(${(color?.r, color?.g, color?.b, color?.a)});
+          var color: vec4<f32>;
+
+          if (uniforms.interactable == 0) {
+            color = vec4<f32>(1.0, 0.0, 1.0, 1.0);
+          }
+
+          return color;
         }
     `,
     });
@@ -369,7 +421,6 @@ class Renderer3D {
       case 'rotation':
         const rotationQuat = quat.create();
         const rotationMatrix = mat4.create();
-        y;
         quat.fromEuler(rotationQuat, rotation.x, rotation.y, rotation.z);
         mat4.fromQuat(rotationMatrix, rotationQuat);
 

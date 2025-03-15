@@ -66,8 +66,6 @@ class Scene {
     this.update(dt);
   }
 
-  // FIXME: Add Types for both Udata, And Model
-  // TOOD: Add Play, Pause Buttons for playing custom animations.
   private processUserData(uData: any): void {
     uData.models.forEach((model: any) => {
       console.log(model);
@@ -89,6 +87,7 @@ class Scene {
         modelData.rotation,
         modelData.color,
         modelData.animation,
+        modelData.interactable,
       );
     } else {
       this.renderer?.primitiveCube();

@@ -111,26 +111,26 @@ export default class ParticleRenderer {
     if (this.simulation) {
       const shaderModule = this.device!.createShaderModule({
         code: `
-      struct VertexInput {
-          @location(0) position: vec2<f32>,
-      };
+          struct VertexInput {
+              @location(0) position: vec2<f32>,
+          };
 
-      struct VertexOutput {
-          @builtin(position) position: vec4<f32>,
-      };
+          struct VertexOutput {
+              @builtin(position) position: vec4<f32>,
+          };
 
-      @vertex
-      fn vs_main(@location(0) pos: vec2<f32>) -> VertexOutput {
-          var out: VertexOutput;
-          out.position = vec4<f32>(pos, 0.0, 1.0);
-          return out;
-      }
+          @vertex
+          fn vs_main(@location(0) pos: vec2<f32>) -> VertexOutput {
+              var out: VertexOutput;
+              out.position = vec4<f32>(pos, 0.0, 1.0);
+              return out;
+          }
 
-      @fragment
-      fn fs_main() -> @location(0) vec4<f32> {
-          return vec4<f32>(1.0, 1.0, 1.0, 1.0); // White particles
-      }
-      `,
+          @fragment
+          fn fs_main() -> @location(0) vec4<f32> {
+              return vec4<f32>(1.0, 1.0, 1.0, 1.0); // White particles
+          }
+        `,
       });
 
       this.pipeline = this.device!.createRenderPipeline({
@@ -216,24 +216,24 @@ export default class ParticleRenderer {
     if (this.simulation) {
       const computeShaderModule = this.device!.createShaderModule({
         code: `
-      struct Particle {
-          position: vec2<f32>,
-          velocity: vec2<f32>,
-      };
+          struct Particle {
+              position: vec2<f32>,
+              velocity: vec2<f32>,
+          };
 
-      @group(0) @binding(0) var<storage, read_write> particles: array<Particle>;
-      @group(0) @binding(1) var<uniform> time: f32;
+          @group(0) @binding(0) var<storage, read_write> particles: array<Particle>;
+          @group(0) @binding(1) var<uniform> time: f32;
 
-      @compute @workgroup_size(64)
-      fn cs_main(@builtin(global_invocation_id) id: vec3<u32>) {
-          let index = id.x;
-          if (index >= arrayLength(&particles)) { return; }
+          @compute @workgroup_size(64)
+          fn cs_main(@builtin(global_invocation_id) id: vec3<u32>) {
+              let index = id.x;
+              if (index >= arrayLength(&particles)) { return; }
 
-          let gravity = vec2<f32>(0.0, ${grav});
-          particles[index].velocity += gravity * time;
-          particles[index].position += particles[index].velocity;
-      }
-      `,
+              let gravity = vec2<f32>(0.0, ${grav});
+              particles[index].velocity += gravity * time;
+              particles[index].position += particles[index].velocity;
+          }
+        `,
       });
 
       this.computePipeline = this.device!.createComputePipeline({
@@ -254,26 +254,26 @@ export default class ParticleRenderer {
     } else {
       const temp = this.device!.createShaderModule({
         code: `
-      struct Particle {
-          position: vec2<f32>,
-          velocity: vec2<f32>,
-          age: f32
-      };
+          struct Particle {
+              position: vec2<f32>,
+              velocity: vec2<f32>,
+              age: f32
+          };
 
-      @group(0) @binding(0) var<storage, read_write> particles: array<Particle>;
-      @group(0) @binding(1) var<uniform> time: f32;
+          @group(0) @binding(0) var<storage, read_write> particles: array<Particle>;
+          @group(0) @binding(1) var<uniform> time: f32;
 
-      @compute @workgroup_size(64)
-      fn cs_main(@builtin(global_invocation_id) id: vec3<u32>) {
-          let index = id.x;
-          if (index >= arrayLength(&particles)) { return; }
+          @compute @workgroup_size(64)
+          fn cs_main(@builtin(global_invocation_id) id: vec3<u32>) {
+            let index = id.x;
+            if (index >= arrayLength(&particles)) { return; }
 
-          let gravity = vec2<f32>(0.0, ${grav});
-          particles[index].velocity += gravity * time;
-          particles[index].position += particles[index].velocity;
-          particles[index].age += time;
-      }
-      `,
+            let gravity = vec2<f32>(0.0, ${grav});
+            particles[index].velocity += gravity * time;
+            particles[index].position += particles[index].velocity;
+            particles[index].age += time;
+          }
+        `,
       });
 
       this.computePipeline = this.device!.createComputePipeline({
