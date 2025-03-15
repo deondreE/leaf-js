@@ -71,27 +71,13 @@ class Scene {
       console.log(model);
       switch (model.type) {
         case 'cube': {
-          this.cube(model);
+          this.renderer?.primitiveCube(uData.models);
           break;
         }
         default:
           console.log('Unsupported Model Type');
       }
     });
-  }
-
-  private cube(modelData: any) {
-    if (modelData.scale <= 1 && modelData.rotation !== undefined && modelData.color !== undefined) {
-      this.renderer?.primitiveCube(
-        modelData.scale,
-        modelData.rotation,
-        modelData.color,
-        modelData.animation,
-        modelData.interactable,
-      );
-    } else {
-      this.renderer?.primitiveCube();
-    }
   }
 
   private saveModelData(uData: any, method?: string): void {

@@ -19,6 +19,7 @@
             texture: './test.jpg',
             scale: 0.6,
             rotation: { x: 25, y: 45, z: 45 },
+            position: { x: 0, y: 1, z: 0 },
             color: { r: 0.0, b: 1.0, g: 0.0, a: 1.0 },
             animation: {
               effect: {
@@ -28,16 +29,30 @@
               },
               timeScale: 'infinite', // once | `amount of times`
             },
-            interactable: true,     
+            interactable: false,
+          },
+          {
+            type: 'cube',
+            texture: './test.jpg',
+            scale: 0.6,
+            rotation: { x: 0, y: 0, z: 0 },
+            color: { r: 0.0, b: 1.0, g: 0.0, a: 1.0 },
+            position: { x: 0, y: 0, z: 0 },
+            animation: {
+              effect: {
+                type: 'rotation',
+                start: { x: 0, y: 0, z: 0 },
+                to: { x: 0, y: 0, z: 0 },
+              },
+              timeScale: 'infinite', // once | `amount of times`
+            },
+            interactable: false,
           },
         ],
-        particles: [
-          { name: 'test', size: 1, amount: 100, do: 'fall' }, 
-        ], 
-      
-    };
+        particles: [{ name: 'test', size: 1, amount: 100, do: 'fall' }],
+      };
 
-    return sceneDef;
-   } 
+      return sceneDef;
+    }
   </script>
 </html>

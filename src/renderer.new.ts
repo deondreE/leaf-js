@@ -1,4 +1,5 @@
 import { mat4, quat } from 'gl-matrix';
+import cubeShader from './shaders/primitive.cube.wgsl';
 import OBJParser from './parsers/obj';
 import STLParser from './parsers/stl';
 
@@ -185,20 +186,22 @@ class Renderer3D {
    * @returns pipeline, shader, vertexBuffer, indexBuffer all in memory.
    */
   async primitiveCube(
-    scale?: number,
-    rotation?: { x: number; y: number; z: number },
-    color?: { r: number; g: number; b: number; a: number },
-    animation?: {
-      effect: {
-        type: string;
-        start: { x: number; y: number; z: number };
-        to: { x: number; y: number; z: number };
+    models: Array<{
+      scale?: number;
+      rotation?: { x: number; y: number; z: number };
+      color?: { r: number; g: number; b: number; a: number };
+      position?: { x: number; y: number; z: number };
+      animation?: {
+        effect: {
+          type: string;
+          start: { x: number; y: number; z: number };
+          to: { x: number; y: number; z: number };
+        };
+        timeScale?: string | 'infinite';
       };
-      timeScale?: string | 'infinite';
-    },
-    interactable?: boolean,
+      interactable?: boolean;
+    }>,
   ) {
-    console.log(color);
     const adapter = await navigator.gpu.requestAdapter();
     if (!adapter) {
       console.error('No WebGPU adapter found.');
@@ -214,32 +217,8 @@ class Renderer3D {
       format: format,
     });
 
-    const vertexData = createCubeVertexArray(scale ? scale : 0.5);
-    const indexData = createCubeIndexData();
-
-    const vertexBuffer = this.device.createBuffer({
-      size: vertexData.byteLength,
-      usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
-    });
-
-    this.device.queue.writeBuffer(vertexBuffer, 0, vertexData);
-
-    const indexBuffer = this.device.createBuffer({
-      size: indexData.byteLength,
-      usage: GPUBufferUsage.INDEX | GPUBufferUsage.COPY_DST,
-    });
-
-    this.device.queue.writeBuffer(indexBuffer, 0, indexData);
-
-    const rotationMatrix = mat4.create();
-    const rotationQuat = quat.create();
-
-    if (rotation) {
-      quat.fromEuler(rotationQuat, rotation.x, rotation.y, rotation.z);
-      mat4.fromQuat(rotationMatrix, rotationQuat);
-    }
-
-    const uniformBufferSize = 96;
+    console.log(models.length);
+    const uniformBufferSize = 96 * models.length;
     const uniformBuffer = this.device.createBuffer({
       size: uniformBufferSize,
       usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
@@ -267,27 +246,56 @@ class Renderer3D {
       ],
     });
 
-    const modelMatrix = mat4.create();
+    // ==========
+    // Buffers
+    // ==========
+    const vertexData = createCubeVertexArray(0.5);
+    const indexData = createCubeIndexData();
 
-    const isMouseOverCube = (mouseX: number, mouseY: number, modelMatrix: mat4): boolean => {
-      const inverseMatrix =  mat4.create();
-      mat4.invert(inverseMatrix, modelMatrix);
+    const vertexBuffer = this.device!.createBuffer({
+      size: vertexData.byteLength,
+      usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
+    });
 
-      const localMouse = vec4.fromValues(mouseX, mouseY, 0, 1);
-      vec4.transformMat4(localMouse, localMouse, inverseMatrix);
+    this.device!.queue.writeBuffer(vertexBuffer, 0, vertexData);
 
-      return (
-        localMouse[0] >= -0.5 && localMouse[0] <= 0.5 &&
-        localMouse[1] >= -0.5 && localMouse[1] <= 0.5
-      )
-    };
+    const indexBuffer = this.device!.createBuffer({
+      size: indexData.byteLength * models.length,
+      usage: GPUBufferUsage.INDEX | GPUBufferUsage.COPY_DST,
+    });
 
-    const uniformData = new Float32Array(18); // 16 for matrix + 1 for scale + 4 for color
-    uniformData.set(rotationMatrix, 0);
-    // @ts-ignore
-    uniformData[16] = scale;
-    uniformData[17] = 0;
-   
+    this.device!.queue.writeBuffer(indexBuffer, 0, indexData);
+
+    const uniformData = new Float32Array(18 * models.length); // 16 for matrix + 1 for scale + 4 for color
+
+    models.forEach((model, index) => {
+      // ==========
+      // Rotation -> Translation
+      // ==========
+      const rotationMatrix = mat4.create();
+      const rotationQuat = quat.create();
+
+      if (model.rotation) {
+        quat.fromEuler(rotationQuat, model.rotation?.x, model.rotation?.y, model.rotation?.z);
+        mat4.fromQuat(rotationMatrix, rotationQuat);
+      }
+
+      const translationMatrix = mat4.create();
+      mat4.fromTranslation(translationMatrix, [
+        model.position?.x || 0,
+        model.position?.y || 0,
+        model.position?.z || 0,
+      ]);
+
+      const modelMatrix = mat4.create();
+      mat4.multiply(modelMatrix, translationMatrix, rotationMatrix);
+
+      uniformData.set(modelMatrix, index * 18);
+      // @ts-ignore
+      uniformData[index * 18 + 16] = model.scale || 0.5;
+      uniformData[index * 18 + 17] = 0;
+    });
+
     this.device!.queue.writeBuffer(
       uniformBuffer,
       0,
@@ -296,71 +304,8 @@ class Renderer3D {
       uniformData.byteLength,
     );
 
-    if (interactable) {      
-      this.canvas!.addEventListener('mousemove', (event) => {
-        const rect = this.canvas!.getBoundingClientRect();
-        this.mouseX = ((event.clientX - rect.left) / rect.width) * 2 - 1;
-        this.mouseY = ((event.clientY - rect.top) / rect.height) * 2 - 1;
-      });
-
-      // render is not being called every frame. 
-      const render = (() => {
-        const isHovered = isMouseOverCube(this.mouseX!, this.mouseY!, rotationMatrix);
-        uniformData[17] = isHovered ? 0 : 1;
-
-        this.device!.queue.writeBuffer(
-          uniformBuffer,
-          0,
-          uniformData.buffer,
-        );
-
-        requestAnimationFrame(render);
-      });
-
-      render();
-    }
-
     const shaderModule = this.device.createShaderModule({
-      code: `
-        struct VertexInput {
-            @location(0) position: vec3<f32>,
-            @location(1) uv: vec2<f32>,
-        };
-
-        struct VertexOutput {
-            @builtin(position) Position: vec4<f32>,
-            @location(1) uv: vec2<f32>,
-        };
-
-        struct Uniforms {
-            rotationMatrix: mat4x4<f32>,
-            scale: f32,
-            interactable: f32,
-        };
-
-        @group(0) @binding(0) var<uniform> uniforms: Uniforms;
-
-        @vertex
-        fn vs_main(input: VertexInput) -> VertexOutput {
-            var output: VertexOutput;
-            let scaledPosition = input.position * uniforms.scale;
-            let rotatedPosition = uniforms.rotationMatrix * vec4<f32>(scaledPosition, 1.0);
-            output.Position = rotatedPosition;
-            output.uv = input.uv;
-            return output;
-        }
-
-        @fragment
-        fn fs_main(input: VertexOutput) -> @location(0) vec4<f32> {
-          var color: vec4<f32>;
-
-          if (uniforms.interactable == 0) {
-            color = vec4<f32>(1.0, 0.0, 1.0, 1.0);
-          }
-
-          return color;
-        }
-    `,
+      code: cubeShader,
     });
 
     const pipeline = this.device.createRenderPipeline({
