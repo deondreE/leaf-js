@@ -10,7 +10,6 @@ import Camera from './camera';
 import { createCubeIndexData, createCubeVertexArray } from './meshes/cube';
 import { vec4 } from 'wgpu-matrix';
 import type { PrimitiveTypes } from './types/renderer.type.js';
-import { request } from 'http';
 
 /** Renderer for the 3d context
  * Required canvas and canvas alone.
@@ -258,7 +257,7 @@ class Renderer3D {
     // Animation
     // ========
     const updateUniformBUffer = (time: number) => {
-      models.forEach((model, index) => {
+      models.forEach((model, index) => { 
         // ==========
         // Rotation -> Translation
         // ==========

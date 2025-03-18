@@ -14,4 +14,28 @@ type PrimitiveTypes = Array<{
   interactable?: boolean;
 }>;
 
-export type { PrimitiveTypes };
+type PrimitiveAnimation = Array<{
+  effect?: {
+    type?: 'scale' | 'rotation' | 'position' | 'color';
+    from?: { x: number; y: number; z: number } | { r: number; g: number; b: number } | number;
+    to?: { x: number; y: number; z: number } | { r: number; g: number; b: number } | number;
+  };
+  timeScale: string | 'infinite'; // infinite will be default.
+}>;
+
+type PrimitiveParticle = Array<{
+  type?: 'emitter' | 'global';
+  amount?: number | 1000;
+  color: { r: number; g: number; b: number; a: number };
+  startPos: { x: number; y: number; z: number };
+  shader?: string | '';
+  emitter?: {
+    shape: 'cone' | 'square' | 'sphere';
+    size?: {
+      radius?: number;
+      size?: { x: number; y: number };
+    };
+  };
+}>;
+
+export type { PrimitiveTypes, PrimitiveAnimation };
