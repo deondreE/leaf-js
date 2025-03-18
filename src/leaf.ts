@@ -39,22 +39,18 @@ class Leaf extends HTMLCanvasElement {
         const global = window as Record<string, any>;
         assert(funcName !== null);
 
+        // =============
         // Dynamic Scene
+        // =============
         if (typeof global[funcName] === 'function') {
           let scene = global[funcName]();
           assert(scene !== null);
 
-          console.log(scene);
           let dynScene = new Scene(scene, this);
-          // If it has a particle that system needs access to it, otherwise use it here.
-          // TODO: Custom camera position. Camera Class
+
           // TODO: Multiple model support. Not sure, maybe appending to the current pipeline.
-          // TODO: Layout the model definitions for the end user, so that we can write the api around that.
-
+          // FIXME: Should be able to append to the current scene pipeline.
           if (scene.particle) {
-            console.log('test:', scene.particle);
-            console.log(scene.particle.emitter);
-
             this.startParticleRenderer(scene.particle);
           }
         }

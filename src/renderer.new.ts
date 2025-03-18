@@ -1,5 +1,5 @@
 import { mat4, quat } from 'gl-matrix';
-import cubeShader from './shaders/primitive.cube.wgsl';
+import primitiveCubeShader from './shaders/primitive.cube.js';
 import OBJParser from './parsers/obj';
 import STLParser from './parsers/stl';
 
@@ -9,6 +9,8 @@ import { v4 as uuid } from 'uuid';
 import Camera from './camera';
 import { createCubeIndexData, createCubeVertexArray } from './meshes/cube';
 import { vec4 } from 'wgpu-matrix';
+import type { PrimitiveTypes } from './types/renderer.type.js';
+import { request } from 'http';
 
 /** Renderer for the 3d context
  * Required canvas and canvas alone.
@@ -69,7 +71,7 @@ class Renderer3D {
     );
     camera.setup();
 
-    // FIXME: Move this to a camera class, that can be controlled by the user.
+    // FIXME: Move this to a camera class, that can bey controlled b the user.
     mat4.lookAt(viewMatrix, [0, 0, 5], [0, 0, 0], [0, 1, 0]); // Camera at (0,0,5), looking at origin
     mat4.perspective(
       projectionMatrix,
@@ -185,23 +187,8 @@ class Renderer3D {
   /** Renders a primitive cube, for the user to effect with a dynamic scene.
    * @returns pipeline, shader, vertexBuffer, indexBuffer all in memory.
    */
-  async primitiveCube(
-    models: Array<{
-      scale?: number;
-      rotation?: { x: number; y: number; z: number };
-      color?: { r: number; g: number; b: number; a: number };
-      position?: { x: number; y: number; z: number };
-      animation?: {
-        effect: {
-          type: string;
-          start: { x: number; y: number; z: number };
-          to: { x: number; y: number; z: number };
-        };
-        timeScale?: string | 'infinite';
-      };
-      interactable?: boolean;
-    }>,
-  ) {
+  async primitiveCube(models: PrimitiveTypes) {
+    // TODO: Move these init settings to a diff file called at construction of a new scene.
     const adapter = await navigator.gpu.requestAdapter();
     if (!adapter) {
       console.error('No WebGPU adapter found.');
@@ -217,7 +204,6 @@ class Renderer3D {
       format: format,
     });
 
-    console.log(models.length);
     const uniformBufferSize = 96 * models.length;
     const uniformBuffer = this.device.createBuffer({
       size: uniformBufferSize,
@@ -268,44 +254,53 @@ class Renderer3D {
 
     const uniformData = new Float32Array(18 * models.length); // 16 for matrix + 1 for scale + 4 for color
 
-    models.forEach((model, index) => {
-      // ==========
-      // Rotation -> Translation
-      // ==========
-      const rotationMatrix = mat4.create();
-      const rotationQuat = quat.create();
+    // ========
+    // Animation
+    // ========
+    const updateUniformBUffer = (time: number) => {
+      models.forEach((model, index) => {
+        // ==========
+        // Rotation -> Translation
+        // ==========
+        const rotationMatrix = mat4.create();
+        const rotationQuat = quat.create();
 
-      if (model.rotation) {
-        quat.fromEuler(rotationQuat, model.rotation?.x, model.rotation?.y, model.rotation?.z);
-        mat4.fromQuat(rotationMatrix, rotationQuat);
-      }
+        if (model.rotation) {
+          quat.fromEuler(
+            rotationQuat,
+            model.rotation?.x + time * 0.001, // Apply rotation over time
+            model.rotation?.y + time * 0.002,
+            model.rotation?.z + time * 0.0015,
+          );
+          mat4.fromQuat(rotationMatrix, rotationQuat);
+        }
 
-      const translationMatrix = mat4.create();
-      mat4.fromTranslation(translationMatrix, [
-        model.position?.x || 0,
-        model.position?.y || 0,
-        model.position?.z || 0,
-      ]);
+        const translationMatrix = mat4.create();
+        mat4.fromTranslation(translationMatrix, [
+          model.position?.x || 0,
+          model.position?.y || 0,
+          model.position?.z || 0,
+        ]);
 
-      const modelMatrix = mat4.create();
-      mat4.multiply(modelMatrix, translationMatrix, rotationMatrix);
+        const modelMatrix = mat4.create();
+        mat4.multiply(modelMatrix, translationMatrix, rotationMatrix);
 
-      uniformData.set(modelMatrix, index * 18);
-      // @ts-ignore
-      uniformData[index * 18 + 16] = model.scale || 0.5;
-      uniformData[index * 18 + 17] = 0;
-    });
+        uniformData.set(modelMatrix, index * 18);
+        uniformData[index * 18 + 16] = model.scale! || 0.5;
+        uniformData[index * 18 + 17] = 0;
+      });
 
-    this.device!.queue.writeBuffer(
-      uniformBuffer,
-      0,
-      uniformData.buffer,
-      uniformData.byteOffset,
-      uniformData.byteLength,
-    );
+      this.device?.queue.writeBuffer(
+        uniformBuffer,
+        0,
+        uniformData.buffer,
+        uniformData.byteOffset,
+        uniformData.byteLength,
+      );
+    };
 
     const shaderModule = this.device.createShaderModule({
-      code: cubeShader,
+      code: primitiveCubeShader,
     });
 
     const pipeline = this.device.createRenderPipeline({
@@ -333,7 +328,12 @@ class Renderer3D {
       primitive: { topology: 'triangle-list' },
     });
 
-    const frame = () => {
+    // ===========
+    // Animation Frame Start
+    // ===========
+    const frame = (time: number) => {
+      updateUniformBUffer(time);
+
       const commandEncoder = this.device!.createCommandEncoder();
       const textureView = this.context!.getCurrentTexture().createView();
       const passEncoder = commandEncoder.beginRenderPass({
@@ -355,7 +355,13 @@ class Renderer3D {
 
       passEncoder.end();
       this.device!.queue.submit([commandEncoder.finish()]);
+
+      // This immediatly take frametime down by 5ms
+      // end game only dely.
+      requestAnimationFrame(frame);
     };
+
+    requestAnimationFrame(frame);
   }
 
   /** Required for animation due to needed some kind of function call.
