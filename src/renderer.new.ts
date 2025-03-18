@@ -333,56 +333,29 @@ class Renderer3D {
       primitive: { topology: 'triangle-list' },
     });
 
-    const commandEncoder = this.device.createCommandEncoder();
-    const textureView = this.context!.getCurrentTexture().createView();
-    const passEncoder = commandEncoder.beginRenderPass({
-      colorAttachments: [
-        {
-          view: textureView,
-          loadOp: 'clear',
-          storeOp: 'store',
-          clearValue: [0.1, 0.1, 0.1, 1],
-        },
-      ],
-    });
+    const frame = () => {
+      const commandEncoder = this.device!.createCommandEncoder();
+      const textureView = this.context!.getCurrentTexture().createView();
+      const passEncoder = commandEncoder.beginRenderPass({
+        colorAttachments: [
+          {
+            view: textureView,
+            loadOp: 'clear',
+            storeOp: 'store',
+            clearValue: [0.1, 0.1, 0.1, 1],
+          },
+        ],
+      });
 
-    passEncoder.setPipeline(pipeline);
-    passEncoder.setBindGroup(0, uniformBindGroup);
-    passEncoder.setVertexBuffer(0, vertexBuffer);
-    passEncoder.setIndexBuffer(indexBuffer, 'uint16');
-    passEncoder.drawIndexed(indexData.length);
+      passEncoder.setPipeline(pipeline);
+      passEncoder.setBindGroup(0, uniformBindGroup);
+      passEncoder.setVertexBuffer(0, vertexBuffer);
+      passEncoder.setIndexBuffer(indexBuffer, 'uint16');
+      passEncoder.drawIndexed(indexData.length);
 
-    passEncoder.end();
-    this.device.queue.submit([commandEncoder.finish()]);
-  }
-
-  private runAnimationCalc(
-    type: string,
-    uniformBuffer: GPUBuffer,
-    uniformData: Float32Array,
-    rotation: { x: number; y: number; z: number },
-  ): void {
-    switch (type) {
-      case 'rotation':
-        const rotationQuat = quat.create();
-        const rotationMatrix = mat4.create();
-        quat.fromEuler(rotationQuat, rotation.x, rotation.y, rotation.z);
-        mat4.fromQuat(rotationMatrix, rotationQuat);
-
-        uniformData.set(rotationMatrix, 0);
-
-        this.device!.queue.writeBuffer(
-          uniformBuffer,
-          0,
-          uniformData.buffer,
-          uniformData.byteOffset,
-          uniformData.byteLength,
-        );
-        break;
-      default:
-        console.warn(`${type}, Not implemented yet!`);
-        break;
-    }
+      passEncoder.end();
+      this.device!.queue.submit([commandEncoder.finish()]);
+    };
   }
 
   /** Required for animation due to needed some kind of function call.
