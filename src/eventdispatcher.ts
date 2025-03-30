@@ -1,6 +1,6 @@
 type EventCallback = () => void;
 
-/**
+/** @internal
  * Allows for triggering custom events, similar to the default event stack,
  * but also allows for rendering the current event stack inside the profiler that only relates
  * to the leaf canvas.

@@ -55,7 +55,6 @@ class Leaf extends HTMLCanvasElement {
           }
         }
       } else {
-        // Render supported static file type.
         this.renderer = new Renderer(this);
         this.renderer.init(this.getAttribute('src')!);
       }
@@ -107,6 +106,7 @@ class Leaf extends HTMLCanvasElement {
   }
 
   /**
+   * @internal
    * Anytime a value changed. Unfortunately the attributeChangedCallback doesnt know what the type is accepting as unknown allows for simple coercion.
    *
    * @param name
@@ -118,6 +118,7 @@ class Leaf extends HTMLCanvasElement {
   }
 
   /**
+   * @internal
    * Just a convenience method to handle bool attributes
    * @param attrName
    */
@@ -127,6 +128,7 @@ class Leaf extends HTMLCanvasElement {
   }
 
   /**
+   * @internal
    * Always returns true unless prop is defined and is false
    * @param attrName
    * @returns

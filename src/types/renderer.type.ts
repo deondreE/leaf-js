@@ -1,3 +1,6 @@
+/** @internal The Primitive is a given shape that is predefed, inside of the renderer class. The user takes primitives and applies things to them allowing for the
+ * user to have a base to work from.
+ */
 type PrimitiveTypes = Array<{
   scale?: number;
   rotation?: { x: number; y: number; z: number };
@@ -14,6 +17,7 @@ type PrimitiveTypes = Array<{
   interactable?: boolean;
 }>;
 
+/** @internal A reference to the "animation" possibilities the user can provide. */
 type PrimitiveAnimation = Array<{
   effect?: {
     type?: 'scale' | 'rotation' | 'position' | 'color';
@@ -23,6 +27,9 @@ type PrimitiveAnimation = Array<{
   timeScale: string | 'infinite'; // infinite will be default.
 }>;
 
+/** @internal
+ * A Particle that only serves one purpose.
+ */
 type PrimitiveParticle = Array<{
   type?: 'emitter' | 'global';
   amount?: number | 1000;
@@ -38,4 +45,4 @@ type PrimitiveParticle = Array<{
   };
 }>;
 
-export type { PrimitiveTypes, PrimitiveAnimation };
+export type { PrimitiveTypes, PrimitiveAnimation, PrimitiveParticle };

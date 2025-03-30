@@ -11,7 +11,7 @@ export type SpriteState = {
   end: number;
 };
 
-/**
+/** @internal
  * Just a method that delegates draw operations.
  */
 export type RenderDrawFunction = (renderer: Renderer, delta: number) => void;

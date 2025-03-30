@@ -1,4 +1,3 @@
-import { Y } from 'vitest/dist/chunks/reporters.DTtkbAtP.js';
 import { assert } from './utils/util';
 
 export interface LProfilerProps {
@@ -142,7 +141,9 @@ export class Profiler extends HTMLCanvasElement {
     this.render();
   }
 
-  /** Takes the list of frames iterates them in a canvas as key-frames; */
+  /** Takes the list of frames iterates them in a canvas as key-frames;
+   * This needs to prerender to save performance.
+   */
   renderAnimationFrames(ctx: CanvasRenderingContext2D) {
     let animationFrame: any[] = [1, 1, 1, 1, 1, 1, 1];
     let padding: number = 10;

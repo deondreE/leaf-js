@@ -1,15 +1,10 @@
-/** These are all of the signal flags **/
+/** @internal These are all of the signal flags
+ * Used directly for particle state values, this is in progress. **/
 export const DERIVED = 1 << 1;
 export const RENDER_EFFECT = 1 << 3;
 export const CLEAN = 1 << 10;
 export const DIRTY = 1 << 11;
 export const MAYBE_DIRTY = 1 << 12;
-
-/**
- * These constants are being placed here to allow for assumption while still offering a highly granular interface
- * @todo - lazy cache shader programs per device once compiled.
- * @file
- */
 
 export const DEFAULT_VIEW_FRUSTRUM: number = (Math.PI * 2) / 4;
 export const DEFAULT_PIPELINE_BUFFERS: GPUVertexBufferLayout[] = [

@@ -1,4 +1,4 @@
-/**
+/** @internal
  * Asserts `condition` is true. Otherwise, throws an `Error` with the provided message.
  */
 export function assert(condition: boolean, msg?: string | (() => string)): asserts condition {
@@ -7,7 +7,7 @@ export function assert(condition: boolean, msg?: string | (() => string)): asser
   }
 }
 
-/** If the argument is an Error, throw it. Otherwise, pass it back. */
+/** @internal If the argument is an Error, throw it. Otherwise, pass it back. */
 export function assertOK<T>(value: Error | T): T {
   if (value instanceof Error) {
     throw value;
@@ -15,7 +15,7 @@ export function assertOK<T>(value: Error | T): T {
   return value;
 }
 
-/**
+/** @internal
  * Assert this code is unreachable. Unconditionally throws an `Error`.
  */
 export function unreachable(msg?: string): never {

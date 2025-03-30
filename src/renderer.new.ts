@@ -6,13 +6,12 @@ import STLParser from './parsers/stl';
 import AssetBuilder from './assetloading/build';
 import { Model } from './types/scene.types';
 import { v4 as uuid } from 'uuid';
-import Camera from './camera';
 import { createCubeIndexData, createCubeVertexArray } from './meshes/cube';
 import { vec4 } from 'wgpu-matrix';
 import type { PrimitiveTypes } from './types/renderer.type.js';
 
 /** Renderer for the 3d context
- * Required canvas and canvas alone.
+ * Required to defined the process of importing rendering context into the canvas.
  */
 class Renderer3D {
   canvas?: HTMLCanvasElement;
@@ -59,18 +58,6 @@ class Renderer3D {
     const projectionMatrix = mat4.create();
     const mvpMatrix = mat4.create();
 
-    const camera = new Camera(
-      Math.PI / 4,
-      // @ts-ignore
-      this.canvas.width / this.canvas.height,
-      0.1,
-      100,
-      1,
-      'perspective',
-    );
-    camera.setup();
-
-    // FIXME: Move this to a camera class, that can bey controlled b the user.
     mat4.lookAt(viewMatrix, [0, 0, 5], [0, 0, 0], [0, 1, 0]); // Camera at (0,0,5), looking at origin
     mat4.perspective(
       projectionMatrix,
@@ -87,7 +74,6 @@ class Renderer3D {
       case 'obj': {
         const objParser = new OBJParser(this.device);
 
-        // Actually get the data given
         const data = await fetch(fileName).then((data) => data.text());
         await objParser.loadOBJ(data);
 
@@ -118,7 +104,7 @@ class Renderer3D {
           this.device!.queue.submit([commandEncoder.finish()]);
         });
 
-        let model: Model = {
+        /* let model: Model = {
           name: fileName,
           id: uuid(),
           static: true,
@@ -126,10 +112,7 @@ class Renderer3D {
           indexBuffer: objParser.getIndexBuffer(),
           shader: objParser.getShaderString(),
         };
-
-        const assetBuilder = new AssetBuilder();
-        assetBuilder.buildModelScene(model);
-
+        */
         break;
       }
 
@@ -177,17 +160,15 @@ class Renderer3D {
     }
   }
 
-  /** Rips the file extension of a model. */
   returnFileExt(fileName: string): string {
     const parts = fileName.split('.');
     return parts.length > 1 ? parts.pop() || '' : '';
   }
 
-  /** Renders a primitive cube, for the user to effect with a dynamic scene.
+  /** Renders a primitive cube in the "GLOBAL" context that is used inside the canvas.
    * @returns pipeline, shader, vertexBuffer, indexBuffer all in memory.
    */
   async primitiveCube(models: PrimitiveTypes) {
-    // TODO: Move these init settings to a diff file called at construction of a new scene.
     const adapter = await navigator.gpu.requestAdapter();
     if (!adapter) {
       console.error('No WebGPU adapter found.');
@@ -355,17 +336,13 @@ class Renderer3D {
       passEncoder.end();
       this.device!.queue.submit([commandEncoder.finish()]);
 
-      // This immediatly take frametime down by 5ms
-      // end game only dely.
       requestAnimationFrame(frame);
     };
 
     requestAnimationFrame(frame);
   }
-
-  /** Required for animation due to needed some kind of function call.
-   * @returns void
-   */
+  
+  /** Render is the source of "Truth" for the call stack, so that the profiler has something to look for on update. */
   private render(renderMethod: () => void) {
     if (typeof renderMethod !== 'function') {
       console.error('renderMethod must be a function');

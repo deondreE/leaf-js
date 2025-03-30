@@ -1,5 +1,5 @@
+/** TODO: Add Support for textures, and multi model support, just make things arrays, stay within 200bytes */
 const primitiveCubeShader = `
-// TODO: update shader code to support multi shader.
 struct VertexInput {
     @location(0) position: vec3<f32>,
     @location(1) uv: vec2<f32>,

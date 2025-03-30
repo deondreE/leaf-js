@@ -2,6 +2,9 @@ import os
 import shutil
 
 def ready_build():
+    """
+    Takes the wasm file from the zig build, copies it then copies the style file as well. 
+    """
     src_file_paths = ["./core/lib.wasm", "./src/style.css"]
     dist_dir = "dist"
 

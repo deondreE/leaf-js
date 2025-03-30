@@ -1,4 +1,5 @@
 export type ReaderFunc<T = number> = (s?: number) => T;
+/** @internal Leaf Data View implementation for bigEndian->LittleEndian */
 export default class LeafView extends DataView<ArrayBuffer> {
   offset: number = 0;
   decoder = new TextDecoder();
