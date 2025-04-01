@@ -13,7 +13,7 @@ The usage of the [web-component](https://developer.mozilla.org/en-US/docs/Web/AP
 <html>
   <body>
     <!-- Leaf Supports -> .stl, .obj, .asesprite static file imports -->
-    <leaf src="object.stl"></leaf>
+    <canvas is="leaf-js" src="object.stl"></canvas>
   </body>
 </html>
 ```
