@@ -6,6 +6,7 @@ type PrimitiveTypes = Array<{
   rotation?: { x: number; y: number; z: number };
   color?: { r: number; g: number; b: number; a: number };
   position?: { x: number; y: number; z: number };
+  texture?: string;
   animation?: {
     effect: {
       type: string;

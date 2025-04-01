@@ -17,6 +17,8 @@ struct Uniforms {
 };
 
 @group(0) @binding(0) var<uniform> uniforms: Uniforms;
+@group(1) @binding(0) var textureSampler: sampler;
+@group(1) @binding(1) var baseTexture: texture_2d<f32>;
 
 @vertex
 fn vs_main(input: VertexInput) -> VertexOutput {
@@ -30,7 +32,7 @@ fn vs_main(input: VertexInput) -> VertexOutput {
 
 @fragment
 fn fs_main(input: VertexOutput) -> @location(0) vec4<f32> {
-  var color: vec4<f32>;
+  var color: vec4<f32> = textureSample(baseTexture, textureSampler, input.uv);
 
   if (uniforms.interactable == 0) {
     color = vec4<f32>(1.0, 0.0, 1.0, 1.0);

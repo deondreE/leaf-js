@@ -18,23 +18,6 @@ The usage of the [web-component](https://developer.mozilla.org/en-US/docs/Web/AP
 </html>
 ```
 
-## Supported File Formats
-
-Currently we support for static file imports:
-
-| File Format | Import Supported | Animation |
-| ----------- | ---------------- | --------- |
-| .fbx        | ❎               | ❎        |
-| .stl        | ✅               | ❎        |
-| .obj        | ✅               | ❎        |
-| .aesprite   | ✅               | ✅        |
-| .jpeg       | ❎               | ❎        |
-| .png        | ❎               | ❎        |
-| .gif        | ❎               | ❎        |
-| .psd        | ❎               | ❎        |
-
-> Note: for .stl you need to check the ascii format inside of the blender output when exporting. Binary parsing for .stl does not work.
-
 ## Dynmaic Scenes
 
 The process of creating dynamic scenes exists due to people wanting to create games, animation, viewing platforms, AR / VR visualization and more all in the web. Leaf takes a new approach to this complex problems simply by heavily relying on ObjectNotation to describe what you want the scene to do.
@@ -46,7 +29,7 @@ Think of this whole process as "I have a scene that contains different things, a
 ```html
 <html>
   <head>
-    <title>Working site</title>
+    <title>Leafjs working site.</title>
   </head>
   <body>
     <canvas is="leaf-js" src="createScene" width="800" height="600"></canvas>
@@ -60,6 +43,15 @@ Think of this whole process as "I have a scene that contains different things, a
             scale: 0.5,
             rotation: { x: 0, y: 0, z: 45 },
             color: { r: 0, g: 0, b: 0, a: 1 },
+            animation: {
+              effect: {
+                type: 'rotation',
+                start: { x: 0, y: 0, z: 0 },
+                to: { x: 0, y: 0, z: 0 },
+              },
+              timeScale: 'inifinite',
+            },
+            interactable: false, // can click on
           },
         ],
       };
@@ -104,3 +96,20 @@ _Scenes Will Support_:
 > Warning: Leaf is still `pre-release` so a lot of this may not actually work.
 
 > For full reference see the Scene section in the reference document.
+
+## Supported File Formats
+
+Currently we support for static file imports:
+
+| File Format | Import Supported | Animation |
+| ----------- | ---------------- | --------- |
+| .fbx        | ❎               | ❎        |
+| .stl        | ✅               | ❎        |
+| .obj        | ✅               | ❎        |
+| .aesprite   | ✅               | ✅        |
+| .jpeg       | ❎               | ❎        |
+| .png        | ❎               | ❎        |
+| .gif        | ❎               | ❎        |
+| .psd        | ❎               | ❎        |
+
+> Note: for .stl you need to check the ascii format inside of the blender output when exporting. Binary parsing for .stl does not work.

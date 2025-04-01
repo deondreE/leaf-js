@@ -200,6 +200,21 @@ class Renderer3D {
       ],
     });
 
+    const textureBindGroupLayout = this.device.createBindGroupLayout({
+      entries: [
+        {
+          binding: 0,
+          visibility: GPUShaderStage.FRAGMENT,
+          sampler: { type: 'filtering' },
+        },
+        {
+          binding: 1,
+          visibility: GPUShaderStage.FRAGMENT,
+          texture: {sampleType: 'float', viewDimension: '2d' }
+        }
+      ]
+    })
+
     const uniformBindGroup = this.device.createBindGroup({
       layout: uniformBindGroupLayout,
       entries: [
@@ -230,6 +245,80 @@ class Renderer3D {
       usage: GPUBufferUsage.INDEX | GPUBufferUsage.COPY_DST,
     });
 
+    async function createTextureFromImage(device: GPUDevice, url: string): Promise<GPUTexture> {
+      const response = await fetch(url);
+      const blob = await response.blob();
+      const imageBitmap = await createImageBitmap(blob);
+
+      const texture = device.createTexture({
+        size: [imageBitmap.width, imageBitmap.height, 1],
+        format: 'rgba8unorm',
+        usage:
+          GPUTextureUsage.TEXTURE_BINDING |
+          GPUTextureUsage.COPY_DST |
+          GPUTextureUsage.RENDER_ATTACHMENT,
+      });
+
+      device.queue.copyExternalImageToTexture(
+        { source: imageBitmap },
+        { texture: texture, origin: [0, 0, 0] },
+        [imageBitmap.width, imageBitmap.height, 1],
+      );
+
+      return texture;
+    }
+
+    const textures: GPUTexture[] = [];
+    for (const model of models) {
+      if (model.texture) {
+        const texture = await createTextureFromImage(this.device, model.texture);
+        textures.push(texture);
+      } else {
+        const defaultTexture = this.device.createTexture({
+          size: [1, 1, 1],
+          format: 'rgba8unorm',
+          usage:
+            GPUTextureUsage.TEXTURE_BINDING |
+            GPUTextureUsage.COPY_DST |
+            GPUTextureUsage.RENDER_ATTACHMENT,
+        });
+
+        const pixelData = new Uint8Array([255, 255, 255, 255]);
+        this.device.queue.writeTexture(
+          {
+            texture: defaultTexture,
+          },
+          pixelData,
+          { bytesPerRow: 4 },
+          [1, 1, 1],
+        );
+        textures.push(defaultTexture);
+      }
+    }
+
+    const sampler = this.device.createSampler({ 
+      magFilter: 'linear',
+      minFilter: 'linear',
+    });
+
+    const textureBindGroups: GPUBindGroup[] = [];
+    for (const texture of textures) {
+      const textureBindGroup = this.device.createBindGroup({
+        layout: textureBindGroupLayout,
+        entries: [
+          {
+            binding: 0,
+            resource: sampler,
+          },
+          {
+            binding: 1,
+            resource: texture.createView(),
+          },
+        ],
+      });
+      textureBindGroups.push(textureBindGroup);
+    }
+
     this.device!.queue.writeBuffer(indexBuffer, 0, indexData);
 
     const uniformData = new Float32Array(18 * models.length); // 16 for matrix + 1 for scale + 4 for color
@@ -238,7 +327,7 @@ class Renderer3D {
     // Animation
     // ========
     const updateUniformBUffer = (time: number) => {
-      models.forEach((model, index) => { 
+      models.forEach((model, index) => {
         // ==========
         // Rotation -> Translation
         // ==========
@@ -285,7 +374,7 @@ class Renderer3D {
 
     const pipeline = this.device.createRenderPipeline({
       layout: this.device.createPipelineLayout({
-        bindGroupLayouts: [uniformBindGroupLayout],
+        bindGroupLayouts: [uniformBindGroupLayout, textureBindGroupLayout],
       }),
       vertex: {
         module: shaderModule,
@@ -329,6 +418,7 @@ class Renderer3D {
 
       passEncoder.setPipeline(pipeline);
       passEncoder.setBindGroup(0, uniformBindGroup);
+      passEncoder.setBindGroup(1, textureBindGroups[0]);
       passEncoder.setVertexBuffer(0, vertexBuffer);
       passEncoder.setIndexBuffer(indexBuffer, 'uint16');
       passEncoder.drawIndexed(indexData.length);
@@ -341,7 +431,7 @@ class Renderer3D {
 
     requestAnimationFrame(frame);
   }
-  
+
   /** Render is the source of "Truth" for the call stack, so that the profiler has something to look for on update. */
   private render(renderMethod: () => void) {
     if (typeof renderMethod !== 'function') {

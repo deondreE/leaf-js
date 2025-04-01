@@ -11,6 +11,7 @@ TOML is a somple format that allows for leaf to keep configuration extremly simp
 ---
 
 ### TOML scene config
+> Proof of concept.
 
 ```toml
 [[example.scene]]
@@ -25,15 +26,13 @@ from = [0, 0, 0]
 to = [0, 90, 0]
 ```
 
----
-
 > Change example.scene to your scene name.
 
 ---
 
-## Function Return Config
+## Global Context Configuration
 
-This is the most common form of configuration inside of leaf, all you have to do is write a function and return a fcreated scene from it.
+This is the most common form of configuration inside of leaf, all you have to do is write a function and return a created scene from it.
 
 > Note: Arrow functions are currently not supported it has to be a function in the global scope.
 
