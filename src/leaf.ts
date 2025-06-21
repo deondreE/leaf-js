@@ -1,4 +1,5 @@
 import Renderer from './renderer.new';
+import ParticleRenderer from './renderer.particle';
 import Scene from './scene';
 import { assert } from './utils/util';
 
@@ -7,6 +8,7 @@ class Leaf extends HTMLCanvasElement {
   is3D: boolean = false;
   static: boolean = false;
   particleSim: boolean = false;
+  scene: Scene | null = null;
   renderer: Renderer | null = null;
   id: string = '';
 
@@ -28,29 +30,36 @@ class Leaf extends HTMLCanvasElement {
         const global = window as Record<string, any>;
         assert(funcName !== null);
 
-        // Dynamic Scene
+        // Objective Scene -- Think game engine.
         if (typeof global[funcName] === 'function') {
           let scene = global[funcName]();
           assert(scene !== null);
 
-          // If it has a particle that system needs access to it, otherwise use it here.
-          // TODO: Model scale,
-          // TODO: Custom camera position. Camera Class
-          // TODO: Multiple model support. Not sure, maybe appending to the current pipeline.
-          // TODO: Layout the model definitions for the end user, so that we can write the api around that.
-
           if (scene.particle) {
-            console.log('test:', scene.particle);
-            console.log(scene.particle.emitter);
-
-            this.startParticleRenderer(scene.particle);
+            // Particles should only render in the given scene, requires some scene level, activation.
+            // TODO: Awake events;
           }
         }
       } else {
-        // Render supported static file type.
         this.renderer = new Renderer(this);
         this.renderer.init(this.getAttribute('src')!);
       }
+
+      // create button container
+      const controls = document.createElement('div');
+      controls.style.display = 'flex';
+      controls.style.gap = '0.5rem';
+      controls.style.marginTop = '0.5rem';
+      controls.style.position = 'absolute';
+      controls.style.top = '0';
+
+      const startBtn = this.createButton('Start', () => this.startScene());
+      const pauseBtn = this.createButton('Pause', () => this.startScene());
+      const resumeBtn = this.createButton('Resume', () => this.startScene());
+      const stopBtn = this.createButton('Stop', () => this.startScene());
+
+      controls.append(startBtn, pauseBtn, resumeBtn, stopBtn);
+      this.insertAdjacentElement('afterend', controls);
     }
 
     if (!this.renderer && this.is3D) {
@@ -61,12 +70,29 @@ class Leaf extends HTMLCanvasElement {
     }
   }
 
-  private createDynamicScene() {
-    let scene = new Scene('string');
+  private createButton(label: string, handler: () => void): HTMLButtonElement {
+    const btn = document.createElement('button');
+    btn.textContent = label;
+    btn.style.padding = '0.5rem 1rem';
+    btn.style.fontSize = '1rem';
+    btn.onclick = handler;
+    return btn;
   }
 
-  private startParticleRenderer(userParticleData: any) {
-    const particleRenderer = new ParticleRenderer(this, userParticleData);
+  startScene() {
+    this.scene?.run();
+  }
+
+  pauseScene() {
+    this.scene?.pause();
+  }
+
+  resumeScene() {
+    this.scene?.resume();
+  }
+
+  stopScene() {
+    this.scene?.stop();
   }
 
   disconectedCallback() {
@@ -77,8 +103,10 @@ class Leaf extends HTMLCanvasElement {
     console.log('Time to transfer context');
   }
 
-  /** Returns a file type */
-  checkFileType(possibleFile: string): boolean {
+  /**
+   * The requirements for this would be importing a static file, src="static_file.{supported_file_type}"
+   * @internal Returns a file type */
+  private checkFileType(possibleFile: string): boolean {
     const parts = possibleFile.split('.');
     if (parts.length < 2) {
       console.warn('Not a valid file type');
@@ -90,6 +118,9 @@ class Leaf extends HTMLCanvasElement {
     switch (extension) {
       case 'obj':
         console.log('Detected OBJ file');
+        return true;
+      case 'ase':
+        console.log('Detected ASE file.');
         return true;
       case 'fbx':
         console.log('Detected FBX');

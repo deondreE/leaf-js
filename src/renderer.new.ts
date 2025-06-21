@@ -2,7 +2,6 @@ import { mat4 } from 'gl-matrix';
 import OBJParser from './parsers/obj';
 import STLParser from './parsers/stl';
 
-import AssetBuilder from './assetloading/build';
 import { Model } from './types/scene.types';
 import { v4 as uuid } from 'uuid';
 import Camera from './camera';
@@ -120,9 +119,6 @@ class Renderer3D {
           indexBuffer: objParser.getIndexBuffer(),
           shader: objParser.getShaderString(),
         };
-
-        const assetBuilder = new AssetBuilder();
-        assetBuilder.buildModelScene(model);
 
         break;
       }

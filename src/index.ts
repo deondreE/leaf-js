@@ -10,6 +10,3 @@ export * from './constants';
 export * from './meshes/capsule';
 export * from './meshes/cube';
 export * from './meshes/quad';
-
-export * from './assetloading/build';
-export * from './assetloading/load';

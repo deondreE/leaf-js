@@ -1,4 +1,5 @@
 type EventCallback = () => void;
+type EventHandler = () => void;
 
 /**
  * Allows for triggering custom events, similar to the default event stack,
@@ -6,40 +7,39 @@ type EventCallback = () => void;
  * to the leaf canvas.
  */
 class EventDispatcher {
-    private events: Map<string, EventCallback[]> = new Map();
-    private callStack: string[] = [];
+    private listeners: Map<string, EventHandler[]> = new Map();
 
-    on(event: string, callback: EventCallback) {
-        if (!this.events.has(event)) {
-            this.events.set(event, []);
-        }
-
-        this.events.get(event)!.push(callback);
+    on (event: string, callback: EventHandler) {
+        if (!this.listeners.has(event)) {
+            this.listeners.set(event, []);
+        } 
+        this.listeners.get(event)?.push(callback);
     }
 
-    off(event: string, callback: EventCallback) {
-        if (this.events.has(event)) {
-            this.events.set(
-                event,
-                this.events.get(event)!.filter(cb => cb !== callback)
-            );
+    emit(event: string) {
+        const callbacks = this.listeners.get(event);
+        if (callbacks) {
+            for (const cb of callbacks) {
+                cb();
+            }
         }
     }
 
-    dispatch(event: string) {
-        this.callStack.push(event);
-        
-        if (this.events.has(event)) {
-            this.events.get(event)?.forEach(callback => callback());
+    off(event: string, callback: EventHandler) {
+        const callbacks = this.listeners.get(event);
+        if (callbacks) {
+            this.listeners.set(event, callbacks.filter(cb => cb !== callback));
         }
     }
 
-    /**
-     * Will return the event call stack for rendering inside of the profiler.
-     */
-    get getLeafCallStack(): string[] {
-        return [...this.callStack];
+    clear(event?: string) {
+        if (event) {
+            this.listeners.delete(event);
+        } else {
+            this.listeners.clear();
+        }
     }
+
 }
 
 export default EventDispatcher;
