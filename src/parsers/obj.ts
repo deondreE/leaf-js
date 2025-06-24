@@ -253,7 +253,7 @@ export default class WebGPUOBJParser {
         targets: [{ format }],
       },
       primitive: {
-        topology: 'line-list',
+        topology: 'triangle-list',
         cullMode: 'back',
       },
     });

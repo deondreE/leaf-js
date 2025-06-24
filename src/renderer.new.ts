@@ -10,6 +10,7 @@ import {
   MATERIAL_UNIFORM_BUFFER_SIZE,
   MtlMaterial,
 } from './parsers/mtl';
+import Gizmo from './gizmo';
 
 /** Currently Supports static file definitions. */
 class Renderer3D {
@@ -88,6 +89,8 @@ class Renderer3D {
         const data = await fetch(fileName).then((data) => data.text());
         await objParser.loadOBJ(data);
 
+        const gizmo = new Gizmo(this.device, this.context, modelMatrix, projectionMatrix, this.canvas!);
+
         const SCENE_UNIFORM_FLOAT_COUNT = 16 + 4 + 4;
         const SCENE_UNIFORM_BUFFER_SIZE = SCENE_UNIFORM_FLOAT_COUNT * 4;
 
@@ -130,7 +133,6 @@ class Renderer3D {
           sceneUniformBuffer,
           materialUniformBuffer,
         );
-
         this.render(() => {
           const commandEncoder = this.device!.createCommandEncoder();
           const passEncoder = commandEncoder.beginRenderPass({
@@ -158,7 +160,8 @@ class Renderer3D {
           const materialData = createMaterialUniformBufferData(fallbackMaterial);
           this.device?.queue.writeBuffer(materialUniformBuffer, 0, materialData.buffer);
 
-          objParser.render(passEncoder);
+          // objParser.render(passEncoder);
+          gizmo.render(passEncoder);
           passEncoder.end();
           this.device!.queue.submit([commandEncoder.finish()]);
         });
