@@ -5,6 +5,11 @@ import STLParser from './parsers/stl';
 import { Model } from './types/scene.types';
 import { v4 as uuid } from 'uuid';
 import Camera from './camera';
+import {
+  createMaterialUniformBufferData,
+  MATERIAL_UNIFORM_BUFFER_SIZE,
+  MtlMaterial,
+} from './parsers/mtl';
 
 /** Currently Supports static file definitions. */
 class Renderer3D {
@@ -75,7 +80,6 @@ class Renderer3D {
     mat4.multiply(mvpMatrix, projectionMatrix, viewMatrix);
     mat4.multiply(mvpMatrix, mvpMatrix, modelMatrix);
 
-    console.log(this.returnFileExt(fileName));
     switch (this.returnFileExt(fileName)) {
       case 'obj': {
         const objParser = new OBJParser(this.device);
@@ -85,14 +89,39 @@ class Renderer3D {
         await objParser.loadOBJ(data);
 
         const shaderModule = objParser.getShader();
-        const uniformBuffer = this.device.createBuffer({
-          size: 64,
+        const sceneUniformBufferSize = 200;
+        const sceneUniformBuffer = this.device.createBuffer({
+          size: sceneUniformBufferSize,
+          usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+          mappedAtCreation: false,
+        });
+
+        const materialUniformBuffer = this.device.createBuffer({
+          size: 200, // From your mtl-parser.ts
           usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
         });
 
+        // write scenedata
+        const sceneUniformsData = new Float32Array(sceneUniformBufferSize / 4);
+        let offset = 0;
+        const lightDirection = new Float32Array([0.0, -1.0, 0.0]); // Example
+        const lightColor = new Float32Array([1.0, 1.0, 1.0]); // Example
+        sceneUniformsData.set(mvpMatrix, offset);
+        offset += 1;
+        sceneUniformsData[offset++] = lightDirection[0];
+        sceneUniformsData[offset++] = lightDirection[1];
+        sceneUniformsData[offset++] = lightDirection[2];
+        offset++;
+
+        sceneUniformsData[offset++] = lightColor[0];
+        sceneUniformsData[offset++] = lightColor[1];
+        sceneUniformsData[offset++] = lightColor[2];
+        offset++;
+
+
+        this.device.queue.writeBuffer(sceneUniformBuffer, 0, sceneUniformsData.buffer);
         // @ts-ignore
-        this.device.queue.writeBuffer(uniformBuffer, 0, mvpMatrix.buffer);
-        await objParser.createPipeline(shaderModule, this.format, uniformBuffer);
+        await objParser.createPipeline(shaderModule, this.format, sceneUniformBuffer, materialUniformBuffer);
 
         this.render(() => {
           const commandEncoder = this.device!.createCommandEncoder();
@@ -105,6 +134,21 @@ class Renderer3D {
               },
             ],
           });
+          const fallbackMaterial: MtlMaterial = {
+            name: 'default',
+            Ka: [0.1, 0.1, 0.1],
+            Kd: [0.7, 0.7, 0.7],
+            Ks: [0.0, 0.0, 0.0],
+            Ke: [0, 0, 0],
+            Ns: 10,
+            d: 1.0,
+            Tr: 1.0,
+            Ni: 1.0,
+            map_Kd: null,
+            map_bump: null,
+          };
+          const materialData = createMaterialUniformBufferData(fallbackMaterial);
+          this.device?.queue.writeBuffer(materialUniformBuffer, 0, materialData.buffer);
 
           objParser.render(passEncoder);
           passEncoder.end();

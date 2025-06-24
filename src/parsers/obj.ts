@@ -24,6 +24,7 @@ interface Face {
 export default class WebGPUOBJParser {
   vertices: Vertex[] = [];
   indices: number[] = [];
+  shaderString: string = '';
 
   device: GPUDevice;
   vertexBuffer!: GPUBuffer;
@@ -156,13 +157,19 @@ export default class WebGPUOBJParser {
   async createPipeline(
     shaderModule: GPUShaderModule,
     format: GPUTextureFormat,
-    uniformBuffer: GPUBuffer,
+    sceneUniformBuffer: GPUBuffer,
+    materialUniformBuffer: GPUBuffer,
   ) {
     const bindGroupLayout = this.device.createBindGroupLayout({
       entries: [
         {
-          binding: 0,
-          visibility: GPUShaderStage.VERTEX,
+          binding: 0, // For SceneUniforms
+          visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
+          buffer: { type: 'uniform' },
+        },
+        {
+          binding: 1, // For MaterialUniforms
+          visibility: GPUShaderStage.FRAGMENT, // Material properties mostly affect fragment stage
           buffer: { type: 'uniform' },
         },
       ],
@@ -202,46 +209,79 @@ export default class WebGPUOBJParser {
     });
 
     this.bindGroup = this.device.createBindGroup({
-      layout: bindGroupLayout,
-      entries: [
-        {
-          binding: 0,
-          resource: { buffer: uniformBuffer },
-        },
-      ],
+       layout: this.pipeline.getBindGroupLayout(0),
+        entries: [
+            { binding: 0, resource: { buffer: sceneUniformBuffer } },
+            { binding: 1, resource: { buffer: materialUniformBuffer } },
+        ],
     });
   }
 
   getShader() {
     this.shaderString = `
-            struct Uniforms {
+            struct SceneUniforms {
               mvpMatrix: mat4x4<f32>,
+              lightDirection: vec3<f32>,
+              lightColor: vec3<f32>,
             }
-            @group(0) @binding(0) var<uniform> uniforms: Uniforms; 
+            @group(0) @binding(0) var<uniform> sceneUniforms: SceneUniforms; 
+
+            struct MaterialUniforms {
+              baseColor: vec3<f32>,
+              ambientColor: vec3<f32>,
+              specularColor: vec3<f32>,
+              emissionColor:vec3<f32>,
+              shininess: f32,
+              alpha: f32,
+            };
+
+            @group(0) @binding(1) var<uniform> materialUniforms: MaterialUniforms;
 
             struct VertexInput {
-                @location(0) position: vec3<f32>,
-                @location(1) normal: vec3<f32>,
-                @location(2) texCoord: vec2<f32>
+              @location(0) position: vec3<f32>,
+              @location(1) normal: vec3<f32>,
+              @location(2) texCoord: vec2<f32>
             };
 
             struct VertexOutput {
-                @builtin(position) Position: vec4<f32>,
-                @location(0) vNormal: vec3<f32>,
+              @builtin(position) Position: vec4<f32>,
+              @location(0) vNormal: vec3<f32>,
+              @location(1) vWorldPos: vec3<f32>,
             };
 
             @vertex
             fn vs_main(input: VertexInput) -> VertexOutput {
-                var output: VertexOutput;
-                output.Position = uniforms.mvpMatrix * vec4<f32>(input.position, 1.0);
-                output.vNormal = input.normal;
-                return output;
+              var output: VertexOutput;
+              let worldPos = vec4<f32>(input.position, 1.0);
+              let worldPosition = vec4<f32>(input.position, 1.0); // Assuming model transform is baked into position or MVP
+              output.Position = sceneUniforms.mvpMatrix * worldPosition;
+              output.vNormal = normalize(input.normal); // Ensure normal is normalized
+              output.vWorldPos = worldPosition.xyz; // Pass world position for fragment shader
+              return output;
             }
 
             @fragment
             fn fs_main(input: VertexOutput) -> @location(0) vec4<f32> {
-                let color = vec3<f32>(0.5, 0.5, 0.5) * (input.vNormal.z * 0.5 + 0.5);
-                return vec4<f32>(color, 1.0);
+                let N = normalize(input.vNormal);
+                let L = normalize(-sceneUniforms.lightDirection); // Direction from fragment to light source
+                let V = normalize(-input.vWorldPos); // Direction from fragment to camera (assuming camera at origin for simplicity)
+
+                // Ambient component using material's ambient color
+                let ambientComponent = materialUniforms.ambientColor * sceneUniforms.lightColor;
+
+                // Diffuse component using material's base (diffuse) color
+                let NdotL = max(dot(N, L), 0.0);
+                let diffuseComponent = materialUniforms.baseColor * sceneUniforms.lightColor * NdotL;
+
+                // Specular component using material's specular color and shininess
+                let R = normalize(reflect(-L, N)); // Reflected light direction
+                let RdotV = max(dot(R, V), 0.0);
+                let specularComponent = materialUniforms.specularColor * sceneUniforms.lightColor * pow(RdotV, materialUniforms.shininess);
+
+                let finalColor = ambientComponent + diffuseComponent + specularComponent;
+
+                // Apply alpha/transparency from the material
+                return vec4<f32>(finalColor, materialUniforms.alpha);
             }
         `;
 
@@ -253,7 +293,7 @@ export default class WebGPUOBJParser {
   }
 
   getVertexBuffer(): GPUBuffer {
-    return this.vretexBuffer;
+    return this.vertexBuffer;
   }
 
   getIndexBuffer(): GPUBuffer {
