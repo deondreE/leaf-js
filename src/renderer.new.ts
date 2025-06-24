@@ -69,7 +69,7 @@ class Renderer3D {
     );
     camera.setup();
 
-    mat4.lookAt(viewMatrix, [0, 0, 5], [0, 0, 0], [0, 1, 0]); // Camera at (0,0,5), looking at origin
+    mat4.lookAt(viewMatrix, [4, 3, 3], [0, 0, 0], [0, 1, 0]); // Camera at (0,0,5), looking at origin
     mat4.perspective(
       projectionMatrix,
       Math.PI / 4,
@@ -88,10 +88,13 @@ class Renderer3D {
         const data = await fetch(fileName).then((data) => data.text());
         await objParser.loadOBJ(data);
 
+        const SCENE_UNIFORM_FLOAT_COUNT = 16 + 4 + 4;
+        const SCENE_UNIFORM_BUFFER_SIZE = SCENE_UNIFORM_FLOAT_COUNT * 4;
+
         const shaderModule = objParser.getShader();
         const sceneUniformBufferSize = 200;
         const sceneUniformBuffer = this.device.createBuffer({
-          size: sceneUniformBufferSize,
+          size: SCENE_UNIFORM_BUFFER_SIZE,
           usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
           mappedAtCreation: false,
         });
@@ -102,12 +105,13 @@ class Renderer3D {
         });
 
         // write scenedata
-        const sceneUniformsData = new Float32Array(sceneUniformBufferSize / 4);
+        const sceneUniformsData = new Float32Array(SCENE_UNIFORM_FLOAT_COUNT);
         let offset = 0;
-        const lightDirection = new Float32Array([0.0, -1.0, 0.0]); // Example
+        const lightDirection = new Float32Array([0.0, 10.0, 0.0]); // Example
         const lightColor = new Float32Array([1.0, 1.0, 1.0]); // Example
         sceneUniformsData.set(mvpMatrix, offset);
-        offset += 1;
+        offset += 16;
+
         sceneUniformsData[offset++] = lightDirection[0];
         sceneUniformsData[offset++] = lightDirection[1];
         sceneUniformsData[offset++] = lightDirection[2];
@@ -118,10 +122,14 @@ class Renderer3D {
         sceneUniformsData[offset++] = lightColor[2];
         offset++;
 
-
         this.device.queue.writeBuffer(sceneUniformBuffer, 0, sceneUniformsData.buffer);
         // @ts-ignore
-        await objParser.createPipeline(shaderModule, this.format, sceneUniformBuffer, materialUniformBuffer);
+        await objParser.createPipeline(
+          shaderModule,
+          this.format,
+          sceneUniformBuffer,
+          materialUniformBuffer,
+        );
 
         this.render(() => {
           const commandEncoder = this.device!.createCommandEncoder();

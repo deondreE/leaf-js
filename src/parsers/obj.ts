@@ -21,6 +21,22 @@ interface Face {
   normalIndices: number[];
 }
 
+interface Vec3 {
+  x: number;
+  y: number;
+  z: number;
+}
+interface Vec2 {
+  u: number;
+  v: number;
+}
+
+interface ObjVertex {
+  position: Vec3;
+  normal: Vec3;
+  texCoord: Vec2;
+}
+
 export default class WebGPUOBJParser {
   vertices: Vertex[] = [];
   indices: number[] = [];
@@ -40,7 +56,6 @@ export default class WebGPUOBJParser {
     const positions: Vec3[] = [];
     const texCoords: Vec2[] = [];
     const normals: Vec3[] = [];
-    const shaderString: string = '';
     this.vertices = [];
     this.indices = [];
 
@@ -60,53 +75,73 @@ export default class WebGPUOBJParser {
 
         switch (prefix) {
           case 'v': {
-            const [_, x, y, z] = trimmedLine.split(/\s+/).map(Number);
+            const x = parseFloat(parts[1]);
+            const y = parseFloat(parts[2]);
+            const z = parseFloat(parts[3]);
             positions.push({ x, y, z });
             break;
           }
           case 'vt': {
-            const [_, u, v] = trimmedLine.split(/\s+/).map(Number);
+            const u = parseFloat(parts[1]);
+            const v = parseFloat(parts[2]);
             texCoords.push({ u, v });
             break;
           }
           case 'vn': {
-            const [_, x, y, z] = trimmedLine.split(/\s+/).map(Number);
+            const x = parseFloat(parts[1]);
+            const y = parseFloat(parts[2]);
+            const z = parseFloat(parts[3]);
             normals.push({ x, y, z });
             break;
           }
           case 'f': {
-            const faceIndices: number[] = [];
+            const currentFaceVertexIndices: number[] = [];
 
             for (let i = 1; i < parts.length; ++i) {
-              const indices: any = parts[i].split('/').map((n) => (n ? parseInt(n) - 1 : -1));
-              const vIdx = indices[0] ?? -1;
-              const tIdx = indices[1] ?? -1;
-              const nIdx = indices[2] ?? -1;
+              const facePart = parts[i];
+              const indices = facePart.split('/').map((n) => (n ? parseInt(n, 10) : -1));
 
-              if (vIdx < 0 || vIdx >= positions.length) continue;
+              const vIdx = indices[0] - 1;
+              const tIdx = indices[1] !== undefined && indices[1] !== -1 ? indices[1] - 1 : -1;
+              const nIdx = indices[2] !== undefined && indices[2] !== -1 ? indices[2] - 1 : -1;
+
+              if (vIdx < 0 || vIdx >= positions.length) {
+                console.warn(`Invalid vertex position index: ${vIdx + 1} on line: ${trimmedLine}`);
+                continue;
+              }
+              if (tIdx !== -1 && (tIdx < 0 || tIdx >= texCoords.length)) {
+                console.warn(`Invalid texCoord index: ${tIdx + 1} on line: ${trimmedLine}`);
+                continue;
+              }
+              if (nIdx !== -1 && (nIdx < 0 || nIdx >= normals.length)) {
+                console.warn(`Invalid normal index: ${nIdx + 1} on line: ${trimmedLine}`);
+                continue;
+              }
 
               const key = `${vIdx}/${tIdx}/${nIdx}`;
+
               if (vertexMap.has(key)) {
-                faceIndices.push(vertexMap.get(key)!);
+                currentFaceVertexIndices.push(vertexMap.get(key)!);
               } else {
-                const vertex = {
+                const vertex: ObjVertex = {
                   position: positions[vIdx],
-                  texCoord: tIdx >= 0 ? texCoords[tIdx] : { u: 0, v: 0 },
-                  normal: nIdx >= 0 ? normals[nIdx] : { x: 0, y: 0, z: 0 },
+                  texCoord: tIdx !== -1 ? texCoords[tIdx] : { u: 0, v: 0 },
+                  normal: nIdx !== -1 ? normals[nIdx] : { x: 0, y: 0, z: 0 },
                 };
 
                 const newIndex = this.vertices.length;
                 this.vertices.push(vertex);
                 vertexMap.set(key, newIndex);
-                faceIndices.push(newIndex);
+                currentFaceVertexIndices.push(newIndex);
               }
+            }
 
-              // Ensure triangulation (convert quads into triangles).
-              if (faceIndices.length === 3) {
-                this.indices.push(...faceIndices);
-              } else if (faceIndices.length === 4) {
-                this.indices.push(faceIndices[0], faceIndices[1], faceIndices[2]);
-                this.indices.push(faceIndices[0], faceIndices[2], faceIndices[3]);
+            if (currentFaceVertexIndices.length >= 3) {
+              const firstIndex = currentFaceVertexIndices[0];
+              for (let i = 1; i < currentFaceVertexIndices.length - 1; ++i) {
+                this.indices.push(firstIndex);
+                this.indices.push(currentFaceVertexIndices[i]);
+                this.indices.push(currentFaceVertexIndices[i + 1]);
               }
             }
             break;
@@ -114,15 +149,18 @@ export default class WebGPUOBJParser {
         }
       }
 
+      console.log(
+        `OBJ Parsing Complete: ${this.vertices.length} unique vertices, ${this.indices.length} indices.`,
+      );
       await this.createBuffers();
       return true;
     } catch (e) {
-      console.error(e);
+      console.error('Error parsing OBJ:', e);
       return false;
     }
   }
 
-  async createBuffers() {
+  async createBuffers(): Promise<void> {
     const vertexData = new Float32Array(
       this.vertices.flatMap((v) => [
         v.position.x,
@@ -143,15 +181,29 @@ export default class WebGPUOBJParser {
     });
     new Float32Array(this.vertexBuffer.getMappedRange()).set(vertexData);
     this.vertexBuffer.unmap();
+    console.log(
+      'Vertex buffer created with',
+      vertexData.length,
+      'floats,',
+      vertexData.byteLength,
+      'bytes.',
+    );
 
-    const indexData = new Uint16Array(this.indices);
-    this.indexBuffer = this.device.createBuffer({
-      size: indexData.byteLength,
-      usage: GPUBufferUsage.INDEX | GPUBufferUsage.COPY_DST,
-      mappedAtCreation: true,
-    });
-    new Uint16Array(this.indexBuffer.getMappedRange()).set(indexData);
-    this.indexBuffer.unmap();
+     const useUint32 = this.vertices.length > 65535; // Or simply always use Uint32 for robustness
+
+        const indexData = useUint32
+            ? new Uint32Array(this.indices)
+            : new Uint16Array(this.indices);
+
+        this.indexBuffer = this.device.createBuffer({
+            size: indexData.byteLength,
+            usage: GPUBufferUsage.INDEX | GPUBufferUsage.COPY_DST,
+            mappedAtCreation: true,
+        });
+
+        new (useUint32 ? Uint32Array : Uint16Array)(this.indexBuffer.getMappedRange()).set(indexData);
+        this.indexBuffer.unmap();
+        console.log("Index buffer created with", indexData.length, "indices,", indexData.byteLength, "bytes. Using", useUint32 ? "Uint32" : "Uint16", "indices.");
   }
 
   async createPipeline(
@@ -188,7 +240,7 @@ export default class WebGPUOBJParser {
           {
             arrayStride: 8 * 4,
             attributes: [
-              { shaderLocation: 0, offset: 0, format: 'float32x3' }, // position
+              { shaderLocation: 0, offset: 0 * 4, format: 'float32x3' }, // position
               { shaderLocation: 1, offset: 3 * 4, format: 'float32x3' }, // normal
               { shaderLocation: 2, offset: 6 * 4, format: 'float32x2' }, // texCoord
             ],
@@ -201,19 +253,17 @@ export default class WebGPUOBJParser {
         targets: [{ format }],
       },
       primitive: {
-        topology: 'triangle-list',
-        cullMode: 'front',
-        unclippedDepth: false,
-        frontFace: 'cw',
+        topology: 'line-list',
+        cullMode: 'back',
       },
     });
 
     this.bindGroup = this.device.createBindGroup({
-       layout: this.pipeline.getBindGroupLayout(0),
-        entries: [
-            { binding: 0, resource: { buffer: sceneUniformBuffer } },
-            { binding: 1, resource: { buffer: materialUniformBuffer } },
-        ],
+      layout: this.pipeline.getBindGroupLayout(0),
+      entries: [
+        { binding: 0, resource: { buffer: sceneUniformBuffer } },
+        { binding: 1, resource: { buffer: materialUniformBuffer } },
+      ],
     });
   }
 
