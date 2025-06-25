@@ -32,11 +32,20 @@ class Renderer3D {
     }
 
     this.device = await adapter.requestDevice();
+    if (!this.canvas) {
+      console.error('Canvas not provided or not available.');
+      return;
+    }
     this.context = this.canvas!.getContext('webgpu');
     this.format = navigator.gpu.getPreferredCanvasFormat();
-
     if (!this.device || !this.context || !this.format) {
-      console.error('Failed to initialize WebGPU.');
+      console.error(
+        'Failed to initialize WebGPU: Device, context, or format is null.',
+      );
+      // More specific error logging could be added based on which one is null
+      if (!this.device) console.error('  - GPUDevice is null.');
+      if (!this.context) console.error('  - GPUCanvasContext is null. Is WebGPU supported?');
+      if (!this.format) console.error('  - GPUTextureFormat is null.');
       return;
     }
 
@@ -95,7 +104,6 @@ class Renderer3D {
         const SCENE_UNIFORM_BUFFER_SIZE = SCENE_UNIFORM_FLOAT_COUNT * 4;
 
         const shaderModule = objParser.getShader();
-        const sceneUniformBufferSize = 200;
         const sceneUniformBuffer = this.device.createBuffer({
           size: SCENE_UNIFORM_BUFFER_SIZE,
           usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
@@ -160,8 +168,8 @@ class Renderer3D {
           const materialData = createMaterialUniformBufferData(fallbackMaterial);
           this.device?.queue.writeBuffer(materialUniformBuffer, 0, materialData.buffer);
 
-          // objParser.render(passEncoder);
-          gizmo.render(passEncoder);
+          objParser.render(passEncoder);
+          // gizmo.render(passEncoder);
           passEncoder.end();
           this.device!.queue.submit([commandEncoder.finish()]);
         });
