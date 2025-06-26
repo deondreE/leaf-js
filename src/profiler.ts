@@ -31,15 +31,14 @@ export class Profiler extends HTMLCanvasElement {
   boundingBoxes: { x: number; y: number; width: number; height: number }[] =
     [];
 
-  // Animation frame visualization specific properties
   animationFrameProgress: number = 0;
   animationFrameCount: number = 0;
   lastAnimationUpdateTime: number = performance.now();
 
-  // Tab and Call Stack properties
   private _currentTab: 'performance' | 'callstack' = 'performance';
   displayCallStack: boolean = true; // Flag to toggle call stack display
   callStackEvents: CallStackEvent[] = [];
+  callStackScrollOffset: number = 0; // New: Vertical scroll offset for the call stack
 
   constructor() {
     super();
@@ -72,10 +71,17 @@ export class Profiler extends HTMLCanvasElement {
         }
       }
     });
+
+    // New: Add mouse wheel listener for scrolling the call stack
+    this.addEventListener('wheel', this.handleScroll.bind(this), {
+      passive: false,
+    });
   }
 
   disconnectedCallback() {
     console.log('Profiler canvas removed.');
+    // Remove event listener to prevent memory leaks
+    this.removeEventListener('wheel', this.handleScroll.bind(this)); // Ensure same bound function is removed
   }
 
   adoptedCallback() {
@@ -214,18 +220,36 @@ export class Profiler extends HTMLCanvasElement {
         if (arg instanceof HTMLCanvasElement || arg instanceof Image) {
           return `<${arg.tagName.toLowerCase()} id="${arg.id}">`;
         }
-        // Use JSON.stringify correctly for each argument
-        // Wrap JSON.stringify in an arrow function to ensure it only receives 'arg'
         try {
           return JSON.stringify(arg);
         } catch (e) {
-          // Handle cases where stringify might fail (e.g., circular structures)
-          return String(arg); // Fallback to String() for complex objects
+          return String(arg);
         }
       }),
     });
-    if (this.callStackEvents.length > 200) {
-      // Keep a reasonable number of events
+
+    const lineHeight = 20;
+    const maxVisibleLines = Math.floor(
+      (this.height - 30) / lineHeight, 
+    );
+
+    if (this._currentTab === 'callstack') {
+      const contentHeight = this.callStackEvents.length * lineHeight;
+      const visibleContentHeight = this.height - 30; // 30px for tabs
+
+      // If we are at the very bottom or not much content yet
+      if (
+        this.callStackScrollOffset >= contentHeight - visibleContentHeight ||
+        contentHeight < visibleContentHeight
+      ) {
+        this.callStackScrollOffset = Math.max(
+          0,
+          contentHeight - visibleContentHeight,
+        );
+      }
+    }
+
+    if (this.callStackEvents.length > 500) {
       this.callStackEvents.shift();
     }
   }
@@ -247,8 +271,8 @@ export class Profiler extends HTMLCanvasElement {
    * @param ctx The 2D rendering context.
    */
   renderFrameTimeGraph(ctx: CanvasRenderingContext2D) {
-    const graphHeight = this.height * 0.5; // Use top half for frame time
-    const graphYOffset = 0;
+    const graphHeight = this.height * 0.5 - 30; // Adjusted for tab height
+    const graphYOffset = 0; // Relative to the translated context
 
     const maxFrameTime = Math.max(...this.frameTimes, 16.67); // Include 60fps target
     const scaleY = graphHeight / (maxFrameTime * 1.2); // Scale to fit, with some padding
@@ -298,8 +322,9 @@ export class Profiler extends HTMLCanvasElement {
    * @param ctx The 2D rendering context.
    */
   renderMemoryUsageGraph(ctx: CanvasRenderingContext2D) {
-    const graphHeight = this.height * 0.3; // Use a portion for memory
-    const graphYOffset = this.height * 0.55; // Position below frame time graph
+    const tabContentHeight = this.height - 30; // Total height for content below tabs
+    const graphHeight = tabContentHeight * 0.3; // Use a portion for memory
+    const graphYOffset = tabContentHeight * 0.55; // Position below frame time graph
 
     ctx.fillStyle = '#1a1a1a'; // Dark background for this section
     ctx.fillRect(0, graphYOffset, this.width, graphHeight);
@@ -317,13 +342,13 @@ export class Profiler extends HTMLCanvasElement {
       const barHeight = this.memoryUsage[i] * scaleY;
       const x = i * barWidth;
       const y = graphYOffset + graphHeight - barHeight;
-      ctx.fillRect(x, y, barWidth * 0.8, barHeight); // Slightly narrower bars
+      ctx.fillRect(x, y, barWidth * 0.8, barHeight); 
     }
 
     // Text labels
-    ctx.fillStyle = '#ff8c00'; // Orange for memory
+    ctx.fillStyle = '#ff8c00'; 
     ctx.font = '12px Arial';
-    ctx.fillText('Memory Usage (MB)', 10, graphYOffset + 15);
+    ctx.fillText('Memory Usage (MB)', 100, graphYOffset + 10);
 
     if (this.memoryUsage.length > 0) {
       const latestMemory = this.memoryUsage[this.memoryUsage.length - 1];
@@ -340,8 +365,9 @@ export class Profiler extends HTMLCanvasElement {
    * @param ctx The 2D rendering context.
    */
   renderAnimationFrameVisualization(ctx: CanvasRenderingContext2D) {
-    const sectionHeight = this.height * 0.1;
-    const sectionYOffset = this.height * 0.9;
+    const tabContentHeight = this.height - 30; // Total height for content below tabs
+    const sectionHeight = tabContentHeight * 0.1;
+    const sectionYOffset = tabContentHeight * 0.9;
 
     ctx.fillStyle = '#0a0a0a'; // Even darker background
     ctx.fillRect(0, sectionYOffset, this.width, sectionHeight);
@@ -398,51 +424,101 @@ export class Profiler extends HTMLCanvasElement {
     ctx.strokeRect(tabWidth, tabY, tabWidth, tabHeight);
     ctx.fillStyle = 'white';
     ctx.fillText('Call Stack', tabWidth + tabWidth / 2, tabY + tabHeight / 2);
-
-    // No need for data attributes on canvas drawing.
-    // The click detection logic in connectedCallback handles it.
   }
 
   renderCallStack(ctx: CanvasRenderingContext2D) {
-    const startY = 40; // Below tabs
-    const lineHeight = 20;
-    const maxLines = Math.floor((this.height - startY) / lineHeight) - 1; // leave space at bottom
+    const contentRegionY = 0; // Relative to the translated context
+    const contentRegionHeight = this.height - 30; // Available height for call stack content
 
     ctx.fillStyle = 'black';
-    ctx.fillRect(0, startY, this.width, this.height - startY);
+    ctx.fillRect(0, contentRegionY, this.width, contentRegionHeight);
 
     ctx.fillStyle = 'white';
-    ctx.font = '12px Monospace'; // Monospace for readability
+    ctx.font = '12px Monospace';
     ctx.textAlign = 'left';
 
-    // Get recent events, display latest at top
-    // Ensure we don't display more lines than available space
-    const eventsToDisplay = this.callStackEvents
-      .slice(Math.max(0, this.callStackEvents.length - maxLines))
-      .reverse();
+    const lineHeight = 20;
+    const totalContentHeight = this.callStackEvents.length * lineHeight;
 
-    eventsToDisplay.forEach((event, index) => {
-      // Time relative to the last frame time.
-      // If you want time since the profiler started, use event.timestamp directly.
+    const maxScroll = Math.max(0, totalContentHeight - contentRegionHeight);
+
+    this.callStackScrollOffset = Math.min(
+      this.callStackScrollOffset,
+      maxScroll,
+    );
+    this.callStackScrollOffset = Math.max(0, this.callStackScrollOffset);
+
+    const lineIndexStart = Math.floor(this.callStackScrollOffset / lineHeight);
+    // End drawing at `lineIndexEnd`
+    const lineIndexEnd = Math.min(
+      this.callStackEvents.length,
+      lineIndexStart + Math.ceil(contentRegionHeight / lineHeight) + 2, // +2 for buffer
+    );
+
+    for (let i = lineIndexStart; i < lineIndexEnd; i++) {
+      const event = this.callStackEvents[i];
+      if (!event) continue; // Safety check
+
       const displayTime = (event.timestamp - this.lastFrameTime).toFixed(2);
       const argsString = event.args
         .map((arg) => {
           try {
             return JSON.stringify(arg);
           } catch (e) {
-            // Fallback for complex/circular objects
             return String(arg);
           }
         })
         .join(', ');
 
       const text = `[${displayTime}ms] ${event.type}(${argsString})`;
-      ctx.fillText(text, 10, startY + (index + 1) * lineHeight);
-    });
+
+      const y = (i - lineIndexStart) * lineHeight + lineHeight - this.callStackScrollOffset % lineHeight;
+      if (y >= contentRegionY && y + lineHeight <= contentRegionY + contentRegionHeight + lineHeight) {
+        ctx.fillText(text, 10, contentRegionY + y);
+      }
+    }
 
     if (this.callStackEvents.length === 0) {
       ctx.fillStyle = '#666';
-      ctx.fillText('No events recorded yet.', 10, startY + lineHeight);
+      ctx.fillText('No events recorded yet.', 10, contentRegionY + lineHeight);
+    }
+    
+    if (maxScroll > 0) {
+      const scrollbarWidth = 5;
+      const scrollbarX = this.width - scrollbarWidth - 5;
+      const scrollbarTrackHeight = contentRegionHeight - 10;
+      const scrollbarTrackY = contentRegionY + 5;
+
+      ctx.fillStyle = '#333';
+      ctx.fillRect(scrollbarX, scrollbarTrackY, scrollbarWidth, scrollbarTrackHeight);
+
+      const thumbHeight = Math.max(20, (contentRegionHeight / totalContentHeight) * scrollbarTrackHeight);
+      const thumbY = scrollbarTrackY + (this.callStackScrollOffset / maxScroll) * (scrollbarTrackHeight - thumbHeight);
+
+      ctx.fillStyle = '#888';
+      ctx.fillRect(scrollbarX, thumbY, scrollbarWidth, thumbHeight);
+    }
+  }
+
+  handleScroll(event: WheelEvent) {
+    if (this._currentTab === 'callstack') {
+      event.preventDefault();
+
+      const scrollSpeed = 20;
+      this.callStackScrollOffset += event.deltaY > 0 ? scrollSpeed : -scrollSpeed;
+
+      const lineHeight = 20;
+      const totalContentHeight = this.callStackEvents.length * lineHeight;
+      const contentRegionHeight = this.height - 30;
+      const maxScroll = Math.max(0, totalContentHeight - contentRegionHeight);
+
+      this.callStackScrollOffset = Math.min(
+        this.callStackScrollOffset,
+        maxScroll,
+      );
+      this.callStackScrollOffset = Math.max(0, this.callStackScrollOffset);
+
+      this.render();
     }
   }
 
@@ -452,22 +528,16 @@ export class Profiler extends HTMLCanvasElement {
     const ctx = this.ctx;
     ctx.clearRect(0, 0, this.width, this.height);
 
-    ctx.fillStyle = 'black'; // Overall background
+    ctx.fillStyle = 'black';
     ctx.fillRect(0, 0, this.width, this.height);
 
-    this.renderTabs(ctx); // Always render tabs
-
-    // Render content based on active tab
-    // We add a `tabContentStartY` to shift the content below the tabs
-    const tabContentStartY = 30; // Height of tabs
-    ctx.save(); // Save the current state of the canvas context
-    ctx.translate(0, tabContentStartY); // Translate content down
+    this.renderTabs(ctx);
+    const tabContentStartY = 30;
+    ctx.save();
+    ctx.translate(0, tabContentStartY);
 
     switch (this._currentTab) {
       case 'performance':
-        // Adjust the render methods to account for the translation if needed,
-        // or calculate internal offsets based on `tabContentStartY`.
-        // For simplicity, let's keep previous graph positioning but note the shift.
         this.renderFrameTimeGraph(ctx);
         this.renderMemoryUsageGraph(ctx);
         this.renderAnimationFrameVisualization(ctx);
@@ -476,9 +546,8 @@ export class Profiler extends HTMLCanvasElement {
         this.renderCallStack(ctx);
         break;
     }
-    ctx.restore(); // Restore the canvas context to its original state
+    ctx.restore();
 
-    // Global status text (always on top, adjust Y to not overlap tabs)
     ctx.fillStyle = this.paused ? 'gray' : 'white';
     ctx.font = '14px Arial';
     ctx.textAlign = 'right';
@@ -488,7 +557,13 @@ export class Profiler extends HTMLCanvasElement {
   switchTab(tab: 'performance' | 'callstack') {
     if (this._currentTab !== tab) {
       this._currentTab = tab;
-      this.render(); // Re-render to show the new tab content
+      if (tab === 'callstack') {
+        const lineHeight = 20;
+        const totalContentHeight = this.callStackEvents.length * lineHeight;
+        const contentRegionHeight = this.height - 30;
+        this.callStackScrollOffset = Math.max(0, totalContentHeight - contentRegionHeight);
+      }
+      this.render();
     }
   }
 
@@ -504,11 +579,9 @@ export class Profiler extends HTMLCanvasElement {
 
   resume() {
     this.paused = false;
-    // When resuming, restart the monitorFrame loop
     if (this.targetCanvas) {
       this.hookCanvas();
     } else {
-      // If no target canvas, just call render
       this.render();
     }
   }
