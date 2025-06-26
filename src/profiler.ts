@@ -7,6 +7,12 @@ export interface LProfilerProps {
 
 // TODO: add profiling for visualizing bounding boxes.
 
+interface CallStackEvent {
+  type: string;
+  timestamp: number;
+  args: any[];
+}
+
 /*
  * Profiler is a web component built for understanding the performance of the canvas specifically.
  * */
@@ -22,12 +28,18 @@ export class Profiler extends HTMLCanvasElement {
   paused = false;
   showBoundingBoxes = true;
   type: '2d' | 'gpu' = '2d';
-  boundingBoxes: { x: number; y: number; width: number; height: number }[] = [];
+  boundingBoxes: { x: number; y: number; width: number; height: number }[] =
+    [];
 
   // Animation frame visualization specific properties
   animationFrameProgress: number = 0;
   animationFrameCount: number = 0;
   lastAnimationUpdateTime: number = performance.now();
+
+  // Tab and Call Stack properties
+  private _currentTab: 'performance' | 'callstack' = 'performance';
+  displayCallStack: boolean = true; // Flag to toggle call stack display
+  callStackEvents: CallStackEvent[] = [];
 
   constructor() {
     super();
@@ -37,7 +49,29 @@ export class Profiler extends HTMLCanvasElement {
     this.id = 'profiler-canvas';
     this.ctx = this.getContext('2d');
     this.updateTarget();
-    // No need for an initial requestAnimationFrame here, hookCanvas will handle monitoring
+
+    // Add event listeners for tab switching
+    this.addEventListener('click', (event) => {
+      // Get mouse position relative to the canvas
+      const rect = this.getBoundingClientRect();
+      const x = event.clientX - rect.left;
+      const y = event.clientY - rect.top;
+
+      const tabHeight = 30;
+      const tabWidth = this.width / 2;
+      const tabY = 0;
+
+      // Check if click is within the tab area
+      if (y >= tabY && y <= tabY + tabHeight) {
+        if (x >= 0 && x < tabWidth) {
+          // Clicked on Performance tab
+          this.switchTab('performance');
+        } else if (x >= tabWidth && x < this.width) {
+          // Clicked on Call Stack tab
+          this.switchTab('callstack');
+        }
+      }
+    });
   }
 
   disconnectedCallback() {
@@ -76,8 +110,6 @@ export class Profiler extends HTMLCanvasElement {
   hookCanvas() {
     if (!this.targetCanvas) return;
 
-    // We need to decide which context to hook. For now, let's assume '2d' as 'webgpu' isn't standard context.
-    // If it's truly webgpu, the profiling will be different.
     const targetCtx =
       this.targetCanvas.getContext('2d') ||
       this.targetCanvas.getContext('webgl') ||
@@ -122,12 +154,12 @@ export class Profiler extends HTMLCanvasElement {
       // Update animation progress for visual effect
       this.animationFrameCount++;
       const animationElapsed = now - this.lastAnimationUpdateTime;
-      if (animationElapsed > 50) { // Update animation progress every 50ms
+      if (animationElapsed > 50) {
+        // Update animation progress every 50ms
         this.animationFrameProgress = (this.animationFrameProgress + 0.1) % 1;
         this.lastAnimationUpdateTime = now;
       }
 
-      // Ensure rendering happens on every frame update, not just every second for FPS/Memory
       this.render();
 
       requestAnimationFrame(monitorFrame);
@@ -143,49 +175,66 @@ export class Profiler extends HTMLCanvasElement {
     // @ts-ignore
     const originalClearRect = targetCtx.clearRect;
 
-    // Patching methods to track when drawing occurs.
-    // Note: This approach might not capture all rendering activities,
-    // especially if direct pixel manipulation or other methods are used.
-    // It also adds overhead to every drawing call.
     if (targetCtx instanceof CanvasRenderingContext2D) {
       // @ts-ignore
       targetCtx.fillRect = (...args) => {
+        this.addEventToCallStack('fillRect', args);
         originalFillRect.apply(targetCtx, args);
-        // We're already monitoring frames in `monitorFrame`, no need to call trackFrame here too
       };
       // @ts-ignore
       targetCtx.strokeRect = (...args) => {
+        this.addEventToCallStack('strokeRect', args);
         originalStrokeRect.apply(targetCtx, args);
       };
       // @ts-ignore
       targetCtx.drawImage = (...args) => {
+        this.addEventToCallStack('drawImage', args);
         originalDrawImage.apply(targetCtx, args);
       };
       // @ts-ignore
       targetCtx.clearRect = (...args: any[]) => {
+        this.addEventToCallStack('clearRect', args);
         originalClearRect.apply(targetCtx, args);
       };
     } else {
       console.warn(
         'Profiler: Context is not 2D. Method patching may not be effective.',
       );
-      // For WebGL/WebGPU, you'd typically look for `requestAnimationFrame` calls or
-      // instrument `gl.present()` or command buffer submissions.
     }
 
     monitorFrame(); // Start the monitoring loop
   }
 
+  addEventToCallStack(type: string, args: any[]) {
+    this.callStackEvents.push({
+      type,
+      timestamp: performance.now(),
+      args: args.map((arg) => {
+        // Simple serialization for display
+        if (arg instanceof HTMLCanvasElement || arg instanceof Image) {
+          return `<${arg.tagName.toLowerCase()} id="${arg.id}">`;
+        }
+        // Use JSON.stringify correctly for each argument
+        // Wrap JSON.stringify in an arrow function to ensure it only receives 'arg'
+        try {
+          return JSON.stringify(arg);
+        } catch (e) {
+          // Handle cases where stringify might fail (e.g., circular structures)
+          return String(arg); // Fallback to String() for complex objects
+        }
+      }),
+    });
+    if (this.callStackEvents.length > 200) {
+      // Keep a reasonable number of events
+      this.callStackEvents.shift();
+    }
+  }
+
   trackMemory() {
-    // FIXME: performance.memory is technically being deprecated.
-    // Use window.performance.memory for now, as it's still widely available
-    // and provides useful approximate data. For more accurate data, one would
-    // need to use browser-specific dev tools APIs or WASM memory reporting.
     // @ts-ignore
     if (performance.memory) {
       // @ts-ignore
       const memInfo = performance.memory;
-      // usedJSHeapSize is in bytes, convert to MB
       const usedMemoryMB = (memInfo.usedJSHeapSize / (1024 * 1024)).toFixed(2);
 
       this.memoryUsage.push(parseFloat(usedMemoryMB));
@@ -219,8 +268,7 @@ export class Profiler extends HTMLCanvasElement {
     ctx.stroke();
 
     // Draw 16.67ms (60 FPS) line
-    const targetFPSLineY =
-      graphYOffset + graphHeight - 16.67 * scaleY;
+    const targetFPSLineY = graphYOffset + graphHeight - 16.67 * scaleY;
     ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)'; // White dashed line
     ctx.setLineDash([5, 5]);
     ctx.beginPath();
@@ -279,7 +327,11 @@ export class Profiler extends HTMLCanvasElement {
 
     if (this.memoryUsage.length > 0) {
       const latestMemory = this.memoryUsage[this.memoryUsage.length - 1];
-      ctx.fillText(`Current: ${latestMemory.toFixed(2)} MB`, 10, graphYOffset + 30);
+      ctx.fillText(
+        `Current: ${latestMemory.toFixed(2)} MB`,
+        10,
+        graphYOffset + 30,
+      );
     }
   }
 
@@ -322,7 +374,78 @@ export class Profiler extends HTMLCanvasElement {
     );
   }
 
-  // FIXME: I would love certain sections to be togglable, by the end user.
+  renderTabs(ctx: CanvasRenderingContext2D) {
+    const tabHeight = 30;
+    const tabWidth = this.width / 2;
+    const tabY = 0;
+
+    ctx.font = '14px Arial';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+
+    // Performance Tab
+    ctx.fillStyle = this._currentTab === 'performance' ? '#333' : '#1a1a1a';
+    ctx.fillRect(0, tabY, tabWidth, tabHeight);
+    ctx.strokeStyle = '#555';
+    ctx.strokeRect(0, tabY, tabWidth, tabHeight);
+    ctx.fillStyle = 'white';
+    ctx.fillText('Performance', tabWidth / 2, tabY + tabHeight / 2);
+
+    // Call Stack Tab
+    ctx.fillStyle = this._currentTab === 'callstack' ? '#333' : '#1a1a1a';
+    ctx.fillRect(tabWidth, tabY, tabWidth, tabHeight);
+    ctx.strokeStyle = '#555';
+    ctx.strokeRect(tabWidth, tabY, tabWidth, tabHeight);
+    ctx.fillStyle = 'white';
+    ctx.fillText('Call Stack', tabWidth + tabWidth / 2, tabY + tabHeight / 2);
+
+    // No need for data attributes on canvas drawing.
+    // The click detection logic in connectedCallback handles it.
+  }
+
+  renderCallStack(ctx: CanvasRenderingContext2D) {
+    const startY = 40; // Below tabs
+    const lineHeight = 20;
+    const maxLines = Math.floor((this.height - startY) / lineHeight) - 1; // leave space at bottom
+
+    ctx.fillStyle = 'black';
+    ctx.fillRect(0, startY, this.width, this.height - startY);
+
+    ctx.fillStyle = 'white';
+    ctx.font = '12px Monospace'; // Monospace for readability
+    ctx.textAlign = 'left';
+
+    // Get recent events, display latest at top
+    // Ensure we don't display more lines than available space
+    const eventsToDisplay = this.callStackEvents
+      .slice(Math.max(0, this.callStackEvents.length - maxLines))
+      .reverse();
+
+    eventsToDisplay.forEach((event, index) => {
+      // Time relative to the last frame time.
+      // If you want time since the profiler started, use event.timestamp directly.
+      const displayTime = (event.timestamp - this.lastFrameTime).toFixed(2);
+      const argsString = event.args
+        .map((arg) => {
+          try {
+            return JSON.stringify(arg);
+          } catch (e) {
+            // Fallback for complex/circular objects
+            return String(arg);
+          }
+        })
+        .join(', ');
+
+      const text = `[${displayTime}ms] ${event.type}(${argsString})`;
+      ctx.fillText(text, 10, startY + (index + 1) * lineHeight);
+    });
+
+    if (this.callStackEvents.length === 0) {
+      ctx.fillStyle = '#666';
+      ctx.fillText('No events recorded yet.', 10, startY + lineHeight);
+    }
+  }
+
   render() {
     if (!this.ctx) return;
 
@@ -332,14 +455,41 @@ export class Profiler extends HTMLCanvasElement {
     ctx.fillStyle = 'black'; // Overall background
     ctx.fillRect(0, 0, this.width, this.height);
 
-    this.renderFrameTimeGraph(ctx);
-    this.renderMemoryUsageGraph(ctx);
-    this.renderAnimationFrameVisualization(ctx);
+    this.renderTabs(ctx); // Always render tabs
 
-    // Global status text
+    // Render content based on active tab
+    // We add a `tabContentStartY` to shift the content below the tabs
+    const tabContentStartY = 30; // Height of tabs
+    ctx.save(); // Save the current state of the canvas context
+    ctx.translate(0, tabContentStartY); // Translate content down
+
+    switch (this._currentTab) {
+      case 'performance':
+        // Adjust the render methods to account for the translation if needed,
+        // or calculate internal offsets based on `tabContentStartY`.
+        // For simplicity, let's keep previous graph positioning but note the shift.
+        this.renderFrameTimeGraph(ctx);
+        this.renderMemoryUsageGraph(ctx);
+        this.renderAnimationFrameVisualization(ctx);
+        break;
+      case 'callstack':
+        this.renderCallStack(ctx);
+        break;
+    }
+    ctx.restore(); // Restore the canvas context to its original state
+
+    // Global status text (always on top, adjust Y to not overlap tabs)
     ctx.fillStyle = this.paused ? 'gray' : 'white';
     ctx.font = '14px Arial';
-    ctx.fillText(this.paused ? 'PAUSED' : 'RUNNING', this.width - 80, 20);
+    ctx.textAlign = 'right';
+    ctx.fillText(this.paused ? 'PAUSED' : 'RUNNING', this.width - 10, 20); // Still 20px from top
+  }
+
+  switchTab(tab: 'performance' | 'callstack') {
+    if (this._currentTab !== tab) {
+      this._currentTab = tab;
+      this.render(); // Re-render to show the new tab content
+    }
   }
 
   BB() {
