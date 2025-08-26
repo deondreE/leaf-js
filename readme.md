@@ -2,6 +2,7 @@
 
 Leaf is a 2D/3D library designed for creating games and simulations on the web. Its goal is to replace WebGL by simplifying the development of complex 3D environments. Leaf aims to make web-based games as powerful as traditional system games and improve sharing workflows for industries relying on visualizations.
 
+> NOTE: Wengpu is currently marked expiramental and needs to be activated in the config of chrome.
 > NOTE: Memory is still a large issue inside of the web.
 
 # Future Goals

@@ -39,13 +39,7 @@ class Renderer3D {
     this.context = this.canvas!.getContext('webgpu');
     this.format = navigator.gpu.getPreferredCanvasFormat();
     if (!this.device || !this.context || !this.format) {
-      console.error(
-        'Failed to initialize WebGPU: Device, context, or format is null.',
-      );
-      // More specific error logging could be added based on which one is null
-      if (!this.device) console.error('  - GPUDevice is null.');
-      if (!this.context) console.error('  - GPUCanvasContext is null. Is WebGPU supported?');
-      if (!this.format) console.error('  - GPUTextureFormat is null.');
+      console.error('Failed to initialize WebGPU: Device, context, or format is null.');
       return;
     }
 
@@ -98,7 +92,13 @@ class Renderer3D {
         const data = await fetch(fileName).then((data) => data.text());
         await objParser.loadOBJ(data);
 
-        const gizmo = new Gizmo(this.device, this.context, modelMatrix, projectionMatrix, this.canvas!);
+        const gizmo = new Gizmo(
+          this.device,
+          this.context,
+          modelMatrix,
+          projectionMatrix,
+          this.canvas!,
+        );
 
         const SCENE_UNIFORM_FLOAT_COUNT = 16 + 4 + 4;
         const SCENE_UNIFORM_BUFFER_SIZE = SCENE_UNIFORM_FLOAT_COUNT * 4;
