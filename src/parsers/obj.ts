@@ -331,23 +331,24 @@ export default class WebGPUOBJParser {
             @fragment
             fn fs_main(input: VertexOutput) -> @location(0) vec4<f32> {
                 let N = normalize(input.vNormal);
-                let L = normalize(-sceneUniforms.lightDirection); // Direction from fragment to light source
-                let V = normalize(-input.vWorldPos); // Direction from fragment to camera (assuming camera at origin for simplicity)
-
+                let L = normalize(-sceneUniforms.lightDirection);
+                let V = normalize(-input.vWorldPos);
                 let H = normalize(L + V);
+            
                 let NdotL = max(dot(N, L), 0.0);
                 let NdotV = max(dot(N, V), 0.0);
                 let NdotH = max(dot(N, H), 0.0);
-                
-                let diffuse = materialUniforms.baseColor / 3.14159;
-                let F0 = mix(vec3<f32>(0.04, 0.04, 0.04), materialUniforms.baseColor, materialUniforms.metallic);
-                let F = F0 + (1.0 - F0) * pow(1.0 - NdotV, 5.0); 
-                let specular = F * ((materialUniforms.roughness) / max(NdotL * NdotV, 0.001));
-                
-                let ambientComponent = materialUniforms.ambientColor * 0.3;
-                var color = (diffuse * NdotL + specular) * sceneUniforms.lightColor + ambientComponent;
-                color = color + materialUniforms.emissionColor;
-                
+            
+                // Basic diffuse + Blinn–Phong specular
+                let diffuse = materialUniforms.baseColor * NdotL;
+            
+                let shininess = max(materialUniforms.shininess, 1.0);
+                let specularStrength = 0.2;
+                let specular = specularStrength * pow(NdotH, shininess);
+            
+                let ambient = materialUniforms.ambientColor * 0.2;
+            
+                let color = ambient + diffuse + specular;
                 return vec4<f32>(color, materialUniforms.alpha);
             }
         `;

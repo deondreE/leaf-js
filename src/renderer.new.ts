@@ -12,47 +12,7 @@ import {
 } from './parsers/mtl';
 import { WebGPUFBXParser } from './parsers/fbx';
 import Gizmo from './gizmo';
-
-function extractRotation(dst: mat4, src: mat4) {
-  // Copy only rotation/scaling part
-  mat4.copy(dst, src);
-  dst[12] = 0;
-  dst[13] = 0;
-  dst[14] = 0;
-
-  // Remove any scale distortion (normalize axes)
-  const xLen = Math.hypot(dst[0], dst[1], dst[2]);
-  const yLen = Math.hypot(dst[4], dst[5], dst[6]);
-  const zLen = Math.hypot(dst[8], dst[9], dst[10]);
-  if (xLen > 0) {
-    dst[0] /= xLen;
-    dst[1] /= xLen;
-    dst[2] /= xLen;
-  }
-  if (yLen > 0) {
-    dst[4] /= yLen;
-    dst[5] /= yLen;
-    dst[6] /= yLen;
-  }
-  if (zLen > 0) {
-    dst[8] /= zLen;
-    dst[9] /= zLen;
-    dst[10] /= zLen;
-  }
-  return dst;
-}
-
-function getWebGL2ContextSafely(canvas: HTMLCanvasElement): WebGL2RenderingContext | null {
-  // If another context is already bound, create a fresh duplicate
-  if (canvas.getContext('webgpu')) {
-    console.warn('Canvas already has a WebGPU context — creating new canvas for WebGL fallback.');
-    const newCanvas = canvas.cloneNode() as HTMLCanvasElement;
-    canvas.replaceWith(newCanvas);
-    return newCanvas.getContext('webgl2');
-  }
-
-  return canvas.getContext('webgl2');
-}
+import { extractRotation } from './matrixMath';
 
 /** > Currently Supports static file definitions. */
 class Renderer3D {
@@ -65,6 +25,7 @@ class Renderer3D {
   depthTexture: GPUTexture | null = null;
   private gizmo: Gizmo | null = null;
   private modelMatrix: Float32Array = mat4.create() as Float32Array;
+  private camera: Camera | null = null;
 
   constructor(canvas: HTMLCanvasElement) {
     this.canvas = canvas;
@@ -111,7 +72,7 @@ class Renderer3D {
   }
 
   private initWebGL(_fileName: string): void {
-    const gl = getWebGL2ContextSafely(this.canvas!);
+    const gl = this.getWebGL2ContextSafely(this.canvas!);
     if (!gl) {
       console.error('WebGL2 context not supported.');
       console.table({
@@ -138,17 +99,20 @@ class Renderer3D {
 
     const viewMatrix = mat4.create();
     const projectionMatrix = mat4.create();
-    const mvpMatrix = mat4.create() as Float32Array;
+    let mvpMatrix = mat4.create() as Float32Array;
 
     const { width, height } = this.canvas!;
-    
-    mat4.identity(this.modelMatrix); 
-    // Camera def need to change
+    mat4.identity(this.modelMatrix);
+
+  
+    // fallback (manual)
     mat4.lookAt(viewMatrix, [4, 3, 5], [0, 0, 0], [0, 1, 0]);
     mat4.perspective(projectionMatrix, Math.PI / 4, width / height, 0.1, 100);
     mat4.multiply(mvpMatrix, projectionMatrix, viewMatrix);
     mat4.multiply(mvpMatrix, mvpMatrix, this.modelMatrix);
-    mat4.scale(this.modelMatrix, this.modelMatrix, [0.8, 0.8, 0.8]);
+
+    // DO NOT double scale
+    // mat4.scale(this.modelMatrix, this.modelMatrix, [0.8, 0.8, 0.8]);
 
     const ext = this.returnFileExt(fileName);
     switch (ext) {
@@ -247,8 +211,6 @@ class Renderer3D {
     if (!this.format) throw new Error('Canvas format not resolved.');
     await fbxParser.createPipeline(shaderModule, this.format, sceneUBO, materialUBO);
 
-    console.log(fbxParser.createPipeline(shaderModule, this.format, sceneUBO, materialUBO))
-    
     const depthView = this.depthTexture!.createView();
     const renderFrame = () => {
       const encoder = device.createCommandEncoder();
@@ -278,38 +240,42 @@ class Renderer3D {
     console.log(`[Renderer3D] ✅ FBX scene loaded: ${fileName}`);
   }
 
-  private async loadOBJScene(fileName: string, mvpMatrix: any) {
-    
+  private async loadOBJScene(fileName: string, mvpMatrix: Float32Array) {
     const device = this.device as GPUDevice;
     const context = this.context as GPUCanvasContext;
     if (!device || !context) throw new Error('Renderer3D device/context not initialized.');
 
     const objParser = new OBJParser(device);
-    const data = await fetch(fileName).then((r) => r.text());
+
+    // Fetch and load the OBJ
+    const absUrl = new URL(fileName, window.location.href).href;
+    console.log(`[Renderer3D] Loading OBJ: ${absUrl}`);
+    const data = await fetch(absUrl).then((r) => r.text());
     await objParser.loadOBJ(data);
 
     const shaderModule = objParser.getShader();
 
-    // Scene uniform buffer — matrix + lighting info, etc.
-    const SCENE_UNIFORM_BUFFER_SIZE = (16 + 4 + 4) * 4; // 24 floats × 4 bytes
+    // === Scene Uniform Buffer ===
+    const SCENE_UNIFORM_BUFFER_SIZE = (16 + 4 + 4) * 4; // mat4 + vec4 + vec4
     const sceneUniformBuffer = device.createBuffer({
       size: SCENE_UNIFORM_BUFFER_SIZE,
       usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
     });
 
-    // Material uniform buffer
+    // === Material Uniform Buffer ===
     const materialUniformBuffer = device.createBuffer({
-      size: 200,
+      size: MATERIAL_UNIFORM_BUFFER_SIZE,
       usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
     });
 
+    // Fill scene data
     const sceneData = new Float32Array(24);
-    sceneData.set(mvpMatrix, 0);
-    sceneData.set([0, -1, -1, 0], 16);
-    sceneData.set([1.0, 1.0, 1.0, 0.0], 20);
+    sceneData.set(mvpMatrix, 0); // 0–15 : mat4
+    sceneData.set([0, -1, -1, 0], 16); // light direction
+    sceneData.set([1.0, 1.0, 1.0, 0.0], 20); // light color
     device.queue.writeBuffer(sceneUniformBuffer, 0, sceneData);
 
-    // Default material if none defined
+    // Fill material data
     const fallbackMaterial: MtlMaterial = {
       name: 'default',
       Ka: [0.2, 0.2, 0.2],
@@ -318,10 +284,10 @@ class Renderer3D {
       Ke: [0.1, 0.1, 0.1],
       Tf: [1.0, 1.0, 1.0],
       Ns: 10.0,
-      Ni: 0.0,
-      d: 0.0,
+      Ni: 1.0,
+      d: 1.0,
       Tr: 0.0,
-      illum: 0,
+      illum: 2,
       map_Kd: null,
       map_Ka: null,
       map_Ke: null,
@@ -332,7 +298,7 @@ class Renderer3D {
       decal: null,
       refl: null,
       Pr: 0.5,
-      Pm: 0.2,
+      Pm: 0.3,
       Ps: 0.0,
       Pc: 0.0,
       Pt: 0.0,
@@ -345,6 +311,7 @@ class Renderer3D {
     const matData = createMaterialUniformBufferData(fallbackMaterial);
     device.queue.writeBuffer(materialUniformBuffer, 0, matData);
 
+    // Create pipeline
     await objParser.createPipeline(
       shaderModule,
       this.format!,
@@ -352,17 +319,15 @@ class Renderer3D {
       materialUniformBuffer,
     );
 
-    const depthView = this.depthTexture!.createView();
-
-    // gizmo
-    const gizmoModel = mat4.create() as Float32Array;
-    mat4.identity(gizmoModel); // if you want orientation matching camera
+    // === Gizmo Setup ===
     const gizmo = new Gizmo(device, this.modelMatrix);
     await gizmo.init(this.format!);
     this.gizmo = gizmo;
-    
-    // Render pass
+    const depthView = this.depthTexture!.createView();
+
+    // === Render Loop ===
     const renderFrame = () => {
+      // this.camera.viewMatrix = mat4.lookAt(mat4.create(), [8, 6, 12], [0, 0, 0], [0, 1, 0]);
       const encoder = device.createCommandEncoder();
       const pass = encoder.beginRenderPass({
         colorAttachments: [
@@ -382,15 +347,14 @@ class Renderer3D {
       });
 
       objParser.render(pass);
-    
+
       if (this.gizmo && this.modelMatrix) {
         const rotMat = mat4.create();
         extractRotation(rotMat, this.modelMatrix);
         mat4.copy(this.gizmo.modelMatrix, rotMat);
+        this.gizmo.draw(pass);
       }
-      
-      this.gizmo?.draw(pass);
-      
+
       pass.end();
       device.queue.submit([encoder.finish()]);
 
@@ -399,16 +363,7 @@ class Renderer3D {
 
     renderFrame();
 
-    const model: Model = {
-      name: fileName,
-      id: uuid(),
-      static: true,
-      vertexBuffer: objParser.getVertexBuffer(),
-      indexBuffer: objParser.getIndexBuffer(),
-      shader: objParser.getShaderString(),
-    };
-
-    console.log('Loaded model:', model);
+    console.log(`[Renderer3D] ✅ OBJ loaded: ${fileName}`);
   }
 
   private async loadSTLScene(fileName: string, mvpMatrix: Float32Array) {
@@ -468,6 +423,22 @@ class Renderer3D {
   private returnFileExt(fileName: string): string {
     const parts = fileName.split('.');
     return parts.length > 1 ? parts.pop()!.toLowerCase() : '';
+  }
+
+  private getWebGL2ContextSafely(canvas: HTMLCanvasElement): WebGL2RenderingContext | null {
+    // If another context is already bound, create a fresh duplicate
+    if (canvas.getContext('webgpu')) {
+      console.warn('Canvas already has a WebGPU context — creating new canvas for WebGL fallback.');
+      const newCanvas = canvas.cloneNode() as HTMLCanvasElement;
+      canvas.replaceWith(newCanvas);
+      return newCanvas.getContext('webgl2');
+    }
+
+    return canvas.getContext('webgl2');
+  }
+
+  setCamera(camera: Camera) {
+    this.camera = camera;
   }
 }
 
