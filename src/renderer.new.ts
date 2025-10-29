@@ -25,8 +25,11 @@ class Renderer3D {
   depthTexture: GPUTexture | null = null;
   private gizmo: Gizmo | null = null;
   private modelMatrix: Float32Array = mat4.create() as Float32Array;
+  private models: Model[] = [];
   private camera: Camera | null = null;
   private gizmoShown: boolean = false;
+  private pickTexture: GPUTexture | null = null;
+  private pickTextureView: GPUTextureView | null = null;
 
   constructor(canvas: HTMLCanvasElement) {
     this.canvas = canvas;
@@ -61,15 +64,25 @@ class Renderer3D {
     this.format = navigator.gpu.getPreferredCanvasFormat();
     gpuContext.configure({ device: this.device, format: this.format });
 
+    const { width, height } = this.canvas!; 
     this.depthTexture = this.device.createTexture({
-      size: [this.canvas!.width, this.canvas!.height],
+      size: [width, height],
       format: 'depth24plus',
       usage: GPUTextureUsage.RENDER_ATTACHMENT,
     });
+    
+    this.pickTexture = this.device.createTexture({
+      size: [width, height],
+      format: 'rgba8unorm',
+      usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.COPY_SRC,
+    });
+    this.pickTextureView = this.pickTexture.createView();
 
     console.log('[Renderer3D] WebGPU Initialized.');
 
     await this.loadSceneWebGPU(fileName);
+    
+    this.canvas!.addEventListener('click', (e) => this.pickObject(e.offsetX, e.offsetY));
   }
 
   private initWebGL(_fileName: string): void {
@@ -106,7 +119,7 @@ class Renderer3D {
     mat4.identity(this.modelMatrix);
 
     // fallback (manual)
-    mat4.lookAt(viewMatrix, [4, 3, 5], [0, 0, 0], [0, 1, 0]);
+    mat4.lookAt(viewMatrix, [5, 6, 15], [0, 0, 0], [0, 4, 0]);
     mat4.perspective(projectionMatrix, Math.PI / 4, width / height, 0.1, 100);
     mat4.multiply(mvpMatrix, projectionMatrix, viewMatrix);
     mat4.multiply(mvpMatrix, mvpMatrix, this.modelMatrix);
@@ -245,6 +258,7 @@ class Renderer3D {
     const context = this.context as GPUCanvasContext;
     if (!device || !context) throw new Error('Renderer3D device/context not initialized.');
 
+    const index = this.models.length;
     const objParser = new OBJParser(device);
 
     // Fetch and load the OBJ
