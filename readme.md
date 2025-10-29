@@ -2,7 +2,7 @@
 
 Leaf is a 2D/3D library designed for creating games and simulations on the web. Its goal is to replace WebGL by simplifying the development of complex 3D environments. Leaf aims to make web-based games as powerful as traditional system games and improve sharing workflows for industries relying on visualizations.
 
-> NOTE: Wengpu is currently marked expiramental and needs to be activated in the config of chrome.
+> NOTE: Webgpu is currently marked expiramental and needs to be activated in the config of chrome.
 > NOTE: Memory is still a large issue inside of the web.
 
 # Future Goals
@@ -21,16 +21,8 @@ These goals are interconnected and designed to work in unison for optimal perfor
 4. Extensible Plugin System:
    Introduce a plugin architecture to allow users to expand functionality, including custom rendering pipelines, physics engines, or specialized lighting systems.
 
-### Required References
+## Engine Features
 
----
-
-- [webgl reference](https://gpuweb.github.io/gpuweb/)
-- [vukan reference](https://vulkan-tutorial.com/Introduction)
-- [webgpu mdn docs](https://developer.mozilla.org/en-US/docs/Web/API/WebGPU_API)
-- [wgsl shading lang](https://www.w3.org/TR/WGSL/)
-
-> NOTE: wgsl is basically glsl with some small viritual math differences.
 
 ## Theoretical Usage:
 

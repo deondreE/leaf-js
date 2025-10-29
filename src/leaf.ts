@@ -6,7 +6,7 @@ import { assert } from './utils/util';
 class Leaf extends HTMLCanvasElement {
   static observedAttributes = ['src', 'particle'];
   is3D: boolean = false;
-  static: boolean = false;
+  isStatic: boolean = false;
   particleSim: boolean = false;
   scene: Scene | null = null;
   renderer: Renderer | null = null;
@@ -18,63 +18,76 @@ class Leaf extends HTMLCanvasElement {
 
   connectedCallback() {
     this.is3D = this.getOptimisticBoolAttribute('is3D');
-    this.static = this.getOptimisticBoolAttribute('static');
+    this.isStatic = this.getOptimisticBoolAttribute('static');
     this.particleSim = this.getOptimisticBoolAttribute('particleSim');
 
-    if (!this.hasAttribute('src'))
-      return console.warn('leaf canvases rely on src attribute to populate');
+    const src = this.getAttribute('src');
+    if (!src) {
+      console.warn('Leaf canveses rely on "src" attribute to populate.')
+    }
+  
+    if (this.checkFileType(src!)) {
+      this.renderer = new Renderer(this);
+      this.renderer.init(src!);
+    } else {
+      const global = window as Record<string, any>;
+      const funcName = src;
+      assert(funcName !== null);
 
-    if (this.hasAttribute('src')) {
-      if (!this.checkFileType(this.getAttribute('src')!)) {
-        const funcName: string = this.getAttribute('src')!;
-        const global = window as Record<string, any>;
-        assert(funcName !== null);
-
-        // Objective Scene -- Think game engine.
-        if (typeof global[funcName] === 'function') {
-          let scene = global[funcName]();
-          assert(scene !== null);
-
-          if (scene.particle) {
+      const sceneFactory = global[funcName];
+      if (typeof sceneFactory === 'function') {
+        const sceneInstance = sceneFactory();
+        assert(sceneInstance !== null);
+        this.scene = sceneInstance;
+        
+          if (sceneInstance.particle) {
             // Particles should only render in the given scene, requires some scene level, activation.
             // TODO: Awake events;
           }
-        }
-      } else {
-        this.renderer = new Renderer(this);
-        this.renderer.init(this.getAttribute('src')!);
       }
 
-      // create button container
-      const controls = document.createElement('div');
-      controls.style.display = 'flex';
-      controls.style.gap = '0.5rem';
-      controls.style.marginTop = '0.5rem';
-      controls.style.position = 'absolute';
-      controls.style.top = '0';
-
-      const startBtn = this.createButton('Start', () => this.startScene());
-      const pauseBtn = this.createButton('Pause', () => this.startScene());
-      const resumeBtn = this.createButton('Resume', () => this.startScene());
-      const stopBtn = this.createButton('Stop', () => this.startScene());
-
-      controls.append(startBtn, pauseBtn, resumeBtn, stopBtn);
-      this.insertAdjacentElement('afterend', controls);
+      this.createControls();
     }
 
     if (!this.renderer && this.is3D) {
       this.id = 'webgpu-canvas';
-      if (this.hasAttribute('src')) {
-        const src = this.getAttribute('src');
-      }
     }
+  }
+  
+  private createControls() {
+    const controls = document.createElement('div');
+    Object.assign(controls.style, {
+      display: 'flex',
+      gap: '0.5rem',
+      marginTop: '0.5rem',
+      position: 'absolute',
+      top: '0',
+      zIndex: '10',
+    });
+    
+    const buttons = [
+      { label: 'Start', action: () => this.startScene() },
+      { label: 'Pause', action: () => this.resumeScene() },
+      { label: 'Resume', action: () => this.startScene() },
+      { label: 'Stop', action: () => this.startScene() },
+    ];
+    
+    buttons.forEach(({ label, action }) => {
+      const btn = this.createButton(label, action);
+      controls.appendChild(btn);
+    });
+    
+    this.insertAdjacentElement('afterend', controls);
   }
 
   private createButton(label: string, handler: () => void): HTMLButtonElement {
     const btn = document.createElement('button');
-    btn.textContent = label;
-    btn.style.padding = '0.5rem 1rem';
-    btn.style.fontSize = '1rem';
+    Object.assign(btn.style, {
+      padding: `0.5rem 1rem`,
+      fontSize: '1rem',
+      cursor: 'pointer',
+    });
+    
     btn.onclick = handler;
     return btn;
   }
