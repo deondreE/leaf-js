@@ -64,13 +64,13 @@ class Renderer3D {
     this.format = navigator.gpu.getPreferredCanvasFormat();
     gpuContext.configure({ device: this.device, format: this.format });
 
-    const { width, height } = this.canvas!; 
+    const { width, height } = this.canvas!;
     this.depthTexture = this.device.createTexture({
       size: [width, height],
       format: 'depth24plus',
       usage: GPUTextureUsage.RENDER_ATTACHMENT,
     });
-    
+
     this.pickTexture = this.device.createTexture({
       size: [width, height],
       format: 'rgba8unorm',
@@ -81,7 +81,7 @@ class Renderer3D {
     console.log('[Renderer3D] WebGPU Initialized.');
 
     await this.loadSceneWebGPU(fileName);
-    
+
     this.canvas!.addEventListener('click', (e) => this.pickObject(e.offsetX, e.offsetY));
   }
 
@@ -152,7 +152,6 @@ class Renderer3D {
     console.log(`[Renderer3D] Loading FBX scene from: ${absURL}`);
     const fbxParser = new WebGPUFBXParser(device);
 
-    // Step 3: Fetch binary data
     let arrayBuffer: ArrayBuffer;
     try {
       const response = await fetch(absURL);
@@ -289,7 +288,6 @@ class Renderer3D {
     sceneData.set([1.0, 1.0, 1.0, 0.0], 20); // light color
     device.queue.writeBuffer(sceneUniformBuffer, 0, sceneData);
 
-    // Fill material data
     const fallbackMaterial: MtlMaterial = {
       name: 'default',
       Ka: [0.2, 0.2, 0.2],
@@ -325,7 +323,6 @@ class Renderer3D {
     const matData = createMaterialUniformBufferData(fallbackMaterial);
     device.queue.writeBuffer(materialUniformBuffer, 0, matData);
 
-    // Create pipeline
     await objParser.createPipeline(
       shaderModule,
       this.format!,

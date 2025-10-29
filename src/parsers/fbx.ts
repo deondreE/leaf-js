@@ -1,17 +1,6 @@
-// src/parsers/fbx.ts
 // © 2025 Deondre English
 
 import { MATERIAL_UNIFORM_BUFFER_SIZE, MtlMaterial } from './mtl';
-
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
-/**
- * --------------------------------------------------------------------
- * Lightweight FBX Parser (Binary + ASCII)
- * Reads static mesh geometry: Vertices, PolygonVertexIndex, Normals, UVs
- * For use with WebGPU renderer.
- * --------------------------------------------------------------------
- */
 
 export interface FBXMesh {
   vertices: number[];
@@ -46,9 +35,7 @@ export async function parseFBX(data: ArrayBuffer | string): Promise<FBXMesh> {
   // Case 3: Remote or local HTTP(S) URL
   if (typeof data === 'string') {
     if (data.startsWith('blob:')) {
-      throw new Error(
-        "Cannot fetch blob: URLs. Pass a pre-loaded ArrayBuffer instead."
-      );
+      throw new Error('Cannot fetch blob: URLs. Pass a pre-loaded ArrayBuffer instead.');
     }
 
     try {
@@ -93,8 +80,7 @@ function parseASCIIFBX(text: string): FBXMesh {
     face.push(id);
     if (end) {
       if (face.length >= 3) {
-        for (let j = 1; j < face.length - 1; j++)
-          indices.push(face[0], face[j], face[j + 1]);
+        for (let j = 1; j < face.length - 1; j++) indices.push(face[0], face[j], face[j + 1]);
       }
       face = [];
     }
@@ -118,11 +104,8 @@ async function decompressZlib(data: Uint8Array): Promise<ArrayBuffer> {
     return await new Promise<ArrayBuffer>((resolve, reject) =>
       inflate(data, (err: any, buf: Buffer) => {
         if (err) reject(err);
-        else
-          resolve(
-            buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength)
-          );
-      })
+        else resolve(buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength));
+      }),
     );
   } catch {
     throw new Error('No DEFLATE decompression available in this environment.');
@@ -145,8 +128,7 @@ async function parseBinaryFBX(buffer: ArrayBuffer): Promise<FBXMesh> {
   let cursor = 27;
 
   const readU32 = (o: number) => view.getUint32(o, true);
-  const readU64 = (o: number) =>
-    readU32(o) + 0x100000000 * readU32(o + 4);
+  const readU64 = (o: number) => readU32(o) + 0x100000000 * readU32(o + 4);
 
   const readProperty = async (): Promise<FBXValue> => {
     const t = String.fromCharCode(view.getUint8(cursor++));
@@ -258,8 +240,7 @@ async function parseBinaryFBX(buffer: ArrayBuffer): Promise<FBXMesh> {
       }
       case 'LayerElementUV': {
         const c =
-          node.children.find((n) => n.name === 'UV') ||
-          node.children.find((n) => n.name === 'UVs');
+          node.children.find((n) => n.name === 'UV') || node.children.find((n) => n.name === 'UVs');
         if (c) uvs.push(...(c.props[0] as number[]));
         break;
       }
@@ -277,8 +258,7 @@ async function parseBinaryFBX(buffer: ArrayBuffer): Promise<FBXMesh> {
     id = Math.abs(id) - 1;
     face.push(id);
     if (end) {
-      for (let j = 1; j < face.length - 1; j++)
-        indices.push(face[0], face[j], face[j + 1]);
+      for (let j = 1; j < face.length - 1; j++) indices.push(face[0], face[j], face[j + 1]);
       face = [];
     }
   }
@@ -321,7 +301,7 @@ export class WebGPUFBXParser {
           mesh.uvs[i * 2] ?? 0,
           mesh.uvs[i * 2 + 1] ?? 0,
         ],
-        i * 8
+        i * 8,
       );
     }
 
@@ -407,7 +387,7 @@ export class WebGPUFBXParser {
     shader: GPUShaderModule,
     format: GPUTextureFormat,
     sceneUBO: GPUBuffer,
-    materialUBO: GPUBuffer
+    materialUBO: GPUBuffer,
   ) {
     const layout = this.device.createBindGroupLayout({
       entries: [

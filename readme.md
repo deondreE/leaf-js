@@ -23,7 +23,6 @@ These goals are interconnected and designed to work in unison for optimal perfor
 
 ## Engine Features
 
-
 ## Theoretical Usage:
 
 > Note: None of this is implemented currently just an idea of how I want it to work.

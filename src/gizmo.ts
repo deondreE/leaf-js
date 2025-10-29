@@ -68,16 +68,15 @@ function generateArrowGeometry(axis: 'x' | 'y' | 'z'): Float32Array {
   return new Float32Array(verts);
 }
 
-function distPointToSegment(
-  p: [number, number],
-  a: [number, number],
-  b: [number, number]
-) {
+function distPointToSegment(p: [number, number], a: [number, number], b: [number, number]) {
   if (isNaN(a[0]) || isNaN(a[1]) || isNaN(b[0]) || isNaN(b[1])) return Infinity;
 
-  const px = p[0], py = p[1];
-  const ax = a[0], ay = a[1];
-  const bx = b[0], by = b[1];
+  const px = p[0],
+    py = p[1];
+  const ax = a[0],
+    ay = a[1];
+  const bx = b[0],
+    by = b[1];
 
   const abx = bx - ax;
   const aby = by - ay;
@@ -117,55 +116,55 @@ export default class Gizmo {
     canvas.addEventListener('mousemove', this.onMouseMove);
     canvas.addEventListener('mouseup', this.onMouseUp);
   }
-  
+
   private onMouseDown = (evt: MouseEvent) => {
     if (!this.canvas || !this.camera) return;
-  
+
     const { width, height } = this.canvas;
-  
+
     // Axis endpoints in local gizmo space
     const origin: [number, number, number] = [0, 0, 0];
     const xEnd: [number, number, number] = [1, 0, 0];
     const yEnd: [number, number, number] = [0, 1, 0];
     const zEnd: [number, number, number] = [0, 0, 1];
-  
+
     // Unpack camera
     const { viewMatrix, pMatrix } = this.camera;
-  
+
     // Project to screen (returns [xPx, yPx, ndcZ])
     const o2 = this.projectToScreen(origin, viewMatrix, pMatrix, this.modelMatrix, width, height);
     const x2 = this.projectToScreen(xEnd, viewMatrix, pMatrix, this.modelMatrix, width, height);
     const y2 = this.projectToScreen(yEnd, viewMatrix, pMatrix, this.modelMatrix, width, height);
     const z2 = this.projectToScreen(zEnd, viewMatrix, pMatrix, this.modelMatrix, width, height);
-  
+
     const mouse: [number, number] = [evt.offsetX, evt.offsetY];
-  
+
     // Compute distances to each axis line in screen space
     const distX = distPointToSegment(mouse, [o2[0], o2[1]], [x2[0], x2[1]]);
     const distY = distPointToSegment(mouse, [o2[0], o2[1]], [y2[0], y2[1]]);
     const distZ = distPointToSegment(mouse, [o2[0], o2[1]], [z2[0], z2[1]]);
-  
+
     const threshold = 15; // pixel tolerance
-  
+
     // If all axes are too far, do nothing
     if (distX > threshold && distY > threshold && distZ > threshold) {
       this.activeAxis = null;
       this.isDragging = false;
       return;
     }
-  
+
     // Decide which axis is closest to click
     if (distX <= distY && distX <= distZ) this.activeAxis = 'x';
     else if (distY <= distZ) this.activeAxis = 'y';
     else this.activeAxis = 'z';
-  
+
     this.isDragging = true;
     this.lastMouse = { x: evt.offsetX, y: evt.offsetY };
-  
+
     console.log(
       `Picked axis: ${this.activeAxis}`,
       'Distances:',
-      `X ${distX.toFixed(2)} Y ${distY.toFixed(2)} Z ${distZ.toFixed(2)}`
+      `X ${distX.toFixed(2)} Y ${distY.toFixed(2)} Z ${distZ.toFixed(2)}`,
     );
   };
 
@@ -175,28 +174,28 @@ export default class Gizmo {
     pMatrix: mat4,
     modelMatrix: mat4,
     width: number,
-    height: number
+    height: number,
   ): [number, number, number] {
     // Compute full MVP
     const mv = mat4.create();
     mat4.multiply(mv, viewMatrix, modelMatrix);
     const mvp = mat4.create();
     mat4.multiply(mvp, pMatrix, mv);
-  
+
     // Transform point
     const clip = vec4.fromValues(point[0], point[1], point[2], 1);
     vec4.transformMat4(clip, clip, mvp);
-  
+
     const w = clip[3];
     if (Math.abs(w) < 1e-6) {
       // Avoid dividing by zero
       return [NaN, NaN, NaN];
     }
-  
+
     const ndcX = clip[0] / w;
     const ndcY = clip[1] / w;
     const ndcZ = clip[2] / w;
-  
+
     // Convert NDC → screen
     const x = (ndcX * 0.5 + 0.5) * width;
     const y = (-ndcY * 0.5 + 0.5) * height;
@@ -205,7 +204,7 @@ export default class Gizmo {
 
   private onMouseMove = (evt: MouseEvent) => {
     if (this.isDragging && this.activeAxis)
-        console.log("Dragging", this.activeAxis, "dx:", evt.movementX, "dy:", evt.movementY);
+      console.log('Dragging', this.activeAxis, 'dx:', evt.movementX, 'dy:', evt.movementY);
     if (!this.isDragging || !this.activeAxis || !this.camera) return;
 
     const dx = evt.movementX;
@@ -227,8 +226,7 @@ export default class Gizmo {
   };
 
   private onMouseUp = () => {
-    if (this.activeAxis)
-        console.log("Released", this.activeAxis);
+    if (this.activeAxis) console.log('Released', this.activeAxis);
     this.isDragging = false;
     this.activeAxis = null;
   };

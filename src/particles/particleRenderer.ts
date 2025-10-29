@@ -1,8 +1,5 @@
 // particleRenderer.ts
-import {
-  ParticleConfig,
-  ParticleUniform,
-} from './particleTypes';
+import { ParticleConfig, ParticleUniform } from './particleTypes';
 import { standardShaders, simulationShaders } from './particleShaders';
 
 const WORKGROUP_SIZE = 64;
@@ -39,7 +36,7 @@ export default class ParticleRenderer {
         gravity: -0.0001,
         simulation: false,
       },
-      userConfig
+      userConfig,
     );
 
     this.init().then(() => {
@@ -71,16 +68,11 @@ export default class ParticleRenderer {
 
     this.particleBuffer = this.device.createBuffer({
       size: this.particleData.byteLength,
-      usage:
-        GPUBufferUsage.VERTEX |
-        GPUBufferUsage.STORAGE |
-        GPUBufferUsage.COPY_DST,
+      usage: GPUBufferUsage.VERTEX | GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
       mappedAtCreation: true,
     });
 
-    new Float32Array(this.particleBuffer.getMappedRange()).set(
-      this.particleData
-    );
+    new Float32Array(this.particleBuffer.getMappedRange()).set(this.particleData);
     this.particleBuffer.unmap();
 
     this.uniformBuffer = this.device.createBuffer({
@@ -179,11 +171,7 @@ export default class ParticleRenderer {
     this.device.queue.writeBuffer(this.uniformBuffer, 0, tData);
 
     if (!this.config.simulation) this.emitParticles(dt);
-    this.device.queue.writeBuffer(
-      this.particleBuffer,
-      0,
-      this.particleData.buffer
-    );
+    this.device.queue.writeBuffer(this.particleBuffer, 0, this.particleData.buffer);
 
     const encoder = this.device.createCommandEncoder();
     const pass = encoder.beginComputePass();

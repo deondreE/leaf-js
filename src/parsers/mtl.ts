@@ -228,21 +228,6 @@ export function parseMtl(mtlContent: string): Map<string, MtlMaterial> {
   return materials;
 }
 
-/**
- * Calculates the size of the MaterialUniforms struct in bytes, respecting WebGPU alignment rules.
- * For `vec3<f32>` members, WebGPU typically aligns them on 16-byte boundaries.
- * For `f32`, it aligns on 4-byte boundaries.
- *
- * MaterialUniforms {
- *    baseColor: vec3<f32>,      // offset 0, size 12, aligned to 16
- *    ambientColor: vec3<f32>,   // offset 16, size 12, aligned to 16
- *    specularColor: vec3<f32>,  // offset 32, size 12, aligned to 16
- *    emissionColor: vec3<f32>,  // offset 48, size 12, aligned to 16
- *    shininess: f32,            // offset 64, size 4, aligned to 4
- *    alpha: f32,                // offset 68, size 4, aligned to 4
- * }
- * Total size: 68 bytes.
- */
 export const MATERIAL_UNIFORM_BUFFER_SIZE = 96;
 export const MATERIAL_UNIFORM_FLOAT_COUNT = 24;
 
@@ -294,11 +279,11 @@ export function createMaterialUniformBufferData(material: MtlMaterial): Float32A
   data[offset++] = material.Ps ?? 0.0; // Sheen
   data[offset++] = material.Pc ?? 0.0; // Clearcoat
   data[offset++] = material.Pt ?? 0.0; // Transmission
-  
+
   while (offset < MATERIAL_UNIFORM_FLOAT_COUNT) {
-     data[offset++] = 0.0;
+    data[offset++] = 0.0;
   }
-  
+
   // Verify the final offset matches expected float count
   if (offset !== MATERIAL_UNIFORM_FLOAT_COUNT) {
     console.warn(

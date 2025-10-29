@@ -28,8 +28,7 @@ export class Profiler extends HTMLCanvasElement {
   paused = false;
   showBoundingBoxes = true;
   type: '2d' | 'gpu' = '2d';
-  boundingBoxes: { x: number; y: number; width: number; height: number }[] =
-    [];
+  boundingBoxes: { x: number; y: number; width: number; height: number }[] = [];
 
   animationFrameProgress: number = 0;
   animationFrameCount: number = 0;
@@ -88,11 +87,7 @@ export class Profiler extends HTMLCanvasElement {
     console.log('Profiler canvas moved to a new document.');
   }
 
-  attributeChangedCallback(
-    name: string,
-    oldValue: string | null,
-    newValue: string | null,
-  ) {
+  attributeChangedCallback(name: string, oldValue: string | null, newValue: string | null) {
     if (name === 'target-id') {
       this.updateTarget();
     }
@@ -101,9 +96,7 @@ export class Profiler extends HTMLCanvasElement {
   updateTarget() {
     const targetId = this.getAttribute('target-id');
     if (targetId) {
-      this.targetCanvas = document.getElementById(
-        targetId,
-      ) as HTMLCanvasElement;
+      this.targetCanvas = document.getElementById(targetId) as HTMLCanvasElement;
     }
     if (this.targetCanvas) {
       console.log(`Profiler Monitoring: ${targetId}`);
@@ -203,9 +196,7 @@ export class Profiler extends HTMLCanvasElement {
         originalClearRect.apply(targetCtx, args);
       };
     } else {
-      console.warn(
-        'Profiler: Context is not 2D. Method patching may not be effective.',
-      );
+      console.warn('Profiler: Context is not 2D. Method patching may not be effective.');
     }
 
     monitorFrame(); // Start the monitoring loop
@@ -229,9 +220,7 @@ export class Profiler extends HTMLCanvasElement {
     });
 
     const lineHeight = 20;
-    const maxVisibleLines = Math.floor(
-      (this.height - 30) / lineHeight, 
-    );
+    const maxVisibleLines = Math.floor((this.height - 30) / lineHeight);
 
     if (this._currentTab === 'callstack') {
       const contentHeight = this.callStackEvents.length * lineHeight;
@@ -242,10 +231,7 @@ export class Profiler extends HTMLCanvasElement {
         this.callStackScrollOffset >= contentHeight - visibleContentHeight ||
         contentHeight < visibleContentHeight
       ) {
-        this.callStackScrollOffset = Math.max(
-          0,
-          contentHeight - visibleContentHeight,
-        );
+        this.callStackScrollOffset = Math.max(0, contentHeight - visibleContentHeight);
       }
     }
 
@@ -304,11 +290,7 @@ export class Profiler extends HTMLCanvasElement {
     // Text labels
     ctx.fillStyle = '#00ff00'; // Green for frame time
     ctx.font = '12px Arial';
-    ctx.fillText(
-      `Frame Time (ms) - Max: ${maxFrameTime.toFixed(2)}`,
-      10,
-      graphYOffset + 15,
-    );
+    ctx.fillText(`Frame Time (ms) - Max: ${maxFrameTime.toFixed(2)}`, 10, graphYOffset + 15);
     ctx.fillText('16.67ms (60 FPS)', 10, targetFPSLineY - 5);
 
     if (this.fpsValues.length > 0) {
@@ -342,21 +324,17 @@ export class Profiler extends HTMLCanvasElement {
       const barHeight = this.memoryUsage[i] * scaleY;
       const x = i * barWidth;
       const y = graphYOffset + graphHeight - barHeight;
-      ctx.fillRect(x, y, barWidth * 0.8, barHeight); 
+      ctx.fillRect(x, y, barWidth * 0.8, barHeight);
     }
 
     // Text labels
-    ctx.fillStyle = '#ff8c00'; 
+    ctx.fillStyle = '#ff8c00';
     ctx.font = '12px Arial';
     ctx.fillText('Memory Usage (MB)', 100, graphYOffset + 10);
 
     if (this.memoryUsage.length > 0) {
       const latestMemory = this.memoryUsage[this.memoryUsage.length - 1];
-      ctx.fillText(
-        `Current: ${latestMemory.toFixed(2)} MB`,
-        10,
-        graphYOffset + 30,
-      );
+      ctx.fillText(`Current: ${latestMemory.toFixed(2)} MB`, 10, graphYOffset + 30);
     }
   }
 
@@ -393,11 +371,7 @@ export class Profiler extends HTMLCanvasElement {
     ctx.fillRect(barX, barY, barWidth * this.animationFrameProgress, barHeight);
 
     ctx.fillStyle = 'white';
-    ctx.fillText(
-      `Frames Rendered: ${this.animationFrameCount}`,
-      barX,
-      barY - 5,
-    );
+    ctx.fillText(`Frames Rendered: ${this.animationFrameCount}`, barX, barY - 5);
   }
 
   renderTabs(ctx: CanvasRenderingContext2D) {
@@ -442,10 +416,7 @@ export class Profiler extends HTMLCanvasElement {
 
     const maxScroll = Math.max(0, totalContentHeight - contentRegionHeight);
 
-    this.callStackScrollOffset = Math.min(
-      this.callStackScrollOffset,
-      maxScroll,
-    );
+    this.callStackScrollOffset = Math.min(this.callStackScrollOffset, maxScroll);
     this.callStackScrollOffset = Math.max(0, this.callStackScrollOffset);
 
     const lineIndexStart = Math.floor(this.callStackScrollOffset / lineHeight);
@@ -472,8 +443,12 @@ export class Profiler extends HTMLCanvasElement {
 
       const text = `[${displayTime}ms] ${event.type}(${argsString})`;
 
-      const y = (i - lineIndexStart) * lineHeight + lineHeight - this.callStackScrollOffset % lineHeight;
-      if (y >= contentRegionY && y + lineHeight <= contentRegionY + contentRegionHeight + lineHeight) {
+      const y =
+        (i - lineIndexStart) * lineHeight + lineHeight - (this.callStackScrollOffset % lineHeight);
+      if (
+        y >= contentRegionY &&
+        y + lineHeight <= contentRegionY + contentRegionHeight + lineHeight
+      ) {
         ctx.fillText(text, 10, contentRegionY + y);
       }
     }
@@ -482,7 +457,7 @@ export class Profiler extends HTMLCanvasElement {
       ctx.fillStyle = '#666';
       ctx.fillText('No events recorded yet.', 10, contentRegionY + lineHeight);
     }
-    
+
     if (maxScroll > 0) {
       const scrollbarWidth = 5;
       const scrollbarX = this.width - scrollbarWidth - 5;
@@ -492,8 +467,13 @@ export class Profiler extends HTMLCanvasElement {
       ctx.fillStyle = '#333';
       ctx.fillRect(scrollbarX, scrollbarTrackY, scrollbarWidth, scrollbarTrackHeight);
 
-      const thumbHeight = Math.max(20, (contentRegionHeight / totalContentHeight) * scrollbarTrackHeight);
-      const thumbY = scrollbarTrackY + (this.callStackScrollOffset / maxScroll) * (scrollbarTrackHeight - thumbHeight);
+      const thumbHeight = Math.max(
+        20,
+        (contentRegionHeight / totalContentHeight) * scrollbarTrackHeight,
+      );
+      const thumbY =
+        scrollbarTrackY +
+        (this.callStackScrollOffset / maxScroll) * (scrollbarTrackHeight - thumbHeight);
 
       ctx.fillStyle = '#888';
       ctx.fillRect(scrollbarX, thumbY, scrollbarWidth, thumbHeight);
@@ -512,10 +492,7 @@ export class Profiler extends HTMLCanvasElement {
       const contentRegionHeight = this.height - 30;
       const maxScroll = Math.max(0, totalContentHeight - contentRegionHeight);
 
-      this.callStackScrollOffset = Math.min(
-        this.callStackScrollOffset,
-        maxScroll,
-      );
+      this.callStackScrollOffset = Math.min(this.callStackScrollOffset, maxScroll);
       this.callStackScrollOffset = Math.max(0, this.callStackScrollOffset);
 
       this.render();

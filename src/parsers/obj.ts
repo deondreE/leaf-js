@@ -1,8 +1,4 @@
-import {
-  MtlMaterial,
-  MATERIAL_UNIFORM_FLOAT_COUNT,
-  createMaterialUniformBufferData,
-} from './mtl';
+import { MtlMaterial, MATERIAL_UNIFORM_FLOAT_COUNT, createMaterialUniformBufferData } from './mtl';
 
 interface Vec3 {
   x: number;
@@ -197,21 +193,27 @@ export default class WebGPUOBJParser {
       'bytes.',
     );
 
-     const useUint32 = this.vertices.length > 65535; // Or simply always use Uint32 for robustness
+    const useUint32 = this.vertices.length > 65535; // Or simply always use Uint32 for robustness
 
-        const indexData = useUint32
-            ? new Uint32Array(this.indices)
-            : new Uint16Array(this.indices);
+    const indexData = useUint32 ? new Uint32Array(this.indices) : new Uint16Array(this.indices);
 
-        this.indexBuffer = this.device.createBuffer({
-            size: indexData.byteLength,
-            usage: GPUBufferUsage.INDEX | GPUBufferUsage.COPY_DST,
-            mappedAtCreation: true,
-        });
+    this.indexBuffer = this.device.createBuffer({
+      size: indexData.byteLength,
+      usage: GPUBufferUsage.INDEX | GPUBufferUsage.COPY_DST,
+      mappedAtCreation: true,
+    });
 
-        new (useUint32 ? Uint32Array : Uint16Array)(this.indexBuffer.getMappedRange()).set(indexData);
-        this.indexBuffer.unmap();
-        console.log("Index buffer created with", indexData.length, "indices,", indexData.byteLength, "bytes. Using", useUint32 ? "Uint32" : "Uint16", "indices.");
+    new (useUint32 ? Uint32Array : Uint16Array)(this.indexBuffer.getMappedRange()).set(indexData);
+    this.indexBuffer.unmap();
+    console.log(
+      'Index buffer created with',
+      indexData.length,
+      'indices,',
+      indexData.byteLength,
+      'bytes. Using',
+      useUint32 ? 'Uint32' : 'Uint16',
+      'indices.',
+    );
   }
 
   async createPipeline(
@@ -268,7 +270,7 @@ export default class WebGPUOBJParser {
         format: 'depth24plus',
         depthWriteEnabled: true,
         depthCompare: 'less',
-      }
+      },
     });
 
     this.bindGroup = this.device.createBindGroup({
@@ -278,7 +280,7 @@ export default class WebGPUOBJParser {
         { binding: 1, resource: { buffer: materialUniformBuffer } },
       ],
     });
-    
+
     this.materialUniformBuffer = materialUniformBuffer;
   }
 

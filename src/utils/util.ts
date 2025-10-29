@@ -21,5 +21,3 @@ export function assertOK<T>(value: Error | T): T {
 export function unreachable(msg?: string): never {
   throw new Error(msg);
 }
-
-// i use these a LOT
