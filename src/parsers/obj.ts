@@ -1,3 +1,9 @@
+import {
+  MtlMaterial,
+  MATERIAL_UNIFORM_FLOAT_COUNT,
+  createMaterialUniformBufferData,
+} from './mtl';
+
 interface Vec3 {
   x: number;
   y: number;
@@ -47,11 +53,13 @@ export default class WebGPUOBJParser {
   indexBuffer!: GPUBuffer;
   pipeline!: GPURenderPipeline;
   bindGroup!: GPUBindGroup;
+  materialUniformBuffer!: GPUBuffer;
 
   constructor(device: GPUDevice) {
     this.device = device;
   }
 
+  /** Parse OBJ data into GPU Buffers.  */
   async loadOBJ(objData: string): Promise<boolean> {
     const positions: Vec3[] = [];
     const texCoords: Vec2[] = [];
@@ -254,8 +262,13 @@ export default class WebGPUOBJParser {
       },
       primitive: {
         topology: 'triangle-list',
-        cullMode: 'back',
+        cullMode: 'none',
       },
+      depthStencil: {
+        format: 'depth24plus',
+        depthWriteEnabled: true,
+        depthCompare: 'less',
+      }
     });
 
     this.bindGroup = this.device.createBindGroup({
@@ -265,6 +278,8 @@ export default class WebGPUOBJParser {
         { binding: 1, resource: { buffer: materialUniformBuffer } },
       ],
     });
+    
+    this.materialUniformBuffer = materialUniformBuffer;
   }
 
   getShader() {
@@ -283,8 +298,12 @@ export default class WebGPUOBJParser {
               emissionColor:vec3<f32>,
               shininess: f32,
               alpha: f32,
+              roughness: f32,
+              metallic: f32,
+              sheen: f32,
+              clearcoat: f32,
+              transmission: f32,
             };
-
             @group(0) @binding(1) var<uniform> materialUniforms: MaterialUniforms;
 
             struct VertexInput {
@@ -303,10 +322,9 @@ export default class WebGPUOBJParser {
             fn vs_main(input: VertexInput) -> VertexOutput {
               var output: VertexOutput;
               let worldPos = vec4<f32>(input.position, 1.0);
-              let worldPosition = vec4<f32>(input.position, 1.0); // Assuming model transform is baked into position or MVP
-              output.Position = sceneUniforms.mvpMatrix * worldPosition;
+              output.Position = sceneUniforms.mvpMatrix * worldPos;
               output.vNormal = normalize(input.normal); // Ensure normal is normalized
-              output.vWorldPos = worldPosition.xyz; // Pass world position for fragment shader
+              output.vWorldPos = input.position; 
               return output;
             }
 
@@ -316,22 +334,21 @@ export default class WebGPUOBJParser {
                 let L = normalize(-sceneUniforms.lightDirection); // Direction from fragment to light source
                 let V = normalize(-input.vWorldPos); // Direction from fragment to camera (assuming camera at origin for simplicity)
 
-                // Ambient component using material's ambient color
-                let ambientComponent = materialUniforms.ambientColor * sceneUniforms.lightColor;
-
-                // Diffuse component using material's base (diffuse) color
+                let H = normalize(L + V);
                 let NdotL = max(dot(N, L), 0.0);
-                let diffuseComponent = materialUniforms.baseColor * sceneUniforms.lightColor * NdotL;
-
-                // Specular component using material's specular color and shininess
-                let R = normalize(reflect(-L, N)); // Reflected light direction
-                let RdotV = max(dot(R, V), 0.0);
-                let specularComponent = materialUniforms.specularColor * sceneUniforms.lightColor * pow(RdotV, materialUniforms.shininess);
-
-                let finalColor = ambientComponent + diffuseComponent + specularComponent;
-
-                // Apply alpha/transparency from the material
-                return vec4<f32>(finalColor, materialUniforms.alpha);
+                let NdotV = max(dot(N, V), 0.0);
+                let NdotH = max(dot(N, H), 0.0);
+                
+                let diffuse = materialUniforms.baseColor / 3.14159;
+                let F0 = mix(vec3<f32>(0.04, 0.04, 0.04), materialUniforms.baseColor, materialUniforms.metallic);
+                let F = F0 + (1.0 - F0) * pow(1.0 - NdotV, 5.0); 
+                let specular = F * ((materialUniforms.roughness) / max(NdotL * NdotV, 0.001));
+                
+                let ambientComponent = materialUniforms.ambientColor * 0.3;
+                var color = (diffuse * NdotL + specular) * sceneUniforms.lightColor + ambientComponent;
+                color = color + materialUniforms.emissionColor;
+                
+                return vec4<f32>(color, materialUniforms.alpha);
             }
         `;
 
