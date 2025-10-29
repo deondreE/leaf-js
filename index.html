@@ -30,6 +30,14 @@
     <script type="module">
       function initScene() {
         return {
+          camera: {
+            type: 'othographic',
+            FOV: 45,
+            cameraBounds: 1.0,
+            near: 0.1,
+            far: 100.0,
+            zoom: 1.0,
+          },
           particle: {
             gravity: -0.0001,
             emitter: {

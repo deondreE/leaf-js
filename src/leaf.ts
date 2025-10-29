@@ -1,6 +1,7 @@
 import Renderer from './renderer.new';
 import ParticleRenderer from './renderer.particle';
 import Scene from './scene';
+import Camera from './camera';
 import { assert } from './utils/util';
 
 class Leaf extends HTMLCanvasElement {
@@ -10,6 +11,7 @@ class Leaf extends HTMLCanvasElement {
   particleSim: boolean = false;
   scene: Scene | null = null;
   renderer: Renderer | null = null;
+  camera: Camera | null = null;
   id: string = '';
 
   constructor() {
@@ -28,6 +30,10 @@ class Leaf extends HTMLCanvasElement {
 
     if (this.checkFileType(src!)) {
       this.renderer = new Renderer(this);
+      const defaultCamera = new Camera(45, 1.0, 0.1, 100.0, 1.0, 'perspective');
+      defaultCamera.setup();
+      this.camera = defaultCamera;
+      this.renderer.setCamera(defaultCamera);
       this.renderer.init(src!);
     } else {
       const global = window as Record<string, any>;
@@ -40,9 +46,30 @@ class Leaf extends HTMLCanvasElement {
         assert(sceneInstance !== null);
         this.scene = sceneInstance;
 
+        if (sceneInstance.camera) {
+          const {
+            type = 'perspective',
+            FOV = 45,
+            cameraBounds = 1,
+            near = 0.1,
+            far = 100,
+            zoom = 1,
+          } = sceneInstance.camera;
+          this.camera = new Camera(FOV, cameraBounds, near, far, zoom, type);
+          this.camera.setup();
+        }
+
         if (sceneInstance.particle) {
           // Particles should only render in the given scene, requires some scene level, activation.
           // TODO: Awake events;
+        }
+
+        if (!this.renderer) {
+          this.renderer = new Renderer(this);
+        }
+
+        if (this.camera) {
+          this.renderer.setCamera(this.camera);
         }
       }
     }
@@ -50,7 +77,7 @@ class Leaf extends HTMLCanvasElement {
     if (!this.renderer && this.is3D) {
       this.id = 'webgpu-canvas';
     }
-    
+
     this.createControls();
   }
 
@@ -77,10 +104,9 @@ class Leaf extends HTMLCanvasElement {
       controls.appendChild(btn);
     });
 
-    Object.assign(this, { position: 'relative' }); 
+    Object.assign(this, { position: 'relative' });
     this.appendChild(controls);
   }
-  
 
   private createButton(label: string, handler: () => void): HTMLButtonElement {
     const btn = document.createElement('button');
