@@ -1,12 +1,12 @@
 export default class ParticleRenderer {
-  device: GPUDevice;
+  device!: GPUDevice;
   context: GPUCanvasContext | null = null;
-  format: GPUCanvasFormat;
-  computePipeline: GPUComputePipeline;
-  particleBuffer: GPUBuffer;
-  uniformBuffer: GPUBuffer;
-  bindGroup: GPUBindGroup;
-  computeBindGroup: GPUBindGroup;
+  format!: GPUCanvasFormat;
+  computePipeline!: GPUComputePipeline;
+  particleBuffer!: GPUBuffer;
+  uniformBuffer!: GPUBuffer;
+  bindGroup!: GPUBindGroup;
+  computeBindGroup!: GPUBindGroup;
   pipeline: GPURenderPipeline | null = null;
   canvas: HTMLCanvasElement;
   particleCount: number = 4000000;

@@ -14,6 +14,7 @@ interface Model {
   name: string;
   id: string;
   static: boolean;
+  pickingColor: [number, number, number];
 }
 
 /** Data that can effect the color directly. Default data will be applied to the renderer when it is called. */
