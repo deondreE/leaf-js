@@ -26,6 +26,7 @@ class Renderer3D {
   private gizmo: Gizmo | null = null;
   private modelMatrix: Float32Array = mat4.create() as Float32Array;
   private camera: Camera | null = null;
+  private gizmoShown: boolean = false;
 
   constructor(canvas: HTMLCanvasElement) {
     this.canvas = canvas;
@@ -104,7 +105,6 @@ class Renderer3D {
     const { width, height } = this.canvas!;
     mat4.identity(this.modelMatrix);
 
-  
     // fallback (manual)
     mat4.lookAt(viewMatrix, [4, 3, 5], [0, 0, 0], [0, 1, 0]);
     mat4.perspective(projectionMatrix, Math.PI / 4, width / height, 0.1, 100);
@@ -320,10 +320,12 @@ class Renderer3D {
     );
 
     // === Gizmo Setup ===
-    const gizmo = new Gizmo(device, this.modelMatrix);
-    await gizmo.init(this.format!);
-    this.gizmo = gizmo;
-    this.gizmo.attachInteraction(this.canvas!, this.camera);
+    if (this.gizmoShown) {
+      const gizmo = new Gizmo(device, this.modelMatrix);
+      await gizmo.init(this.format!);
+      this.gizmo = gizmo;
+      this.gizmo.attachInteraction(this.canvas!, this.camera);
+    }
     const depthView = this.depthTexture!.createView();
 
     // === Render Loop ===
