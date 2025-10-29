@@ -28,7 +28,7 @@ class Camera {
     far: number = 100.0,
     zoom: number = 1.0,
     type: 'perspective' | 'orthographic' = 'perspective',
-    aspect: number = 1.0
+    aspect: number = 1.0,
   ) {
     this.FOV = FOV;
     this.cameraBounds = cameraBounds;
@@ -58,12 +58,7 @@ class Camera {
     // Build projection
     switch (this.type) {
       case 'perspective':
-        this.pMatrix = this.createPerspectiveProjection(
-          this.FOV,
-          this.aspect,
-          this.near,
-          this.far
-        );
+        this.pMatrix = this.createPerspectiveProjection(this.FOV, this.aspect, this.near, this.far);
         break;
       case 'orthographic':
         this.pMatrix = this.createOrthographicProjection(
@@ -72,7 +67,7 @@ class Camera {
           -this.cameraBounds,
           this.cameraBounds,
           this.near,
-          this.far
+          this.far,
         );
         break;
     }
@@ -89,7 +84,7 @@ class Camera {
     fov: number,
     aspect: number,
     near: number,
-    far: number
+    far: number,
   ): Float32Array {
     const f = 1.0 / Math.tan((fov * Math.PI) / 360);
     const nf = 1 / (near - far);
@@ -124,7 +119,7 @@ class Camera {
     bottom: number,
     top: number,
     near: number,
-    far: number
+    far: number,
   ): Float32Array {
     const matrix = mat4.create();
 

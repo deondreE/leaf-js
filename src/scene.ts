@@ -2,8 +2,6 @@ import Renderer from './renderer';
 import type { Model } from './types/scene.types';
 import EventDispatcher from './eventdispatcher';
 
-// NOTE: you can define a large pipeline, and there is a clean step that removes most of the unused garbage.
-
 /** A Scene is defined as a collection of objects renderd in a single pass. */
 class Scene {
   name: string | '' = '';

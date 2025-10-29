@@ -1,4 +1,4 @@
-import Renderer from './renderer.new';
+import Renderer from './renderer';
 import ParticleRenderer from './renderer.particle';
 import Scene from './scene';
 import Camera from './camera';
