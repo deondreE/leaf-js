@@ -1,215 +1,225 @@
-interface GizmoVertex {
-  position: [number, number, number];
-  color: [number, number, number, number];
-}
+import { mat4 } from "gl-matrix";
 
-class Gizmo {
-  device: GPUDevice | null = null;
-  modelMatrix: any;
-  context: any;
-  canvas: HTMLCanvasElement;
-  projectionMatrix: any;
+function generateArrowGeometry(axis: "x" | "y" | "z"): Float32Array {
+  const headLength = 0.2;
+  const shaftLength = 0.8;
+  const radius = 0.03;
+  const radialSegments = 16;
 
-  constructor(device: GPUDevice, context: any, modelMatrix: any, projectionMatrix: any, canvas: HTMLCanvasElement) {
-    this.device = device;
-    this.context = context;
-    this.modelMatrix = modelMatrix;
-    this.canvas = canvas;
-    this.projectionMatrix = projectionMatrix;
+  const verts: number[] = [];
+  const color =
+    axis === "x"
+      ? [1, 0, 0, 1]
+      : axis === "y"
+      ? [0, 1, 0, 1]
+      : [0, 0, 1, 1];
+
+  // Shaft (cylinder sides)
+  for (let i = 0; i < radialSegments; i++) {
+    const t1 = (i / radialSegments) * Math.PI * 2;
+    const t2 = ((i + 1) / radialSegments) * Math.PI * 2;
+
+    const c1 = Math.cos(t1) * radius;
+    const s1 = Math.sin(t1) * radius;
+    const c2 = Math.cos(t2) * radius;
+    const s2 = Math.sin(t2) * radius;
+
+    const p0 =
+      axis === "x"
+        ? [0, c1, s1]
+        : axis === "y"
+        ? [c1, 0, s1]
+        : [c1, s1, 0];
+    const p1 =
+      axis === "x"
+        ? [shaftLength, c1, s1]
+        : axis === "y"
+        ? [c1, shaftLength, s1]
+        : [c1, s1, shaftLength];
+    const p2 =
+      axis === "x"
+        ? [shaftLength, c2, s2]
+        : axis === "y"
+        ? [c2, shaftLength, s2]
+        : [c2, s2, shaftLength];
+    const p3 =
+      axis === "x"
+        ? [0, c2, s2]
+        : axis === "y"
+        ? [c2, 0, s2]
+        : [c2, s2, 0];
+
+    verts.push(...p0, ...color, ...p1, ...color, ...p2, ...color);
+    verts.push(...p0, ...color, ...p2, ...color, ...p3, ...color);
   }
 
-  render(passEncoder: GPURenderPassEncoder) {
-    const axisVertices = new Float32Array([
-      // Vertex 0: Origin (shared by all axes)
-      0.0,
-      0.0,
-      0.0, // Position
-      1.0,
-      1.0,
-      1.0,
-      1.0, // White (or you could make it black, or transparent if only the ends matter)
+  // Cone head
+  const tip =
+    axis === "x"
+      ? [shaftLength + headLength, 0, 0]
+      : axis === "y"
+      ? [0, shaftLength + headLength, 0]
+      : [0, 0, shaftLength + headLength];
+  const baseStart = shaftLength;
+  const coneRadius = radius * 1.5;
+  for (let i = 0; i < radialSegments; i++) {
+    const t1 = (i / radialSegments) * Math.PI * 2;
+    const t2 = ((i + 1) / radialSegments) * Math.PI * 2;
 
-      // Vertex 1: X-axis end
-      1.0,
-      0.0,
-      0.0, // Position
-      1.0,
-      0.0,
-      0.0,
-      1.0, // Red
+    const c1 = Math.cos(t1) * coneRadius;
+    const s1 = Math.sin(t1) * coneRadius;
+    const c2 = Math.cos(t2) * coneRadius;
+    const s2 = Math.sin(t2) * coneRadius;
 
-      // Vertex 2: Y-axis end
-      0.0,
-      1.0,
-      0.0, // Position
-      0.0,
-      1.0,
-      0.0,
-      1.0, // Green
+    const b1 =
+      axis === "x"
+        ? [baseStart, c1, s1]
+        : axis === "y"
+        ? [c1, baseStart, s1]
+        : [c1, s1, baseStart];
+    const b2 =
+      axis === "x"
+        ? [baseStart, c2, s2]
+        : axis === "y"
+        ? [c2, baseStart, s2]
+        : [c2, s2, baseStart];
 
-      // Vertex 3: Z-axis end
-      0.0,
-      0.0,
-      1.0, // Position
-      0.0,
-      0.0,
-      1.0,
-      1.0, // Blue
-    ]);
+    verts.push(...tip, ...color, ...b1, ...color, ...b2, ...color);
+  }
 
-    const axisIndices = new Uint16Array([
-      0,
-      1, // X-axis line (from origin to X-end)
-      0,
-      2, // Y-axis line (from origin to Y-end)
-      0,
-      3, // Z-axis line (from origin to Z-end)
-    ]);
+  return new Float32Array(verts);
+}
 
-    const vertexBuffer = this.device!.createBuffer({
-      size: axisVertices.byteLength,
+export default class Gizmo {
+  device: GPUDevice;
+  pipeline!: GPURenderPipeline;
+  vertexBuffer!: GPUBuffer;
+  bindGroup!: GPUBindGroup;
+  uniformBuffer!: GPUBuffer;
+  modelMatrix: Float32Array;
+  vertexCount = 0;
+
+  constructor(device: GPUDevice, model: Float32Array) {
+    this.device = device;
+    this.modelMatrix = model;
+  }
+
+  async init(format: GPUTextureFormat) {
+    const vertsX = generateArrowGeometry("x");
+    const vertsY = generateArrowGeometry("y");
+    const vertsZ = generateArrowGeometry("z");
+
+    const allVerts = new Float32Array(
+      vertsX.length + vertsY.length + vertsZ.length
+    );
+    allVerts.set(vertsX);
+    allVerts.set(vertsY, vertsX.length);
+    allVerts.set(vertsZ, vertsX.length + vertsY.length);
+
+    this.vertexCount = allVerts.length / 7;
+
+    console.log("Gizmo vertex count:", this.vertexCount);
+
+    this.vertexBuffer = this.device.createBuffer({
+      size: allVerts.byteLength,
       usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
       mappedAtCreation: true,
     });
-    new Float32Array(vertexBuffer.getMappedRange()).set(axisVertices);
-    vertexBuffer.unmap();
+    new Float32Array(this.vertexBuffer.getMappedRange()).set(allVerts);
+    this.vertexBuffer.unmap();
 
-    const indexBuffer = this.device!.createBuffer({
-      size: axisIndices.byteLength,
-      usage: GPUBufferUsage.INDEX | GPUBufferUsage.COPY_DST,
-      mappedAtCreation: true,
-    });
-    new Uint16Array(indexBuffer.getMappedRange()).set(axisIndices);
-    indexBuffer.unmap();
-
-    const shaderModule = this.device!.createShaderModule({
+    const shaderModule = this.device.createShaderModule({
       code: this.createShader(),
     });
 
-    const gizmoPipeline = this.device!.createRenderPipeline({
-      layout: 'auto',
+    this.uniformBuffer = this.device.createBuffer({
+      size: 256, // align to 256 bytes
+      usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+    });
+
+    const layout = this.device.createBindGroupLayout({
+      entries: [{ binding: 0, visibility: GPUShaderStage.VERTEX, buffer: {} }],
+    });
+
+    this.pipeline = this.device.createRenderPipeline({
+      layout: this.device.createPipelineLayout({ bindGroupLayouts: [layout] }),
       vertex: {
         module: shaderModule,
-        entryPoint: 'vs_main',
+        entryPoint: "vs_main",
         buffers: [
           {
-            arrayStride: (3 + 4) * 4,
+            arrayStride: 7 * 4,
             attributes: [
-              { shaderLocation: 0, offset: 0, format: 'float32x3' },
-              { shaderLocation: 1, offset: 3 * 4, format: 'float32x4' },
+              { shaderLocation: 0, offset: 0, format: "float32x3" },
+              { shaderLocation: 1, offset: 12, format: "float32x4" },
             ],
           },
         ],
       },
-      primitive: {
-        topology: 'line-list',
-      },
-      depthStencil: {
-        depthWriteEnabled: true,
-        depthCompare: 'less',
-        format: 'depth24plus',
-      },
-      multisample: { count: 1 },
       fragment: {
         module: shaderModule,
-        entryPoint: 'fs_main',
-        targets: [{ format: navigator.gpu.getPreferredCanvasFormat() }],
+        entryPoint: "fs_main",
+        targets: [{ format }],
+      },
+      primitive: { topology: "triangle-list", cullMode: "none" },
+      depthStencil: {
+        format: "depth24plus",
+        depthWriteEnabled: false,
+        depthCompare: "always",
       },
     });
 
-    const uniformBuffer = this.device!.createBuffer({
-      size: 16 * 4 * 2,
-      usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.INDEX | GPUBufferUsage.COPY_DST,
+    this.bindGroup = this.device.createBindGroup({
+      layout,
+      entries: [{ binding: 0, resource: { buffer: this.uniformBuffer } }],
     });
+  }
 
-    const gizmoBindGroup = this.device!.createBindGroup({
-      layout: gizmoPipeline.getBindGroupLayout(0),
-      entries: [
-        {
-          binding: 0,
-          resource: { buffer: uniformBuffer },
-        },
-      ],
-    });
+  draw(pass: GPURenderPassEncoder) {
+    if (this.vertexCount < 3) return;
 
-    this.device!.queue.writeBuffer(uniformBuffer, 0, this.modelMatrix.buffer);
-    this. device!.queue.writeBuffer(uniformBuffer, 16 * 4, this.projectionMatrix.buffer);
+    const uniform = new Float32Array(16);
+    uniform.set(this.modelMatrix, 0);
+    this.device.queue.writeBuffer(this.uniformBuffer, 0, uniform);
 
-    let depthTexture: GPUTexture;
-    let depthTextureView: GPUTextureView;
-    const re = () => {
-      depthTexture = this.device!.createTexture({
-        size: [this.canvas.width, this.canvas.height],
-        format: 'depth24plus',
-        usage: GPUTextureUsage.RENDER_ATTACHMENT,
-      });
-      depthTextureView = depthTexture.createView();
-      const commandEncoder = this.device!.createCommandEncoder();
-      const textureView = this.context.getCurrentTexture().createView();
+    pass.setPipeline(this.pipeline);
+    pass.setVertexBuffer(0, this.vertexBuffer);
+    pass.setBindGroup(0, this.bindGroup);
+    pass.draw(this.vertexCount);
+  }
 
-      const renderPassDescriptor: GPURenderPassDescriptor = {
-        colorAttachments: [
-          {
-            view: textureView,
-            clearValue: { r: 0.0, g: 0.0, b: 0.0, a: 1.0 },
-            loadOp: 'load',
-            storeOp: 'store',
-          },
-        ],
-        depthStencilAttachment: {
-          view: depthTextureView,
-          depthClearValue: 1.0,
-          depthLoadOp: 'clear',
-          depthStoreOp: 'store',
-        },
+  private createShader(): string {
+    return `
+      struct Uniforms {
+        model: mat4x4<f32>,
+      };
+      @group(0) @binding(0) var<uniform> uniforms: Uniforms;
+
+      struct VSIn {
+        @location(0) pos: vec3<f32>,
+        @location(1) color: vec4<f32>,
+      };
+      struct VSOut {
+        @builtin(position) Position: vec4<f32>,
+        @location(0) color: vec4<f32>,
       };
 
-      const passEncoder = commandEncoder.beginRenderPass(renderPassDescriptor);
+      @vertex
+      fn vs_main(input: VSIn) -> VSOut {
+        var out: VSOut;
+        // Keep at center of screen temporarily
+        var scale = 0.3;
+        var offset = vec3<f32>(0.0, 0.0, 0.0);
+        var pos = (uniforms.model * vec4<f32>(input.pos, 1.0)).xyz * scale + offset;
+        out.Position = vec4<f32>(pos, 1.0);
+        out.color = input.color;
+        return out;
+      }
 
-      passEncoder.setPipeline(gizmoPipeline);
-      passEncoder.setVertexBuffer(0, vertexBuffer);
-      passEncoder.setIndexBuffer(indexBuffer, 'uint16');
-      passEncoder.setBindGroup(0, gizmoBindGroup);
-
-      passEncoder.drawIndexed(axisIndices.length);
-      passEncoder.end();
-      this.device!.queue.submit([commandEncoder.finish()]);
-    };
-    requestAnimationFrame(re);
-  }
-
-  createShader() {
-    return `
-            struct VertexInput {
-                @location(0) position: vec3<f32>,
-                @location(1) color: vec4<f32>,
-            };
-
-            struct Uniforms {
-                modelMatrix: mat4x4<f32>,
-                viewProjectionMatrix: mat4x4<f32>,
-            };
-            @group(0) @binding(0) var<uniform> uniforms: Uniforms;
-
-            struct VertexOutput {
-                @builtin(position) position: vec4<f32>,
-                @location(0) color: vec4<f32>,
-            };
-            
-            @vertex
-            fn vs_main(input: VertexInput) -> VertexOutput {
-                var output: VertexOutput;
-                output.position = uniforms.viewProjectionMatrix * uniforms.modelMatrix * vec4<f32>(input.position, 1.0);
-                output.color = input.color;
-                return output;
-            }
-
-            @fragment
-            fn fs_main(@location(0) color: vec4<f32>) -> @location(0) vec4<f32> {
-                return color;
-            }
-        `;
+      @fragment
+      fn fs_main(input: VSOut) -> @location(0) vec4<f32> {
+        return input.color;
+      }
+    `;
   }
 }
-
-export default Gizmo;

@@ -13,6 +13,35 @@ import {
 import { WebGPUFBXParser } from './parsers/fbx';
 import Gizmo from './gizmo';
 
+function extractRotation(dst: mat4, src: mat4) {
+  // Copy only rotation/scaling part
+  mat4.copy(dst, src);
+  dst[12] = 0;
+  dst[13] = 0;
+  dst[14] = 0;
+
+  // Remove any scale distortion (normalize axes)
+  const xLen = Math.hypot(dst[0], dst[1], dst[2]);
+  const yLen = Math.hypot(dst[4], dst[5], dst[6]);
+  const zLen = Math.hypot(dst[8], dst[9], dst[10]);
+  if (xLen > 0) {
+    dst[0] /= xLen;
+    dst[1] /= xLen;
+    dst[2] /= xLen;
+  }
+  if (yLen > 0) {
+    dst[4] /= yLen;
+    dst[5] /= yLen;
+    dst[6] /= yLen;
+  }
+  if (zLen > 0) {
+    dst[8] /= zLen;
+    dst[9] /= zLen;
+    dst[10] /= zLen;
+  }
+  return dst;
+}
+
 function getWebGL2ContextSafely(canvas: HTMLCanvasElement): WebGL2RenderingContext | null {
   // If another context is already bound, create a fresh duplicate
   if (canvas.getContext('webgpu')) {
@@ -34,6 +63,8 @@ class Renderer3D {
   format: GPUTextureFormat | null = null;
   renderTexture: GPUTexture | null = null;
   depthTexture: GPUTexture | null = null;
+  private gizmo: Gizmo | null = null;
+  private modelMatrix: Float32Array = mat4.create() as Float32Array;
 
   constructor(canvas: HTMLCanvasElement) {
     this.canvas = canvas;
@@ -105,18 +136,19 @@ class Renderer3D {
   private async loadSceneWebGPU(fileName: string): Promise<void> {
     if (!this.device) throw new Error('Device not initialized.');
 
-    const modelMatrix = mat4.create() as Float32Array;
     const viewMatrix = mat4.create();
     const projectionMatrix = mat4.create();
-    const mvpMatrix = mat4.create();
+    const mvpMatrix = mat4.create() as Float32Array;
 
     const { width, height } = this.canvas!;
+    
+    mat4.identity(this.modelMatrix); 
     // Camera def need to change
     mat4.lookAt(viewMatrix, [4, 3, 5], [0, 0, 0], [0, 1, 0]);
     mat4.perspective(projectionMatrix, Math.PI / 4, width / height, 0.1, 100);
     mat4.multiply(mvpMatrix, projectionMatrix, viewMatrix);
-    mat4.multiply(mvpMatrix, mvpMatrix, modelMatrix);
-    mat4.scale(modelMatrix, modelMatrix, [0.8, 0.8, 0.8]);
+    mat4.multiply(mvpMatrix, mvpMatrix, this.modelMatrix);
+    mat4.scale(this.modelMatrix, this.modelMatrix, [0.8, 0.8, 0.8]);
 
     const ext = this.returnFileExt(fileName);
     switch (ext) {
@@ -247,6 +279,7 @@ class Renderer3D {
   }
 
   private async loadOBJScene(fileName: string, mvpMatrix: any) {
+    
     const device = this.device as GPUDevice;
     const context = this.context as GPUCanvasContext;
     if (!device || !context) throw new Error('Renderer3D device/context not initialized.');
@@ -321,6 +354,13 @@ class Renderer3D {
 
     const depthView = this.depthTexture!.createView();
 
+    // gizmo
+    const gizmoModel = mat4.create() as Float32Array;
+    mat4.identity(gizmoModel); // if you want orientation matching camera
+    const gizmo = new Gizmo(device, this.modelMatrix);
+    await gizmo.init(this.format!);
+    this.gizmo = gizmo;
+    
     // Render pass
     const renderFrame = () => {
       const encoder = device.createCommandEncoder();
@@ -342,6 +382,15 @@ class Renderer3D {
       });
 
       objParser.render(pass);
+    
+      if (this.gizmo && this.modelMatrix) {
+        const rotMat = mat4.create();
+        extractRotation(rotMat, this.modelMatrix);
+        mat4.copy(this.gizmo.modelMatrix, rotMat);
+      }
+      
+      this.gizmo?.draw(pass);
+      
       pass.end();
       device.queue.submit([encoder.finish()]);
 
