@@ -323,6 +323,7 @@ class Renderer3D {
     const gizmo = new Gizmo(device, this.modelMatrix);
     await gizmo.init(this.format!);
     this.gizmo = gizmo;
+    this.gizmo.attachInteraction(this.canvas!, this.camera);
     const depthView = this.depthTexture!.createView();
 
     // === Render Loop ===
