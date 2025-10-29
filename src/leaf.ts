@@ -23,9 +23,9 @@ class Leaf extends HTMLCanvasElement {
 
     const src = this.getAttribute('src');
     if (!src) {
-      console.warn('Leaf canveses rely on "src" attribute to populate.')
+      console.warn('Leaf canveses rely on "src" attribute to populate.');
     }
-  
+
     if (this.checkFileType(src!)) {
       this.renderer = new Renderer(this);
       this.renderer.init(src!);
@@ -39,21 +39,21 @@ class Leaf extends HTMLCanvasElement {
         const sceneInstance = sceneFactory();
         assert(sceneInstance !== null);
         this.scene = sceneInstance;
-        
-          if (sceneInstance.particle) {
-            // Particles should only render in the given scene, requires some scene level, activation.
-            // TODO: Awake events;
-          }
-      }
 
-      this.createControls();
+        if (sceneInstance.particle) {
+          // Particles should only render in the given scene, requires some scene level, activation.
+          // TODO: Awake events;
+        }
+      }
     }
 
     if (!this.renderer && this.is3D) {
       this.id = 'webgpu-canvas';
     }
+    
+    this.createControls();
   }
-  
+
   private createControls() {
     const controls = document.createElement('div');
     Object.assign(controls.style, {
@@ -64,21 +64,23 @@ class Leaf extends HTMLCanvasElement {
       top: '0',
       zIndex: '10',
     });
-    
+
     const buttons = [
       { label: 'Start', action: () => this.startScene() },
       { label: 'Pause', action: () => this.resumeScene() },
       { label: 'Resume', action: () => this.startScene() },
       { label: 'Stop', action: () => this.startScene() },
     ];
-    
+
     buttons.forEach(({ label, action }) => {
       const btn = this.createButton(label, action);
       controls.appendChild(btn);
     });
-    
-    this.insertAdjacentElement('afterend', controls);
+
+    Object.assign(this, { position: 'relative' }); 
+    this.appendChild(controls);
   }
+  
 
   private createButton(label: string, handler: () => void): HTMLButtonElement {
     const btn = document.createElement('button');
@@ -87,7 +89,7 @@ class Leaf extends HTMLCanvasElement {
       fontSize: '1rem',
       cursor: 'pointer',
     });
-    
+
     btn.onclick = handler;
     return btn;
   }
