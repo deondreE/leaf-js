@@ -6,66 +6,56 @@
     <title>Worky</title>
   </head>
   <body>
-    <canvas is="leaf-js" src="t.obj" width="800" height="800" id="webgpu-canvas"></canvas>
-    <canvas is="l-profiler" width="800" height="650" target-id="webgpu-canvas"></canvas>
-  </body>
-  <script src="./src/profiler.ts" type="module"></script>
-  <script src="./src/leaf.ts" type="module"></script>
-  <script>
-    function initScene() {
-      let scene = {
-        particle: {
-          gravity: -0.0001,
-          emitter: {
-            startPos: {
-              z: 0,
-              y: 0,
-              x: 0,
-            },
-            emissionRate: 0,
-            overTimeEffects: {
-              rotationOverTime: {
-                z: 0,
-                y: 0,
-                x: 0,
-              },
-              velocityOverTime: {
-                z: 0,
-                y: 0,
-                x: 0,
-              },
-              colorOverTime: {
-                startColor: {
-                  r: 0,
-                  g: 0,
-                  b: 0,
-                  a: 0,
-                },
-                endColor: {
-                  r: 0,
-                  g: 0,
-                  b: 0,
-                  a: 0,
-                },
-              },
-              sizeOverTime: {
-                startSize: {
-                  w: 0,
-                  h: 0,
-                },
-                endSize: {
-                  w: 0,
-                  h: 0,
-                },
-              },
-            },
-            shape: 'default',
-          },
-          particleCount: 4_000_000,
-        },
-      };
+    <canvas
+      is="leaf-js"
+      src="t.obj"
+      width="800"
+      height="800"
+      id="webgpu-canvas">
+    </canvas>
 
-      return scene;
-    }
-  </script>
+    <!--TODO: Profile needs some context to attach to. -->
+    <!--<canvas
+      is="l-profiler"
+      width="800"
+      height="650"
+      target-id="webgpu-canvas">
+    </canvas>-->
+
+    <!-- Load external modules -->
+    <script type="module" src="/src/profiler.ts"></script>
+    <script type="module" src="/src/leaf.ts"></script>
+
+    <!-- Inline setup logic -->
+    <script type="module">
+      function initScene() {
+        return {
+          particle: {
+            gravity: -0.0001,
+            emitter: {
+              startPos: { x: 0, y: 0, z: 0 },
+              emissionRate: 0,
+              overTimeEffects: {
+                rotationOverTime: { x: 0, y: 0, z: 0 },
+                velocityOverTime: { x: 0, y: 0, z: 0 },
+                colorOverTime: {
+                  startColor: { r: 0, g: 0, b: 0, a: 0 },
+                  endColor: { r: 0, g: 0, b: 0, a: 0 },
+                },
+                sizeOverTime: {
+                  startSize: { w: 0, h: 0 },
+                  endSize: { w: 0, h: 0 },
+                },
+              },
+              shape: 'default',
+            },
+            particleCount: 4_000_000,
+          },
+        };
+      }
+
+      // Expose to window for custom element lookup
+      window.initScene = initScene;
+    </script>
+  </body>
 </html>

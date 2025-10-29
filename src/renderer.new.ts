@@ -12,244 +12,302 @@ import {
 } from './parsers/mtl';
 import Gizmo from './gizmo';
 
+function getWebGL2ContextSafely(canvas: HTMLCanvasElement): WebGL2RenderingContext | null {
+  // If another context is already bound, create a fresh duplicate
+  if (canvas.getContext('webgpu')) {
+    console.warn('Canvas already has a WebGPU context — creating new canvas for WebGL fallback.');
+    const newCanvas = canvas.cloneNode() as HTMLCanvasElement;
+    canvas.replaceWith(newCanvas);
+    return newCanvas.getContext('webgl2');
+  }
+
+  return canvas.getContext('webgl2');
+}
+
 /** Currently Supports static file definitions. */
 class Renderer3D {
   canvas?: HTMLCanvasElement;
+  contextType: 'webgpu' | 'webgl2' | null = null;
   device: GPUDevice | null = null;
-  context: GPUCanvasContext | null = null;
+  context: GPUCanvasContext | WebGLRenderingContext | null = null;
   format: GPUTextureFormat | null = null;
   renderTexture: GPUTexture | null = null;
+  depthTexture: GPUTexture | null = null;
 
   constructor(canvas: HTMLCanvasElement) {
     this.canvas = canvas;
   }
 
   async init(fileName: string) {
+    if ('gpu' in navigator) {
+      console.log('Attempting WebGPU initialization....');
+      try {
+        await this.initWebGPU(fileName);
+        this.contextType = 'webgpu';
+        return;
+      } catch (err) {
+        console.warn('WebGP initialization failed, falling back to webgl2', err);
+      }
+    }
+
+    console.log('Using WebGL2 fallback.');
+    this.initWebGL(fileName);
+    this.contextType = 'webgl2';
+  }
+
+  private async initWebGPU(fileName: string): Promise<void> {
     const adapter = await navigator.gpu.requestAdapter();
-    if (!adapter) {
-      console.error('No WebGPU adapter found.');
-      return;
-    }
-
+    if (!adapter) throw new Error('No WebGPU adapter found.');
     this.device = await adapter.requestDevice();
-    if (!this.canvas) {
-      console.error('Canvas not provided or not available.');
-      return;
-    }
+
     this.context = this.canvas!.getContext('webgpu');
+    if (!this.context) throw new Error('Failed to create WebGPU context.');
+
     this.format = navigator.gpu.getPreferredCanvasFormat();
-    if (!this.device || !this.context || !this.format) {
-      console.error('Failed to initialize WebGPU: Device, context, or format is null.');
+    this.context.configure({ device: this.device, format: this.format });
+
+    this.depthTexture = this.device!.createTexture({
+      size: [this.canvas!.width, this.canvas!.height],
+      format: 'depth24plus',
+      usage: GPUTextureUsage.RENDER_ATTACHMENT,
+    });
+
+    console.log('[Renderer3D] WebGPU Initialized.');
+
+    // Continue with your existing WebGPU pipeline setup:
+    await this.loadSceneWebGPU(fileName);
+  }
+
+  private initWebGL(_fileName: string): void {
+    const gl = getWebGL2ContextSafely(this.canvas!);
+    if (!gl) {
+      console.log('Testing context creation:');
+      console.error('WebGL2 context not supported.');
+      console.table({
+        secureContext: window.isSecureContext,
+        hasGPU: 'gpu' in navigator,
+        ua: navigator.userAgent,
+      });
       return;
     }
 
-    this.context.configure({
-      device: this.device,
-      format: this.format,
-    });
+    this.device = gl;
+    this.context = gl;
 
-    // Create a texture to render to
-    this.renderTexture = this.device.createTexture({
-      size: [this.canvas!.width, this.canvas!.height],
-      format: this.format,
-      usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.COPY_SRC, // Add COPY_SRC
-    });
+    // basic clear example
+    gl.viewport(0, 0, this.canvas!.width, this.canvas!.height);
+    gl.clearColor(0.1, 0.1, 0.1, 1.0);
+    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
-    // TODO: Make this a camera class.
-    // Matrix Definitions can be global context.
-    const modelMatrix = mat4.create();
+    console.log('[Renderer3D] WebGL2 fallback initialized.');
+    this.render(() => {
+      gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+    });
+  }
+
+  private async loadSceneWebGPU(fileName: string): Promise<void> {
+    if (!this.device) throw new Error('Device not initialized.');
+
+    const modelMatrix = mat4.create() as Float32Array;
     const viewMatrix = mat4.create();
     const projectionMatrix = mat4.create();
     const mvpMatrix = mat4.create();
 
-    const camera = new Camera(
-      Math.PI / 4,
-      // @ts-ignore
-      this.canvas.width / this.canvas.height,
-      0.1,
-      100,
-      1,
-      'perspective',
-    );
-    camera.setup();
+    const width = this.canvas!.width;
+    const height = this.canvas!.height;
 
-    mat4.lookAt(viewMatrix, [4, 3, 3], [0, 0, 0], [0, 1, 0]); // Camera at (0,0,5), looking at origin
-    mat4.perspective(
-      projectionMatrix,
-      Math.PI / 4,
-      this.canvas!.width / this.canvas!.height,
-      0.1,
-      100.0,
-    ); // FOV = 45 degreess
+    mat4.lookAt(viewMatrix, [4, 3, 5], [0, 0, 0], [0, 1, 0]);
+    mat4.perspective(projectionMatrix, Math.PI / 4, width / height, 0.1, 100);
     mat4.multiply(mvpMatrix, projectionMatrix, viewMatrix);
     mat4.multiply(mvpMatrix, mvpMatrix, modelMatrix);
+    mat4.scale(modelMatrix, modelMatrix, [0.8, 0.8, 0.8]);
 
-    switch (this.returnFileExt(fileName)) {
-      case 'obj': {
-        const objParser = new OBJParser(this.device);
-
-        // Actually get the data given
-        const data = await fetch(fileName).then((data) => data.text());
-        await objParser.loadOBJ(data);
-
-        const gizmo = new Gizmo(
-          this.device,
-          this.context,
-          modelMatrix,
-          projectionMatrix,
-          this.canvas!,
-        );
-
-        const SCENE_UNIFORM_FLOAT_COUNT = 16 + 4 + 4;
-        const SCENE_UNIFORM_BUFFER_SIZE = SCENE_UNIFORM_FLOAT_COUNT * 4;
-
-        const shaderModule = objParser.getShader();
-        const sceneUniformBuffer = this.device.createBuffer({
-          size: SCENE_UNIFORM_BUFFER_SIZE,
-          usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
-          mappedAtCreation: false,
-        });
-
-        const materialUniformBuffer = this.device.createBuffer({
-          size: 200, // From your mtl-parser.ts
-          usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
-        });
-
-        // write scenedata
-        const sceneUniformsData = new Float32Array(SCENE_UNIFORM_FLOAT_COUNT);
-        let offset = 0;
-        const lightDirection = new Float32Array([0.0, 10.0, 0.0]); // Example
-        const lightColor = new Float32Array([1.0, 1.0, 1.0]); // Example
-        sceneUniformsData.set(mvpMatrix, offset);
-        offset += 16;
-
-        sceneUniformsData[offset++] = lightDirection[0];
-        sceneUniformsData[offset++] = lightDirection[1];
-        sceneUniformsData[offset++] = lightDirection[2];
-        offset++;
-
-        sceneUniformsData[offset++] = lightColor[0];
-        sceneUniformsData[offset++] = lightColor[1];
-        sceneUniformsData[offset++] = lightColor[2];
-        offset++;
-
-        this.device.queue.writeBuffer(sceneUniformBuffer, 0, sceneUniformsData.buffer);
-        // @ts-ignore
-        await objParser.createPipeline(
-          shaderModule,
-          this.format,
-          sceneUniformBuffer,
-          materialUniformBuffer,
-        );
-        this.render(() => {
-          const commandEncoder = this.device!.createCommandEncoder();
-          const passEncoder = commandEncoder.beginRenderPass({
-            colorAttachments: [
-              {
-                view: this.context!.getCurrentTexture().createView(),
-                loadOp: 'clear',
-                storeOp: 'store',
-              },
-            ],
-          });
-          const fallbackMaterial: MtlMaterial = {
-            name: 'default',
-            Ka: [0.1, 0.1, 0.1],
-            Kd: [0.7, 0.7, 0.7],
-            Ks: [0.0, 0.0, 0.0],
-            Ke: [0, 0, 0],
-            Ns: 10,
-            d: 1.0,
-            Tr: 1.0,
-            Ni: 1.0,
-            map_Kd: null,
-            map_bump: null,
-          };
-          const materialData = createMaterialUniformBufferData(fallbackMaterial);
-          this.device?.queue.writeBuffer(materialUniformBuffer, 0, materialData.buffer);
-
-          objParser.render(passEncoder);
-          // gizmo.render(passEncoder);
-          passEncoder.end();
-          this.device!.queue.submit([commandEncoder.finish()]);
-        });
-        // Generic Model def for saving specifically.
-        let model: Model = {
-          name: fileName,
-          id: uuid(),
-          static: true,
-          vertexBuffer: objParser.getVertexBuffer(),
-          indexBuffer: objParser.getIndexBuffer(),
-          shader: objParser.getShaderString(),
-        };
-
-        break;
-      }
-
-      case 'fbx':
-        console.warn('Not implemented yet!');
+    const ext = this.returnFileExt(fileName);
+    switch (ext) {
+      case 'obj':
+        await this.loadOBJScene(fileName, mvpMatrix);
         break;
       case 'stl':
-        console.log('test');
-        const stlParser = new STLParser(this.device);
-
-        const data = await fetch(fileName).then((data) => data.text());
-        await stlParser.loadSTL(data);
-
-        const shaderModule = stlParser.getShader();
-        const uniformBuffer = this.device.createBuffer({
-          size: 64,
-          usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
-        });
-
-        // @ts-ignore
-        this.device.queue.writeBuffer(uniformBuffer, 0, mvpMatrix.buffer);
-
-        await stlParser.createPipeline(shaderModule, this.format, uniformBuffer);
-
-        this.render(() => {
-          const commandEncoder = this.device!.createCommandEncoder();
-          const passEncoder = commandEncoder.beginRenderPass({
-            colorAttachments: [
-              {
-                view: this.context!.getCurrentTexture().createView(),
-                loadOp: 'clear',
-                storeOp: 'store',
-              },
-            ],
-          });
-
-          stlParser.render(passEncoder);
-          passEncoder.end();
-          this.device!.queue.submit([commandEncoder.finish()]);
-        });
-
+        await this.loadSTLScene(fileName, mvpMatrix);
         break;
       default:
-        break;
+        console.warn(`Unsupported file type: ${ext}`);
     }
   }
 
-  private createModelViewMatrix() {}
+  private async loadOBJScene(fileName: string, mvpMatrix: any) {
+    const device = this.device as GPUDevice;
+    const context = this.context as GPUCanvasContext;
+    if (!device || !context) throw new Error('Renderer3D device/context not initialized.');
+
+    const objParser = new OBJParser(device);
+    const data = await fetch(fileName).then((r) => r.text());
+    await objParser.loadOBJ(data);
+
+    const shaderModule = objParser.getShader();
+
+    // Scene uniform buffer — matrix + lighting info, etc.
+    const SCENE_UNIFORM_BUFFER_SIZE = (16 + 4 + 4) * 4; // 24 floats × 4 bytes
+    const sceneUniformBuffer = device.createBuffer({
+      size: SCENE_UNIFORM_BUFFER_SIZE,
+      usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+    });
+
+    // Material uniform buffer
+    const materialUniformBuffer = device.createBuffer({
+      size: 200,
+      usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+    });
+
+    const sceneData = new Float32Array(24);
+    sceneData.set(mvpMatrix, 0);
+    sceneData.set([0, -1, -1, 0], 16);
+    sceneData.set([1.0, 1.0, 1.0, 0.0], 20);
+    device.queue.writeBuffer(sceneUniformBuffer, 0, sceneData);
+
+    // Default material if none defined
+    const fallbackMaterial: MtlMaterial = {
+      name: 'default',
+      Ka: [0.2, 0.2, 0.2],
+      Kd: [0.8, 0.8, 0.8],
+      Ks: [0.6, 0.6, 0.6],
+      Ke: [0.1, 0.1, 0.1],
+      Tf: [1.0, 1.0, 1.0],
+      Ns: 10.0,
+      Ni: 0.0,
+      d: 0.0,
+      Tr: 0.0,
+      illum: 0,
+      map_Kd: null,
+      map_Ka: null,
+    map_Ke: null,
+      map_d: null,
+      map_Ns: null,
+      map_bump: null,
+      disp: null,
+      decal: null,
+      refl: null,
+      Pr: 0.5,
+      Pm: 0.2,
+      Ps: 0.0,
+      Pc: 0.0,
+      Pt: 0.0,
+      map_Pr: null,
+      map_Pm: null,
+      map_Ps: null,
+      map_Pc: null,
+      map_Pt: null,
+    };
+    const matData = createMaterialUniformBufferData(fallbackMaterial);
+    device.queue.writeBuffer(materialUniformBuffer, 0, matData);
+
+    await objParser.createPipeline(
+      shaderModule,
+      this.format!,
+      sceneUniformBuffer,
+      materialUniformBuffer,
+    );
+
+    const depthView = this.depthTexture!.createView();
+
+    // Render pass
+    const renderFrame = () => {
+      const encoder = device.createCommandEncoder();  
+      const pass = encoder.beginRenderPass({
+        colorAttachments: [
+          {
+            view: context.getCurrentTexture().createView(),
+            clearValue: { r: 0.1, g: 0.1, b: 0.1, a: 1 },
+            loadOp: 'clear',
+            storeOp: 'store',
+          },
+        ],
+        depthStencilAttachment: {
+          view: depthView,
+          depthClearValue: 1.0,
+          depthLoadOp: 'clear',
+          depthStoreOp: 'store',
+        },
+      });
+
+      objParser.render(pass);
+      pass.end();
+      device.queue.submit([encoder.finish()]);
+
+      requestAnimationFrame(renderFrame);
+    };
+
+    renderFrame();
+
+    const model: Model = {
+      name: fileName,
+      id: uuid(),
+      static: true,
+      vertexBuffer: objParser.getVertexBuffer(),
+      indexBuffer: objParser.getIndexBuffer(),
+      shader: objParser.getShaderString(),
+    };
+
+    console.log('Loaded model:', model);
+  }
+
+  private async loadSTLScene(fileName: string, mvpMatrix: Float32Array) {
+    const stl = new STLParser(this.device as GPUDevice);
+    const data = await fetch(fileName).then((r) => r.text());
+    await stl.loadSTL(data);
+    const shaderModule = stl.getShader();
+
+    const uniformBuffer = (this.device as GPUDevice).createBuffer({
+      size: 64,
+      usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+    });
+    (this.device as GPUDevice).queue.writeBuffer(uniformBuffer, 0, mvpMatrix);
+
+    await stl.createPipeline(shaderModule, this.format!, uniformBuffer);
+
+    const device = this.device as GPUDevice;
+    const context = this.context as GPUCanvasContext;
+    const depthView = this.depthTexture!.createView();
+
+    const renderFrame = () => {
+      const encoder = device.createCommandEncoder();
+      const pass = encoder.beginRenderPass({
+        colorAttachments: [
+          {
+            view: context.getCurrentTexture().createView(),
+            clearValue: { r: 0.2, g: 0.2, b: 0.2, a: 1 },
+            loadOp: 'clear',
+            storeOp: 'store',
+          },
+        ],
+        depthStencilAttachment: {
+          view: depthView,
+          depthClearValue: 1.0,
+          depthLoadOp: 'clear',
+          depthStoreOp: 'store',
+        },
+      });
+
+      stl.render(pass);
+      pass.end();
+      device.queue.submit([encoder.finish()]);
+      requestAnimationFrame(renderFrame);
+    };
+
+    renderFrame();
+  }
 
   private createModelScaleMatrix(scaleX: number, scaleY: number, scaleZ: number) {
     return new Float32Array([scaleX, 0, 0, 0, 0, scaleY, 0, 0, 0, 0, scaleZ, 0, 0, 0, 0, 1]);
   }
 
-  returnFileExt(fileName: string): string {
-    const parts = fileName.split('.');
-    return parts.length > 1 ? parts.pop() || '' : '';
+  private render(fn: () => void): void {
+    if (typeof fn === 'function') fn();
   }
 
-  private cameraControls(): void {}
-
-  private render(renderMethod: () => void) {
-    if (typeof renderMethod !== 'function') {
-      console.error('renderMethod must be a function');
-      return;
-    }
-
-    renderMethod();
+  private returnFileExt(fileName: string): string {
+    const parts = fileName.split('.');
+    return parts.length > 1 ? parts.pop()!.toLowerCase() : '';
   }
 }
 
