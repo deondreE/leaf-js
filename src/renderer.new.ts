@@ -10,6 +10,7 @@ import {
   MATERIAL_UNIFORM_BUFFER_SIZE,
   MtlMaterial,
 } from './parsers/mtl';
+import { WebGPUFBXParser } from './parsers/fbx';
 import Gizmo from './gizmo';
 
 function getWebGL2ContextSafely(canvas: HTMLCanvasElement): WebGL2RenderingContext | null {
@@ -24,7 +25,7 @@ function getWebGL2ContextSafely(canvas: HTMLCanvasElement): WebGL2RenderingConte
   return canvas.getContext('webgl2');
 }
 
-/** Currently Supports static file definitions. */
+/** > Currently Supports static file definitions. */
 class Renderer3D {
   canvas?: HTMLCanvasElement;
   contextType: 'webgpu' | 'webgl2' | null = null;
@@ -46,7 +47,7 @@ class Renderer3D {
         this.contextType = 'webgpu';
         return;
       } catch (err) {
-        console.warn('WebGP initialization failed, falling back to webgl2', err);
+        console.warn('WebGPU initialization failed, falling back to webgl2', err);
       }
     }
 
@@ -60,13 +61,14 @@ class Renderer3D {
     if (!adapter) throw new Error('No WebGPU adapter found.');
     this.device = await adapter.requestDevice();
 
-    this.context = this.canvas!.getContext('webgpu');
-    if (!this.context) throw new Error('Failed to create WebGPU context.');
+    const gpuContext = this.canvas!.getContext('webgpu');
+    if (!gpuContext) throw new Error('Failed to create WebGPU context.');
 
+    this.context = gpuContext;
     this.format = navigator.gpu.getPreferredCanvasFormat();
-    this.context.configure({ device: this.device, format: this.format });
+    gpuContext.configure({ device: this.device, format: this.format });
 
-    this.depthTexture = this.device!.createTexture({
+    this.depthTexture = this.device.createTexture({
       size: [this.canvas!.width, this.canvas!.height],
       format: 'depth24plus',
       usage: GPUTextureUsage.RENDER_ATTACHMENT,
@@ -74,14 +76,12 @@ class Renderer3D {
 
     console.log('[Renderer3D] WebGPU Initialized.');
 
-    // Continue with your existing WebGPU pipeline setup:
     await this.loadSceneWebGPU(fileName);
   }
 
   private initWebGL(_fileName: string): void {
     const gl = getWebGL2ContextSafely(this.canvas!);
     if (!gl) {
-      console.log('Testing context creation:');
       console.error('WebGL2 context not supported.');
       console.table({
         secureContext: window.isSecureContext,
@@ -94,15 +94,12 @@ class Renderer3D {
     this.device = gl;
     this.context = gl;
 
-    // basic clear example
     gl.viewport(0, 0, this.canvas!.width, this.canvas!.height);
     gl.clearColor(0.1, 0.1, 0.1, 1.0);
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-
     console.log('[Renderer3D] WebGL2 fallback initialized.');
-    this.render(() => {
-      gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-    });
+
+    this.render(() => gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT));
   }
 
   private async loadSceneWebGPU(fileName: string): Promise<void> {
@@ -113,9 +110,8 @@ class Renderer3D {
     const projectionMatrix = mat4.create();
     const mvpMatrix = mat4.create();
 
-    const width = this.canvas!.width;
-    const height = this.canvas!.height;
-
+    const { width, height } = this.canvas!;
+    // Camera def need to change
     mat4.lookAt(viewMatrix, [4, 3, 5], [0, 0, 0], [0, 1, 0]);
     mat4.perspective(projectionMatrix, Math.PI / 4, width / height, 0.1, 100);
     mat4.multiply(mvpMatrix, projectionMatrix, viewMatrix);
@@ -130,9 +126,124 @@ class Renderer3D {
       case 'stl':
         await this.loadSTLScene(fileName, mvpMatrix);
         break;
+      case 'fbx':
+        await this.loadFBXScene(fileName, mvpMatrix);
+        break;
       default:
         console.warn(`Unsupported file type: ${ext}`);
     }
+  }
+
+  private async loadFBXScene(fileName: string, mvpMatrix: Float32Array) {
+    const device = this.device as GPUDevice;
+    const context = this.context as GPUCanvasContext;
+    if (!device || !context) throw new Error('Renderer3D not initialized.');
+
+    const absURL = new URL(fileName, window.location.href).href;
+    console.log(`[Renderer3D] Loading FBX scene from: ${absURL}`);
+    const fbxParser = new WebGPUFBXParser(device);
+
+    // Step 3: Fetch binary data
+    let arrayBuffer: ArrayBuffer;
+    try {
+      const response = await fetch(absURL);
+      if (!response.ok) throw new Error(`HTTP ${response.status} (${response.statusText})`);
+      arrayBuffer = await response.arrayBuffer();
+    } catch (err) {
+      console.error(`❌ Failed to fetch FBX '${fileName}':`, err);
+      console.warn('Tip: Make sure f.fbx is in your /public/ folder and accessible via /f.fbx');
+      return;
+    }
+
+    await fbxParser.loadFBX(arrayBuffer);
+
+    const shaderModule = fbxParser.getShader();
+    const SCENE_UNIFORM_BUFFER_SIZE = (16 + 4 + 4) * 4;
+
+    const sceneUBO = device.createBuffer({
+      size: SCENE_UNIFORM_BUFFER_SIZE,
+      usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+    });
+
+    const sceneData = new Float32Array(24);
+    sceneData.set(mvpMatrix, 0);
+    sceneData.set([0.0, -1.0, -1.0, 0.0], 16);
+    sceneData.set([1.0, 1.0, 1.0, 0.0], 20);
+    device.queue.writeBuffer(sceneUBO, 0, sceneData);
+
+    const materialUBO = device.createBuffer({
+      size: MATERIAL_UNIFORM_BUFFER_SIZE,
+      usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+    });
+
+    const defaultMaterial: MtlMaterial = {
+      name: 'fbxDefault',
+      Ka: [0.2, 0.2, 0.2],
+      Kd: [0.7, 0.7, 0.7],
+      Ks: [0.8, 0.8, 0.8],
+      Ke: [0.0, 0.0, 0.0],
+      Tf: [1.0, 1.0, 1.0],
+      Ns: 20,
+      Ni: 1,
+      d: 1,
+      Tr: 0,
+      illum: 2,
+      map_Ka: null,
+      map_Kd: null,
+      map_Ke: null,
+      map_d: null,
+      map_Ns: null,
+      map_bump: null,
+      disp: null,
+      decal: null,
+      refl: null,
+      Pr: 0.4,
+      Pm: 0.1,
+      Ps: 0.0,
+      Pc: 0.0,
+      Pt: 0.0,
+      map_Pr: null,
+      map_Pm: null,
+      map_Ps: null,
+      map_Pc: null,
+      map_Pt: null,
+    };
+
+    const matData = createMaterialUniformBufferData(defaultMaterial);
+    device.queue.writeBuffer(materialUBO, 0, matData);
+
+    if (!this.format) throw new Error('Canvas format not resolved.');
+    await fbxParser.createPipeline(shaderModule, this.format, sceneUBO, materialUBO);
+
+    console.log(fbxParser.createPipeline(shaderModule, this.format, sceneUBO, materialUBO))
+    
+    const depthView = this.depthTexture!.createView();
+    const renderFrame = () => {
+      const encoder = device.createCommandEncoder();
+      const pass = encoder.beginRenderPass({
+        colorAttachments: [
+          {
+            view: context.getCurrentTexture().createView(),
+            clearValue: { r: 0.1, g: 0.1, b: 0.1, a: 1 },
+            loadOp: 'clear',
+            storeOp: 'store',
+          },
+        ],
+        depthStencilAttachment: {
+          view: depthView,
+          depthClearValue: 1,
+          depthLoadOp: 'clear',
+          depthStoreOp: 'store',
+        },
+      });
+
+      fbxParser.render(pass);
+      pass.end();
+      device.queue.submit([encoder.finish()]);
+      requestAnimationFrame(renderFrame);
+    };
+    renderFrame();
+    console.log(`[Renderer3D] ✅ FBX scene loaded: ${fileName}`);
   }
 
   private async loadOBJScene(fileName: string, mvpMatrix: any) {
@@ -180,7 +291,7 @@ class Renderer3D {
       illum: 0,
       map_Kd: null,
       map_Ka: null,
-    map_Ke: null,
+      map_Ke: null,
       map_d: null,
       map_Ns: null,
       map_bump: null,
@@ -212,7 +323,7 @@ class Renderer3D {
 
     // Render pass
     const renderFrame = () => {
-      const encoder = device.createCommandEncoder();  
+      const encoder = device.createCommandEncoder();
       const pass = encoder.beginRenderPass({
         colorAttachments: [
           {
