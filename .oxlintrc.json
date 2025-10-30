@@ -1,0 +1,31 @@
+{
+  "$schema": "https://oxlint.dev/schema/oxlintrc.schema.json",
+  "extends": ["recommended"],
+  "rules": {
+    "no-unused-vars": ["error", { "args": "none", "ignoreRestSiblings": true }],
+    "no-undef": "error",
+    "no-shadow": "warn",
+    "no-console": "warn",
+    "eqeqeq": ["error", "always"],
+    "prefer-const": "error",
+    "no-var": "error",
+
+    "no-duplicate-imports": "error",
+    "import/order": [
+      "warn",
+      {
+        "groups": ["builtin", "external", "internal", "parent", "sibling"],
+        "newlines-between": "always"
+      }
+    ],
+    "indent": ["error", 2],
+    "semi": ["error", "always"],
+    "quotes": ["error", "single"],
+    "max-len": ["warn", { "code": 100 }],
+    "comma-dangle": ["error", "always-multiline"],
+    "@typescript-eslint/no-explicit-any": "off",
+    "@typescript-eslint/explicit-function-return-type": "off",
+    "@typescript-eslint/no-inferrable-types": "off"
+  },
+  "ignore": ["dist", "node_modules", "build"]
+}
