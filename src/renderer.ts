@@ -14,6 +14,7 @@ import { WebGPUFBXParser } from './parsers/fbx';
 import Gizmo from './gizmo';
 import RigidBody from './physics/RigidBody';
 import PhysicsSystem from './physics/PhysyicsSystem';
+import PhysicsDebugger from './physics/PhysicsDebugger';
 import { extractRotation } from './matrixMath';
 
 /** > Currently Supports static file definitions. */
@@ -35,6 +36,8 @@ class Renderer3D {
   private pickTextureView: GPUTextureView | null = null;
   private physics: PhysicsSystem = new PhysicsSystem();
   private physicsEnabled = true;
+  private physicsDebugger: PhysicsDebugger | null = null;
+  private showPhysicsDebug = true;
   private lastTime = 0;
 
   constructor(canvas: HTMLCanvasElement) {
@@ -44,6 +47,11 @@ class Renderer3D {
   enablePhysics(enable = true) {
     this.physicsEnabled = enable;
     console.log(`[Renderer3D] Physics ${enable ? 'enabled' : 'disabled'}.`);
+  }
+
+  togglePhysicsDebug(enable: boolean) {
+    this.showPhysicsDebug = enable;
+    console.log(`[Renderer3D] Physics debugger ${enable ? 'enabled' : 'disabled'}.`);
   }
 
   async init(fileName: string) {
@@ -88,6 +96,10 @@ class Renderer3D {
       usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.COPY_SRC,
     });
     this.pickTextureView = this.pickTexture.createView();
+
+    // --- Initialize Physics Debugger
+    this.physicsDebugger = new PhysicsDebugger(this.device, this.format!);
+    await this.physicsDebugger.init();
 
     console.log('[Renderer3D] WebGPU Initialized.');
 
@@ -407,6 +419,12 @@ class Renderer3D {
       });
 
       objParser.render(pass);
+      
+      if (this.showPhysicsDebug && this.physicsDebugger) {
+        this.physicsDebugger.updateBuffers(this.physics.bodies);
+        this.physicsDebugger.draw(pass);
+        this.physicsDebugger.physicsGroundY = -0.5;
+      }
 
       if (this.gizmo && this.modelMatrix) {
         const rotMat = mat4.create() as Float32Array;

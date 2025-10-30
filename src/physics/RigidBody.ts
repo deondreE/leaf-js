@@ -5,19 +5,22 @@ export default class RigidBody {
   acceleration: [number, number, number];
   mass: number;
   useGravity: boolean;
+  radius: number;
   
   constructor(
     position: [number, number, number] = [0, 0, 0],
     mass = 1,
     useGravity = true,
+    radius = 1,
   ) {
     this.position = position;
     this.velocity = [0, 0, 0];
     this.acceleration = [0, 0, 0];
     this.mass = mass;
+    this.radius = radius;
     this.useGravity = useGravity;
-  }
   
+  }
   /** apply a continues force linear force (F = m * a) */
   applyForce(force: [number, number, number]) {
     this.acceleration[0] += force[0] / this.mass;
