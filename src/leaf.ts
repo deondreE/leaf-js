@@ -3,16 +3,24 @@ import ParticleRenderer from './renderer.particle';
 import Scene from './scene';
 import Camera from './camera';
 import { assert } from './utils/util';
+import { SceneConfig, SceneFactory } from './types/scene.types';
+
+declare global {
+  interface Window {
+    [key: string]: unknown;
+  }
+}
 
 class Leaf extends HTMLCanvasElement {
-  static observedAttributes = ['src', 'particle'];
-  is3D: boolean = false;
-  isStatic: boolean = false;
-  particleSim: boolean = false;
-  scene: Scene | null = null;
-  renderer: Renderer | null = null;
-  camera: Camera | null = null;
-  id: string = '';
+  static observedAttributes = ['src', 'particle', 'is3D', 'static'];
+
+  private renderer: Renderer | ParticleRenderer | null = null;
+  private scene: Scene | null = null;
+  private camera: Camera | null = null;
+
+  private is3D = false;
+  private isStatic = false;
+  private particleSim = false;
 
   constructor() {
     super();
@@ -23,63 +31,122 @@ class Leaf extends HTMLCanvasElement {
     this.isStatic = this.getOptimisticBoolAttribute('static');
     this.particleSim = this.getOptimisticBoolAttribute('particleSim');
 
-    const src = this.getAttribute('src');
-    if (!src) {
-      console.warn('Leaf canveses rely on "src" attribute to populate.');
+    const srcAttr = this.getAttribute('src');
+    if (!srcAttr) {
+      console.warn('[Leaf] Missing "src" attribute on canvas.');
+      return;
     }
 
-    if (this.checkFileType(src!)) {
-      this.renderer = new Renderer(this);
-      const defaultCamera = new Camera(45, 1.0, 0.1, 100.0, 1.0, 'perspective');
-      defaultCamera.setup();
-      this.camera = defaultCamera;
-      this.renderer.setCamera(defaultCamera);
-      this.renderer.init(src!);
+    if (this.checkFileType(srcAttr)) {
+      this.loadFileScene(srcAttr);
     } else {
-      const global = window as Record<string, any>;
-      const funcName = src;
-      assert(funcName !== null);
-
-      const sceneFactory = global[funcName];
-      if (typeof sceneFactory === 'function') {
-        const sceneInstance = sceneFactory();
-        assert(sceneInstance !== null);
-        this.scene = sceneInstance;
-
-        if (sceneInstance.camera) {
-          const {
-            type = 'perspective',
-            FOV = 45,
-            cameraBounds = 1,
-            near = 0.1,
-            far = 100,
-            zoom = 1,
-          } = sceneInstance.camera;
-          this.camera = new Camera(FOV, cameraBounds, near, far, zoom, type);
-          this.camera.setup();
-        }
-
-        if (sceneInstance.particle) {
-          // Particles should only render in the given scene, requires some scene level, activation.
-          // TODO: Awake events;
-        }
-
-        if (!this.renderer) {
-          this.renderer = new Renderer(this);
-        }
-
-        if (this.camera) {
-          this.renderer.setCamera(this.camera);
-        }
-      }
-    }
-
-    if (!this.renderer && this.is3D) {
-      this.id = 'webgpu-canvas';
+      this.loadDynamicScene(srcAttr);
     }
 
     this.createControls();
   }
+
+  private initializeDynamicScene(factoryName: string) {
+    const global = window as Record<string, unknown>;
+    const sceneFactory = global[factoryName] as SceneFactory | undefined;
+
+    if (!sceneFactory || typeof sceneFactory !== 'function') {
+      console.warn(`[Leaf] Scene factory "${factoryName}" is not defined or not a function.`);
+      return;
+    }
+
+    const sceneConfig: SceneConfig = sceneFactory();
+    assert(sceneConfig !== null);
+
+    if (sceneConfig.camera) {
+      const {
+        type = 'perspective',
+        FOV = 45,
+        cameraBounds = 1,
+        near = 0.1,
+        far = 100,
+        zoom = 1,
+      } = sceneConfig.camera;
+
+      const cam = new Camera(FOV, cameraBounds, near, far, zoom, type);
+      cam.setup();
+      this.camera = cam;
+    }
+
+    if (sceneConfig.particle) {
+      //this.renderer = new ParticleRenderer(this);
+      // attach particle config here when system ready
+    } else {
+      this.renderer = new Renderer(this);
+    }
+
+    // if (this.camera) this.renderer!.(this.camera);
+    this.scene = new Scene(sceneConfig, this);
+  }
+  
+  private loadDynamicScene(factoryName: string) {
+    const global = window as Record<string, unknown>;
+    const sceneFactory = global[factoryName] as SceneFactory | undefined;
+
+    if (!sceneFactory || typeof sceneFactory !== 'function') {
+      console.error(`[Leaf] Scene factory "${factoryName}" not found on window.`);
+      return;
+    }
+
+    const config: SceneConfig = sceneFactory();
+    assert(config !== null);
+
+    console.log('[Leaf] Dynamic Scene Config:', config);
+
+    // Setup camera from config
+    if (config.camera) {
+      const {
+        type = 'perspective',
+        FOV = 45,
+        cameraBounds = 1.0,
+        near = 0.1,
+        far = 100.0,
+        zoom = 1.0,
+      } = config.camera;
+
+      const cam = new Camera(FOV, cameraBounds, near, far, zoom, type);
+      cam.setup();
+      this.camera = cam;
+    }
+
+    // Choose renderer based on particle simulation
+    if (config.particle) {
+      // this.renderer = new ParticleRenderer(this);
+      console.log('[Leaf] Using ParticleRenderer.');
+    } else {
+      this.renderer = new Renderer(this);
+    }
+
+    // if (this.camera) this.renderer!.setCamera(this.camera);
+
+    this.scene = new Scene(config, this);
+    // this.scene.renderer  = this.renderer;
+
+    this.scene.awake(() => console.log('[Scene] onAwake called.'));
+    this.scene.start(() => console.log('[Scene] onStart called.'));
+    this.scene.update(() => console.log(`[Scene] onUpdate `));
+
+    this.scene.run();
+  }
+  
+  private loadFileScene(src: string) {
+      console.log(`[Leaf] Loading static scene from file: ${src}`);
+  
+      this.renderer = new Renderer(this);
+  
+      const aspect = this.width / this.height;
+      const camera = new Camera(45, aspect, 0.1, 100.0, 1.0, 'perspective');
+      camera.setup();
+  
+      this.camera = camera;
+      this.renderer.setCamera(camera);
+      this.renderer.init(src);
+    }
 
   private createControls() {
     const controls = document.createElement('div');
@@ -136,8 +203,8 @@ class Leaf extends HTMLCanvasElement {
     this.scene?.stop();
   }
 
-  disconectedCallback() {
-    console.log('Time to deinitialize the canvas');
+  disconnectedCallback() {
+    console.log('[Leaf] Disconnected: cleanup logic here if needed.');
   }
 
   adoptedCallback() {
@@ -182,8 +249,8 @@ class Leaf extends HTMLCanvasElement {
    * @param oldValue
    * @param newValue
    */
-  attributeChangedCallback(name: string, oldValue: unknown, newValue: unknown) {
-    console.log(`The attribute ${name} changed from ${oldValue} to ${newValue}`);
+  attributeChangedCallback(name: string, oldVal: unknown, newVal: unknown) {
+    console.log(`[Leaf] Attribute "${name}" changed from ${oldVal} to ${newVal}`);
   }
 
   /**

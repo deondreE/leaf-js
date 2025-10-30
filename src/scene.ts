@@ -1,6 +1,6 @@
-import Renderer from './renderer';
 import type { Model } from './types/scene.types';
 import EventDispatcher from './eventdispatcher';
+import Renderer3D from './renderer';
 
 /** A Scene is defined as a collection of objects renderd in a single pass. */
 class Scene {
@@ -8,7 +8,7 @@ class Scene {
   canvas: HTMLCanvasElement | null = null;
   uData: any | null = null;
   children: Map<Model, string> = new Map<Model, string>();
-  renderer: Renderer | null = null;
+  renderer: Renderer3D | null = null;
   eventDispatcher: EventDispatcher | null = null;
 
   private rafId: number | null = null;

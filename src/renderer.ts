@@ -442,6 +442,7 @@ class Renderer3D {
 
     console.log(`[Renderer3D] ✅ OBJ loaded: ${fileName}`);
   }
+  
 
   private async loadSTLScene(fileName: string, mvpMatrix: Float32Array) {
     const stl = new STLParser(this.device as GPUDevice);
