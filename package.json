@@ -1,13 +1,37 @@
 {
   "name": "leaf",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "type": "module",
   "description": "A performant 3d javascript library",
   "source": "src/index.ts",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/deondreE/leaf-js"
+  },
+  "bugs": {
+    "url": "https://github.com/deondreE/leaf-js/issues"
+  },
+  "homepage": "https://github.com/deondreE/leaf-js#readme",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "require": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./*": {
+      "import": "./dist/*.js",
+      "require": "./dist/*.js",
+      "types": "./dist/*.d.ts"
+    }
+  },
   "scripts": {
     "dev": "vite",
     "build": "rollup -c",
     "build:prod": "NODE_ENV=production rollup -c",
+    "build:types": "dts-bundle-generator -o dist/leaf.d.ts src/index.ts",
     "dev:rollup": "rollup -c -w",
     "format": "prettier --write .",
     "lint": "oxlint src --fix"
@@ -22,6 +46,7 @@
     "@types/node": "^22.13.2",
     "@types/uuid": "^10.0.0",
     "@webgpu/types": "^0.1.52",
+    "dts-bundle-generator": "^9.5.1",
     "oxlint": "^1.24.0",
     "prettier": "^3.5.1",
     "rollup": "^4.52.5",

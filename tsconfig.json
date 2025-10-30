@@ -8,6 +8,7 @@
     "allowJs": true,
     "moduleResolution": "bundler",
     "allowImportingTsExtensions": true,
+    "declaration": true,
     "composite": false,
     "emitDeclarationOnly": false,
     "resolveJsonModule": true,
