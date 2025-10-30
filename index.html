@@ -6,15 +6,8 @@
     <title>Worky</title>
   </head>
   <body>
+      <!-- FIXME: Leaf dyn scenes do not work in the current state. -->
     <canvas is="leaf-js" src="/t.obj" width="800" height="800" id="webgpu-canvas"> </canvas>
-
-    <!--TODO: Profile needs some context to attach to. -->
-    <!--<canvas
-      is="l-profiler"
-      width="800"
-      height="650"
-      target-id="webgpu-canvas">
-    </canvas>-->
 
     <!-- Load external modules -->
     <script type="module" src="/src/profiler.ts"></script>

@@ -1,3 +1,4 @@
+import RigidBody from "../physics/RigidBody";
 /** */
 interface SceneTypes {
   name: string;
@@ -14,7 +15,9 @@ interface Model {
   name: string;
   id: string;
   static: boolean;
+  modelMatrix: Float32Array;
   pickingColor: [number, number, number];
+  body?: RigidBody;
 }
 
 /** Data that can effect the color directly. Default data will be applied to the renderer when it is called. */

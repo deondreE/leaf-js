@@ -13,6 +13,7 @@ test.json*
 *.vcxproj.user
 .vs
 .idea
+.DS_STORE
 
 # Model files
 *obj

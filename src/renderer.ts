@@ -12,6 +12,8 @@ import {
 } from './parsers/mtl';
 import { WebGPUFBXParser } from './parsers/fbx';
 import Gizmo from './gizmo';
+import RigidBody from './physics/RigidBody';
+import PhysicsSystem from './physics/PhysyicsSystem';
 import { extractRotation } from './matrixMath';
 
 /** > Currently Supports static file definitions. */
@@ -23,6 +25,7 @@ class Renderer3D {
   format: GPUTextureFormat | null = null;
   renderTexture: GPUTexture | null = null;
   depthTexture: GPUTexture | null = null;
+
   private gizmo: Gizmo | null = null;
   private modelMatrix: Float32Array = mat4.create() as Float32Array;
   private models: Model[] = [];
@@ -30,9 +33,17 @@ class Renderer3D {
   private gizmoShown: boolean = false;
   private pickTexture: GPUTexture | null = null;
   private pickTextureView: GPUTextureView | null = null;
+  private physics: PhysicsSystem = new PhysicsSystem();
+  private physicsEnabled = true;
+  private lastTime = 0;
 
   constructor(canvas: HTMLCanvasElement) {
     this.canvas = canvas;
+  }
+
+  enablePhysics(enable = true) {
+    this.physicsEnabled = enable;
+    console.log(`[Renderer3D] Physics ${enable ? 'enabled' : 'disabled'}.`);
   }
 
   async init(fileName: string) {
@@ -330,6 +341,10 @@ class Renderer3D {
       materialUniformBuffer,
     );
 
+    // == Physics ==
+    const body = new RigidBody([0, 3, 0], 1.0, true);
+    this.physics.addBody(body);
+
     // === Gizmo Setup ===
     if (this.gizmoShown) {
       const gizmo = new Gizmo(device, this.modelMatrix);
@@ -337,10 +352,41 @@ class Renderer3D {
       this.gizmo = gizmo;
       this.gizmo.attachInteraction(this.canvas!, this.camera);
     }
+
+    const model: Model = {
+      name: fileName,
+      id: uuid(),
+      static: false,
+      vertexBuffer: objParser.getVertexBuffer(),
+      indexBuffer: objParser.getIndexBuffer(),
+      shader: objParser.getShaderString(),
+      body: body,
+      pickingColor: [100, 100, 100],
+      modelMatrix: mat4.create() as Float32Array,
+    };
+    this.models.push(model);
+
     const depthView = this.depthTexture!.createView();
 
     // === Render Loop ===
-    const renderFrame = () => {
+    const renderFrame = (now: number) => {
+      const dt = this.lastTime ? (now - this.lastTime) / 1000 : 0;
+      this.lastTime = now;
+
+      if (this.physicsEnabled) this.physics.update(dt);
+
+      for (const mdl of this.models) {
+        if (mdl.body && mdl.modelMatrix) {
+          const [x, y, z] = mdl.body.position;
+          mat4.fromTranslation(mdl.modelMatrix, [x, y, z]);
+
+          const mvp = new Float32Array(16);
+          mat4.multiply(mvp, mvpMatrix, mdl.modelMatrix);
+          sceneData.set(mvp, 0);
+          device.queue.writeBuffer(sceneUniformBuffer, 0, sceneData);
+        }
+      }
+
       // this.camera.viewMatrix = mat4.lookAt(mat4.create(), [8, 6, 12], [0, 0, 0], [0, 1, 0]);
       const encoder = device.createCommandEncoder();
       const pass = encoder.beginRenderPass({
@@ -363,7 +409,7 @@ class Renderer3D {
       objParser.render(pass);
 
       if (this.gizmo && this.modelMatrix) {
-        const rotMat = mat4.create();
+        const rotMat = mat4.create() as Float32Array;
         extractRotation(rotMat, this.modelMatrix);
         mat4.copy(this.gizmo.modelMatrix, rotMat);
         this.gizmo.draw(pass);
@@ -371,11 +417,10 @@ class Renderer3D {
 
       pass.end();
       device.queue.submit([encoder.finish()]);
-
       requestAnimationFrame(renderFrame);
     };
 
-    renderFrame();
+    requestAnimationFrame(renderFrame);
 
     console.log(`[Renderer3D] ✅ OBJ loaded: ${fileName}`);
   }
