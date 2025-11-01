@@ -1,34 +1,35 @@
+import { Vec3, PhysicsShape, RigidBodyConfig } from '../types/scene.types';
 
-export default class RigidBody { 
+export default class RigidBody {
+  shape: PhysicsShape;
+  mass: number;
   position: [number, number, number];
   velocity: [number, number, number];
   acceleration: [number, number, number];
-  mass: number;
-  useGravity: boolean;
+  restitution: number;
+  damping: number;
+  friction: number;
   radius: number;
-  
-  constructor(
-    position: [number, number, number] = [0, 0, 0],
-    mass = 1,
-    useGravity = true,
-    radius = 1,
-  ) {
-    this.position = position;
-    this.velocity = [0, 0, 0];
+  size?: [number, number, number];
+  useGravity: boolean;
+
+  constructor(config: RigidBodyConfig) {
+    this.shape = config.shape;
+    this.mass = config.mass;
+    this.position = [config.position.x, config.position.y, config.position.z];
+    this.velocity = [
+      config.velocity?.x ?? 0,
+      config.velocity?.y ?? 0,
+      config.velocity?.z ?? 0,
+    ];
     this.acceleration = [0, 0, 0];
-    this.mass = mass;
-    this.radius = radius;
-    this.useGravity = useGravity;
-  
-  }
-  /** apply a continues force linear force (F = m * a) */
-  applyForce(force: [number, number, number]) {
-    this.acceleration[0] += force[0] / this.mass;
-    this.acceleration[1] += force[1] / this.mass;
-    this.acceleration[2] += force[2] / this.mass;
-  }
-  
-  clearForces() {
-    this.acceleration = [0, 0, 0];
+    this.restitution = config.restitution ?? 0.8;
+    this.damping = config.damping ?? 0.995;
+    this.friction = config.friction ?? 0.5;
+    this.radius = config.radius ?? 0.5;
+    this.size = config.size
+      ? [config.size.x, config.size.y, config.size.z]
+      : undefined;
+    this.useGravity = config.mass > 0; // static objects won’t use gravity
   }
 }
