@@ -1,5 +1,5 @@
 import RigidBody from './RigidBody';
-import { mat4 } from 'gl-matrix';
+import { mat3, mat4, quat, vec3 } from 'gl-matrix';
 
 /**
  * Lightweight line renderer for visualizing physics shapes.
@@ -15,7 +15,7 @@ export default class PhysicsDebugger {
   physicsGroundY = 0;
   showGround = true;
   showBodies = true;
-  
+
   private lastColors = new WeakMap<RigidBody, [number, number, number]>();
 
   constructor(device: GPUDevice, format: GPUTextureFormat) {
@@ -113,7 +113,7 @@ export default class PhysicsDebugger {
       const c: [number, number, number] = [0.1, 0.8, 0.1];
       const step = 1;
       for (let i = -size; i <= size; i += step) {
-        verts.push(-size, y, i, ...c, size, y, i, ...c);  // z lines
+        verts.push(-size, y, i, ...c, size, y, i, ...c); // z lines
         verts.push(i, y, -size, ...c, i, y, size, ...c); // x lines
       }
     }
@@ -121,35 +121,49 @@ export default class PhysicsDebugger {
     // Body wireframes -------------------------------------------------------
     if (this.showBodies) {
       const segs = 16;
+
       for (const b of bodies) {
         const [x, y, z] = b.position;
         const r = b.radius;
-        const speed = Math.sqrt(
-          b.velocity[0] ** 2 + b.velocity[1] ** 2 + b.velocity[2] ** 2
-        );
-        // smooth the color toward current target
+        const q = b.orientation ?? quat.create();
+
+        const speed = Math.sqrt(b.velocity[0] ** 2 + b.velocity[1] ** 2 + b.velocity[2] ** 2);
         const targetCol = this.velocityToColor(speed);
         const color = this.smoothColor(b, targetCol);
 
+        // Local-space circle points
         for (let i = 0; i < segs; i++) {
           const a1 = (i / segs) * Math.PI * 2;
           const a2 = ((i + 1) / segs) * Math.PI * 2;
 
-          // XZ
-          verts.push(
-            x + r * Math.cos(a1), y, z + r * Math.sin(a1), ...color,
-            x + r * Math.cos(a2), y, z + r * Math.sin(a2), ...color
-          );
-          // XY
-          verts.push(
-            x + r * Math.cos(a1), y + r * Math.sin(a1), z, ...color,
-            x + r * Math.cos(a2), y + r * Math.sin(a2), z, ...color
-          );
-          // YZ
-          verts.push(
-            x, y + r * Math.cos(a1), z + r * Math.sin(a1), ...color,
-            x, y + r * Math.cos(a2), z + r * Math.sin(a2), ...color
-          );
+          // Each circle is drawn in LOCAL space
+          const circles = [
+            // XZ circle
+            [
+              vec3.fromValues(Math.cos(a1) * r, 0, Math.sin(a1) * r),
+              vec3.fromValues(Math.cos(a2) * r, 0, Math.sin(a2) * r),
+            ],
+            // XY circle
+            [
+              vec3.fromValues(Math.cos(a1) * r, Math.sin(a1) * r, 0),
+              vec3.fromValues(Math.cos(a2) * r, Math.sin(a2) * r, 0),
+            ],
+            // YZ circle
+            [
+              vec3.fromValues(0, Math.cos(a1) * r, Math.sin(a1) * r),
+              vec3.fromValues(0, Math.cos(a2) * r, Math.sin(a2) * r),
+            ],
+          ];
+
+          // Transform each vertex by body orientation → world position
+          for (const [v1, v2] of circles) {
+            const w1 = vec3.transformQuat(vec3.create(), v1, q);
+            const w2 = vec3.transformQuat(vec3.create(), v2, q);
+            vec3.add(w1, w1, b.position);
+            vec3.add(w2, w2, b.position);
+
+            verts.push(w1[0], w1[1], w1[2], ...color, w2[0], w2[1], w2[2], ...color);
+          }
         }
       }
     }

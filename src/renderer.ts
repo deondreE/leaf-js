@@ -354,8 +354,16 @@ class Renderer3D {
     );
 
     // == Physics ==
-    const body = new RigidBody([0, 3, 0], 1.0, true);
+    const body = new RigidBody({
+      shape: 'sphere',
+      mass: 1.0,
+      position: { x: 0, y: 3, z: 0},
+      restitution: 0.8,
+      damping: 0.99,
+    });
     this.physics.addBody(body);
+    body.applyTorque([0, 2, 0]);
+    
 
     // === Gizmo Setup ===
     if (this.gizmoShown) {
@@ -372,8 +380,8 @@ class Renderer3D {
       vertexBuffer: objParser.getVertexBuffer(),
       indexBuffer: objParser.getIndexBuffer(),
       shader: objParser.getShaderString(),
+      // pickingColor: [100, 100, 100],
       body: body,
-      pickingColor: [100, 100, 100],
       modelMatrix: mat4.create() as Float32Array,
     };
     this.models.push(model);

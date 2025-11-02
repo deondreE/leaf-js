@@ -2,6 +2,9 @@
  * Basic math helpers
  * ------------------------------------------------------------------- */
 
+import { Mat4 } from "wgpu-matrix";
+import RigidBody from "../physics/RigidBody";
+
 /** 3D Vector Structure. */
 export interface Vec3 {
   /** X-Axis */
@@ -196,10 +199,12 @@ export type SceneFactory = () => SceneConfig;
    name: string;
    /** Whether this model is static (won’t move or animate). */
    static: boolean;
+   body: RigidBody, 
    /** GPU buffer for vertex data. */
    vertexBuffer: GPUBuffer;
    /** GPU buffer for index data. */
    indexBuffer: GPUBuffer;
    /** Identifier of the shader currently bound to this model. */
    shader: string;
+   modelMatrix: Mat4,
  }
