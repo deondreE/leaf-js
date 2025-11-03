@@ -1,81 +1,162 @@
-# Leaf-js
+# Leaf‑js
 
-Leaf is a 2D/3D library designed for creating games and simulations on the web. Its goal is to replace WebGL by simplifying the development of complex 3D environments. Leaf aims to make web-based games as powerful as traditional system games and improve sharing workflows for industries relying on visualizations.
+Leaf‑js is a next‑generation `2D/3D rendering engine` for creating games, simulations, and interactive experiences directly on the web. It builds upon modern browser graphics technologies—primarily `WebGPU`—to simplify the development of complex, high‑performance 3D environments.
 
-> NOTE: Webgpu is currently marked expiramental and needs to be activated in the config of chrome.
-> NOTE: Memory is still a large issue inside of the web.
+Leaf’s ultimate goal is to make web‑based games as capable as native desktop or console titles, while also improving asset sharing workflows for industries that rely on advanced visualization (architecture, simulation, VFX, etc.).
 
-# Future Goals
+> Note: WebGPU is currently experimental.
+> It must be enabled manually in your browser settings (e.g., chrome://flags in Chrome).
+> Note: Memory usage is currently a limiting factor—Web‑based GPUs are improving but still constrained compared to native APIs.
 
-These goals are interconnected and designed to work in unison for optimal performance. The library aims to deliver a seamless experience where all components—rendering, lighting, physics, and animations—collaborate to create highly realistic simulations. Achieving 1080p at 120 FPS is the preferred standard for performance, ensuring smooth and visually appealing experiences.
+# 🌿 Vision
 
-1. Advanced Rendering with Lighting:
-   A renderer is not just about drawing shapes; realistic lighting is fundamental to creating immersive visuals. Future updates will integrate robust lighting models to enhance depth and realism.
+Leaf is designed around one core philosophy: power and simplicity should coexist.
 
-2. Physics-Based Interactions:
-   Accurate physics simulations are crucial for modeling real-world interactions. These will be tightly coupled with rendering and animations to create cohesive and lifelike scenes.
+Creating a high‑fidelity 3D world shouldn’t require pages of boilerplate boilerplate WebGL code. Leaf builds an abstract rendering layer that intelligently handles low‑level GPU optimization while keeping your experience as modern and developer‑friendly as possible.
+ 
+# 🚀 Future Goals
+
+These systems are designed to integrate tightly, providing smooth coordination between rendering, physics, lighting, and animation—targeting true high frame‑rate realism `(~1080p at 120 FPS)`.
+
+1. Advanced Lighting & Rendering
+    - Not just drawing triangles—lighting defines realism.
+    - Leaf will feature physically‑based lighting and shading models to bring natural illumination, reflections, and atmospheric depth to the web.
+
+2. Physics‑Based Interactions
+   - Real‑world physics make digital worlds believable.
+   - Leaf’s physics engine will synchronize with rendering and animation systems to produce dynamically accurate and visually cohesive scenes.
 
 3. High-Performance Optimization:
-   Striving for 1080p resolution at 120 FPS will remain a core objective, with optimizations at every level—rendering pipeline, asset management, and scene updates.
+    - A prioritized development goal is sustaining 1080p @ 120 FPS through:
+        - Persistent GPU buffer mapping
+        
+        - Multi‑threaded asset streaming
+        
+        - Scene batched‑rendering and culling
+        
+        - Adaptive LOD (Level of Detail) pipelines
 
 4. Extensible Plugin System:
-   Introduce a plugin architecture to allow users to expand functionality, including custom rendering pipelines, physics engines, or specialized lighting systems.
+    - Leaf will support a plugin architecture for expanding its capabilities:
+        - Custom rendering pipelines
+        
+        - Specialized lighting or shadow engines
+        
+        - External physics or AI systems
+    - This flexibility allows both developers and studios to tailor Leaf for their specific production needs.
 
-## Engine Features
+## 🧠 Core Engine Features
 
-## Theoretical Usage:
+- Unified Scene Management: 2D and 3D scenes live within the same runtime hierarchy.
 
-> Note: None of this is implemented currently just an idea of how I want it to work.
+- Dynamic Parsing: Supports OBJ, STL, FBX, and YAML scene definitions.
+
+- Cross‑Context Rendering: Auto‑selects WebGPU → WebGL2 → Canvas fallback.
+
+- Physics Integration: Lightweight PhysicsSystem supports gravity, collision, and rigid body mechanics.
+
+- Profiler & Debugger: Collects FPS, vertex counts, and bounding data directly from GPU passes.
+
+- Declarative Scene API: Scenes can be defined via TypeScript objects for clarity and composability.
+
+- Web‑Component Canvas: Leaf provides a default <leaf‑canvas> element supporting all rendering contexts.
+
+## 🧩 Theoretical Usage Example
+
+> 🧪 Prototype concept — not yet implemented.
 
 ```typescript
 import Leaf from 'leaf-js';
 
+// Define a 3D Simulation
 const Simulation = () => {
-    Leaf.scene({
-        name: 'simulation',
-        models: {
-            // Write custom cobe on the update allowing access directly to the rendering thread.
-            waterparticle: {
-                onUpdate: () => {
+  Leaf.scene({
+    name: 'simulation',
+    models: {
+      // Write custom code directly in the update loop to modify rendering.
+      waterParticle: {
+        onUpdate: () => {
+          // Example: update vertex positions, physics, or color states here.
+        },
+      },
+    },
+  });
+};
 
-                },
-            },
-        }
-    })
-}
-
-/// Some Entry point
+// Entry Point
 const runCode = () => {
-    // Anything will be able to be hardcoded.
-    Leaf.scene({
-        name: 'new Scene',
-        subscenes: [
-            simulation: Simulation,
-        ],
-        models: [
-            cube: {
-                name: 'new cube',
-                x: 0,
-                y: 0,
-                w: 100,
-                h: 100,
-            },
-            importedmodle: {
-                // This will import the animation
-                location: 'models/model.fbx',
-                hasAnimation: true,
-                startAnimation: true,
-            }
-        ],
-        // Simple animations can be programmed by referencing the object name.
-        animations: [
-            rotation: {
-                newcube: {
-                    x: -90,
-                    time: '1s',
-                }
-            }
-        ]
-    });
-}
+  Leaf.scene({
+    name: 'mainScene',
+    subscenes: [
+      { simulation: Simulation },
+    ],
+    models: {
+      cube: {
+        name: 'mainCube',
+        x: 0,
+        y: 0,
+        w: 100,
+        h: 100,
+      },
+      importedModel: {
+        // Model loading pipeline: supports FBX, OBJ, STL etc.
+        location: 'models/model.fbx',
+        hasAnimation: true,
+        startAnimation: true,
+      },
+    },
+    animations: {
+      rotation: {
+        mainCube: {
+          x: -90,
+          time: '1s',
+        },
+      },
+    },
+  });
+};
+
+runCode();
 ```
+
+## 🧱 Concept Breakdown
+
+|Feature|	Description|
+| ----------- | ---------------- | 
+|Leaf.scene()|	Creates or loads a new scene context.|
+|models|	Defines meshes, geometry, or imported assets.|
+|subscenes|	References child scenes or layered simulations.|
+|animations|Describes time‑based transformations over scene elements.|
+|onUpdate()|	Custom per‑frame logic with direct access to the render thread.|
+
+## ⚒️ Development Philosophy
+
+| Principle| 	Description| 
+| ----------- | ---------------- | 
+|Declarative First|	Describe what you want rendered — Leaf handles how.|
+|Low‑Level Access| When Needed	Direct access to pipelines or buffers is always possible.|
+|Zero‑Boilerplate Startup|	Leaf.scene() should be enough to start a new environment.|
+|Native‑Quality Web Performance|Aim for full parity with desktop APIs like Vulkan/DirectX.|
+|Open Design|	Engine internals are modular, making extension and experimentation easy.|
+
+## 🧩 Supported File Types
+
+|Domain|	Formats|
+|3D Models|	FBX, OBJ, STL |
+|2D Assets|	PNG, JPEG, GIF, SVG|
+|Sprite Systems|Aseprite (.ase, .aseprite)|
+|Scene|Definitions	YAML|
+
+## 🧭 Quick Notes
+
+- Enable WebGPU manually via chrome://flags/#enable-unsafe-webgpu (Chrome) or about:config in Firefox.
+- Use TypeScript for best performance and autocompletion (Leaf provides full typings).
+- The engine is designed with memory profiling and chunk streaming in mind for large scenes.
+
+## 🌌 Summary
+
+Leaf‑js strives to make high‑fidelity, physics‑enabled, real‑time 3D simulations accessible on the Web—
+
+bridging the power of native rendering with the openness of browser platforms.
+
+It’s not just another WebGL wrapper — it’s the beginning of the WebGPU era.

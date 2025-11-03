@@ -1,54 +1,68 @@
-# Api Reference
+# Leaf Engine – API Reference
 
-This is a general reference of the inner workings of the leaf system.
+## Overview
+
+This document provides an overview of the core systems that make up the Leaf Renderer API, describing file parsing, scene management, and rendering architecture.
 
 ## Static Scenes
 
-Scenes that are not modified at runtime will write to file at buildtime.
+Static scenes are prebuilt environments that remain unchanged at runtime.
 
-> Static scenes are built to .YAML. Depending on the parser.
+At build time, they are serialized into .YAML files depending on the active parser.
 
-Static scenes are driven directly by there paser. The user supplies a file format then a parse function is run on that specific file type. After that everything required for rendering is defined within the parsers class.
+Static scenes are driven directly by their associated parser.
 
-`parse{FileType}`: parses the data from the given file, currently loads it into memory will eventually stream into chunks for more efficient processing.
+The user supplies a known file type, and the system runs the parse{FileType} function to extract its data.
 
-`getShaderString`: This is specifically for dyn scenes.
+All buffers, materials, and pipelines required for rendering are then defined within that parser class.
 
-`createBuffers`: Returns all required buffers and their required data inside of them.
 
-`createPipeline`: Creates a pipeline for the specific requirements of that file type.
+|Method |	Description|
+| ----------- | ---------------- | 
+|`parse{FileType}`| 	Parses the data from the given file. Currently loads the file entirely into memory. Will support chunk-based streaming for more efficient processing in future versions.|
+|`getShaderString`|	Returns the shader source string for dynamic scenes (used by runtime-generated pipelines)|
+|`createBuffers`|	Prepares all CPU-to-GPU buffer data such as vertex, index, and uniform buffers for rendering.|
+|`createPipeline`|Creates a GPU render pipeline with state objects that match the requirements of that specific file format.|
+|`render`|Executes draw commands for the prepared object. |
 
-`render`: Renders the object.
+## Data Responsibilities
 
-- VertexBuffer: Defined inside the parser class returned from the parsing of the file
-- UniformBuffer: Shared across all models, but unqiue due to js implemenatation of buffer.
-- MVPBuffer: The Model View Player buffer is a single defined buffer shared across a single instance.
+- `VertexBuffer`: Defined within the parser class; produced directly from parsed file data.
+- `UniformBuffer`: Shared by all models but unique per JavaScript memory reference.
+- `MVPBuffer`(Model‑View‑Projection Buffer): A shared transform buffer used by all model instances of a scene.
 
-> painpoints: Too much memory usage.
+>Pain Points:
+
+> Streaming and lazy loading (chunking) is a planned optimization.
 
 ## Rendering
 
-The end-user, can communicated with the renderer, but by default will not have access to the "Renderer".
-
-`On render`: a private `staticTransform` and public `transform` method should be used to apply static mutation from a 3rd party file and `transform` modifies the models buffer and marks model as dynamic.
-
-`On render`: a private `checkSource` reads the source file type, and should return the type of rendering context needed. If it is a web-native supported context, it will return `null`. If it is unsupported it will throw an `UnsupportedTypeError`.
-
-`OnLeafLoad`: checks all enqueued scenes for compliant pipelineDescriptor.
-
-`On initialization`: the type of renderer is just an enum, and a switch will be used to pick out "context".
-
-`On intialization`: If there is no selector provided leaf will create a `default` canvas, and call `injectDOM` which would be identical to `document.querySelector`.
-
-`On intialization`: The default canvas is a Leaf-Canvas which is specified as a web component allowing for all child scenes to read a default pipeline.
+|Stage|	Behavior|
+| ----------- | ---------------- |
+|OnRender (internal)|	Uses staticTransform() for applying static file-based modifications and transform() for runtime mutations. Any call to transform() marks the model as dynamic.|
+|checkSource()|	Inspects file type to determine which rendering context or backend to use. Returns the proper render context if supported; throws UnsupportedTypeError otherwise.|
+|onLeafLoad()|	Validates that all loaded scenes comply with required pipelineDescriptor definitions.
+|Renderer Initialization|	Uses an enum (e.g., RendererType.WEBGPU, RendererType.WEBGL2) to select and configure the rendering context.|
+|Canvas Handling|	When no canvas is provided, Leaf creates a default <leaf-canvas> web component automatically via injectDOM(). All child scenes inherit its default pipeline. |
 
 ## Event System
 
 > Required for MVP
 
-Will extend the existing event system allowing for custom events only when needed, having our own dispatch / event system is more work then actually required in this use case.
+Leaf extends the DOM Event system to enable lightweight, custom scene events without re‑implementing an internal dispatcher.
 
-> See: [This](https://developer.mozilla.org/en-US/docs/Web/Events/Creating_and_triggering_events) for extending the event system.
+Events like scene loaded, model clicked, and physics updated can dispatch through standard DOM `EventTarget` APIs.
+
+Reference:
+
+See [MDN – Creating and triggering events](https://developer.mozilla.org/en-US/docs/Web/API/Document_Object_Model/Events)
+
+Example:
+
+```js 
+const event = new CustomEvent('leaf:modelLoaded', { detail: { modelName }});
+window.dispatchEvent(event);
+```
 
 ## Profiler
 
@@ -71,23 +85,47 @@ Navigation Meshes:
 
 ## Particles
 
-Particles are more complex then traditional rendering, I want to use icospheres the user provides some level of data that they want to render then some positional data and some color. Physics based functions are not supported in its current state.
+Particle systems are currently experimental and use icosphere instancing for simplicity.
 
-Particles in thier final state wil use signals to communicate with some dispatcher about what they are going to do or are currrently doing.
+Users provide:
 
-## File formats
 
-Supported file formats in leaf currently.
+- Per‑particle color and position data,
 
-3d:
+- Optional procedural distribution setup.
 
-- [Fbx](https://code.blender.org/2013/08/fbx-binary-file-format-specification/)
-- [Obj](https://www.loc.gov/preservation/digital/formats/fdd/fdd000507.shtml)
-- [Stl]()
 
-2d:
+Physics-based particle simulation is not yet supported in the current build.
 
-- GIF
-- PNG, JPEG
-- SVG
-- [Aesprite](https://github.com/aseprite/aseprite/blob/main/docs/ase-file-specs.md)
+> Later iterations will use a signal-based dispatcher for inter>
+
+>system communication (e.g., linking emitters or dynamic light sources).
+
+## File Format Support
+
+Leaf supports multi‑format asset ingest for both 3D and 2D pipelines.
+
+### 3D
+
+|Format|	Specification|
+| ----------- | ---------------- |
+|FBX|	Autodesk FBX Specification (Blender Reference)|
+|OBJ|	Wavefront OBJ Specification – Library of Congress|
+|STL|	Stereolithography geometry format, used for lightweight mesh imports.|
+
+### 2D
+
+|Format|	Notes|
+| ----------- | ---------------- |
+|GIF|	Animated 2D texture atlas (future support)|
+|PNG / JPEG|	Standard raster formats for textures|
+|SVG	|Native vector shape rendering support (planned)| 
+|Aseprite|	Aseprite File Specification – used for sprite‑sheet animation and frame data|
+
+## Summary
+
+Leaf provides a modular, file‑centric rendering pipeline.
+
+Each parser defines its own buffers, materials, and shaders, while the renderer manages lifecycle events and profiling transparently.
+
+Upcoming improvements include memory streaming, advanced event management, and extended editor‑mode support.
