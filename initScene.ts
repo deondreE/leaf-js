@@ -1,4 +1,5 @@
 import type { SceneFactory } from './src/types/scene.types';
+import global from './src/types/global';
 
 export const initScene: SceneFactory = () => ({
   name: 'Demo Scene',

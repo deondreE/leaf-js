@@ -20,8 +20,7 @@ export default class PhysicsSystem {
   gravity: [number, number, number] = [0, -9.81, 0];
 
   /** Y-coordinate of ground-plane collision surface. */
-  groundY = -4.0;
-
+  groundY = -4;
   /** Default restitution (bounciness) when collisions occur. */
   restitution = 0.8;
 

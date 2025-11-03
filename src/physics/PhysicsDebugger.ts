@@ -12,7 +12,7 @@ export default class PhysicsDebugger {
   private vertexBuffer!: GPUBuffer;
   private vertexCount = 0;
 
-  physicsGroundY = 0;
+  physicsGroundY = -.25;
   showGround = true;
   showBodies = true;
 

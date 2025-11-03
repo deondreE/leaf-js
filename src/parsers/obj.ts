@@ -50,6 +50,8 @@ export default class WebGPUOBJParser {
   pipeline!: GPURenderPipeline;
   bindGroup!: GPUBindGroup;
   materialUniformBuffer!: GPUBuffer;
+  objects: Record<string, { vertices: Vertex[]; indices: number[] }> = {};
+  private objectDrawRanges: { name: string, start: number, count: number }[] = [];
 
   constructor(device: GPUDevice) {
     this.device = device;
@@ -63,6 +65,8 @@ export default class WebGPUOBJParser {
     this.vertices = [];
     this.indices = [];
 
+    let currentObject = 'default';
+    this.objects = { [currentObject]: { vertices: [], indices: [] } };
     const vertexMap = new Map<string, number>();
 
     try {
@@ -78,74 +82,72 @@ export default class WebGPUOBJParser {
         const prefix = parts[0];
 
         switch (prefix) {
+          case 'o': {
+            currentObject = parts[1] || `object_${Object.keys(this.objects).length}`;
+            this.objects[currentObject] = { vertices: [], indices: [] };
+            vertexMap.clear();
+            break;
+          }
           case 'v': {
-            const x = parseFloat(parts[1]);
-            const y = parseFloat(parts[2]);
-            const z = parseFloat(parts[3]);
-            positions.push({ x, y, z });
+            positions.push({
+              x: parseFloat(parts[1]),
+              y: parseFloat(parts[2]),
+              z: parseFloat(parts[3]),
+            });
             break;
           }
           case 'vt': {
-            const u = parseFloat(parts[1]);
-            const v = parseFloat(parts[2]);
-            texCoords.push({ u, v });
+            texCoords.push({
+              u: parseFloat(parts[1]),
+              v: parseFloat(parts[2]),
+            });
             break;
           }
           case 'vn': {
-            const x = parseFloat(parts[1]);
-            const y = parseFloat(parts[2]);
-            const z = parseFloat(parts[3]);
-            normals.push({ x, y, z });
+            normals.push({
+              x: parseFloat(parts[1]),
+              y: parseFloat(parts[2]),
+              z: parseFloat(parts[3]),
+            });
             break;
           }
           case 'f': {
+            const obj = this.objects[currentObject];
             const currentFaceVertexIndices: number[] = [];
 
             for (let i = 1; i < parts.length; ++i) {
               const facePart = parts[i];
-              const indices = facePart.split('/').map((n) => (n ? parseInt(n, 10) : -1));
+              const [vStr, tStr, nStr] = facePart.split('/');
 
-              const vIdx = indices[0] - 1;
-              const tIdx = indices[1] !== undefined && indices[1] !== -1 ? indices[1] - 1 : -1;
-              const nIdx = indices[2] !== undefined && indices[2] !== -1 ? indices[2] - 1 : -1;
+              const vIdx = parseInt(vStr, 10) - 1;
+              const tIdx = tStr ? parseInt(tStr, 10) - 1 : -1;
+              const nIdx = nStr ? parseInt(nStr, 10) - 1 : -1;
 
-              if (vIdx < 0 || vIdx >= positions.length) {
-                console.warn(`Invalid vertex position index: ${vIdx + 1} on line: ${trimmedLine}`);
-                continue;
-              }
-              if (tIdx !== -1 && (tIdx < 0 || tIdx >= texCoords.length)) {
-                console.warn(`Invalid texCoord index: ${tIdx + 1} on line: ${trimmedLine}`);
-                continue;
-              }
-              if (nIdx !== -1 && (nIdx < 0 || nIdx >= normals.length)) {
-                console.warn(`Invalid normal index: ${nIdx + 1} on line: ${trimmedLine}`);
-                continue;
-              }
+              if (tIdx < 0 || vIdx >= positions.length) continue;
 
               const key = `${vIdx}/${tIdx}/${nIdx}`;
-
               if (vertexMap.has(key)) {
                 currentFaceVertexIndices.push(vertexMap.get(key)!);
               } else {
-                const vertex: ObjVertex = {
+                const vertex: Vertex = {
                   position: positions[vIdx],
-                  texCoord: tIdx !== -1 ? texCoords[tIdx] : { u: 0, v: 0 },
-                  normal: nIdx !== -1 ? normals[nIdx] : { x: 0, y: 0, z: 0 },
+                  texCoord: tIdx >= 0 ? texCoords[tIdx] : { u: 0, v: 0 },
+                  normal: nIdx >= 0 ? normals[nIdx] : { x: 0, y: 0, z: 0 },
                 };
-
-                const newIndex = this.vertices.length;
-                this.vertices.push(vertex);
+                const newIndex = obj.vertices.length;
+                obj.vertices.push(vertex);
                 vertexMap.set(key, newIndex);
                 currentFaceVertexIndices.push(newIndex);
               }
             }
 
+            // Triangulate if needed
             if (currentFaceVertexIndices.length >= 3) {
-              const firstIndex = currentFaceVertexIndices[0];
-              for (let i = 1; i < currentFaceVertexIndices.length - 1; ++i) {
-                this.indices.push(firstIndex);
-                this.indices.push(currentFaceVertexIndices[i]);
-                this.indices.push(currentFaceVertexIndices[i + 1]);
+              const first = currentFaceVertexIndices[0];
+              for (let i = 0; i < currentFaceVertexIndices.length - 1; ++i) {
+                obj.indices.push(first);
+                obj.indices.push(currentFaceVertexIndices[i]);
+                obj.indices.push(currentFaceVertexIndices[i + 1]);
               }
             }
             break;
@@ -153,9 +155,32 @@ export default class WebGPUOBJParser {
         }
       }
 
+      this.vertices = [];
+      this.indices = [];
+      let vertexOffset = 0;
+      let indexOffset = 0;
+
+      for (const [name, obj] of Object.entries(this.objects)) {
+        console.log(
+          `Parsed object "${name}": ${obj.vertices.length} vertices, ${obj.indices.length} indices.`,
+        );
+        
+        this.objectDrawRanges.push({
+          name,
+          start: indexOffset,
+          count: obj.indices.length,
+        });
+        
+        this.vertices.push(...obj.vertices);
+        this.indices.push(...obj.indices.map((i) => i + vertexOffset));
+        
+        vertexOffset += obj.vertices.length;
+        indexOffset += obj.indices.length;
+      }
       console.log(
         `OBJ Parsing Complete: ${this.vertices.length} unique vertices, ${this.indices.length} indices.`,
       );
+
       await this.createBuffers();
       return true;
     } catch (e) {
@@ -379,6 +404,10 @@ export default class WebGPUOBJParser {
     passEncoder.setBindGroup(0, this.bindGroup);
     passEncoder.setVertexBuffer(0, this.vertexBuffer);
     passEncoder.setIndexBuffer(this.indexBuffer, 'uint16');
-    passEncoder.drawIndexed(this.indices.length);
+    
+    for (const obj of this.objectDrawRanges) {
+      if (obj.count <= 0) continue;
+      passEncoder.drawIndexed(obj.count, 1, obj.start, 0, 0);
+    }
   }
 }

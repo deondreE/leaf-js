@@ -39,6 +39,12 @@ class Renderer3D {
   private physicsDebugger: PhysicsDebugger | null = null;
   private showPhysicsDebug = true;
   private lastTime = 0;
+  private viewMatrix: any;
+  
+  private fpsElement: HTMLDivElement | null = null;
+  private frames: number = 0;
+  private lastFpsUpdate = 0;
+  private currentFps = 0;
 
   constructor(canvas: HTMLCanvasElement) {
     this.canvas = canvas;
@@ -92,7 +98,7 @@ class Renderer3D {
 
     this.pickTexture = this.device.createTexture({
       size: [width, height],
-      format: 'rgba8unorm',
+      format: this.format!,
       usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.COPY_SRC,
     });
     this.pickTextureView = this.pickTexture.createView();
@@ -142,6 +148,7 @@ class Renderer3D {
     mat4.identity(this.modelMatrix);
 
     // fallback (manual)
+    this.viewMatrix = viewMatrix;
     mat4.lookAt(viewMatrix, [5, 6, 15], [0, 0, 0], [0, 4, 0]);
     mat4.perspective(projectionMatrix, Math.PI / 4, width / height, 0.1, 100);
     mat4.multiply(mvpMatrix, projectionMatrix, viewMatrix);
@@ -353,17 +360,35 @@ class Renderer3D {
       materialUniformBuffer,
     );
 
-    // == Physics ==
-    const body = new RigidBody({
-      shape: 'sphere',
-      mass: 1.0,
-      position: { x: 0, y: 3, z: 0},
-      restitution: 0.8,
-      damping: 0.99,
+    this.fpsElement = document.createElement('div');
+    Object.assign(this.fpsElement.style, {
+      position: 'absolute',
+      top: '8px',
+      left: '8px',
+      color: '#00ff88',
+      fontFamily: 'monospace',
+      fontSize: '14px',
+      background: 'rgba(0, 0, 0, 0.4)',
+      padding: '2px 6px',
+      borderRadius: '4px',
+      zIndex: '999',
     });
-    this.physics.addBody(body);
-    body.applyTorque([0, 2, 0]);
-    
+    this.fpsElement.textContent = 'FPS: 0';
+    this.canvas!.parentElement?.appendChild(this.fpsElement);
+
+    let body: RigidBody | null = null;
+    // == Physics ==
+    for (const [objName, objData] of Object.entries(objParser.objects)) {
+      body = new RigidBody({
+        shape: 'box',
+        mass: 1.0,
+        position: { x: 0, y: 3, z: 0 },
+        restitution: 0.8,
+        damping: 0.99,
+      });
+      this.physics.addBody(body);
+      body.applyTorque([0, 2, 0]);
+    }
 
     // === Gizmo Setup ===
     if (this.gizmoShown) {
@@ -381,7 +406,7 @@ class Renderer3D {
       indexBuffer: objParser.getIndexBuffer(),
       shader: objParser.getShaderString(),
       // pickingColor: [100, 100, 100],
-      body: body,
+      body: body!,
       modelMatrix: mat4.create() as Float32Array,
     };
     this.models.push(model);
@@ -395,6 +420,16 @@ class Renderer3D {
 
       if (this.physicsEnabled) this.physics.update(dt);
 
+      this.frames++;
+       if (now - this.lastFpsUpdate > 1000) {
+         this.currentFps = this.frames;
+         this.frames = 0;
+         this.lastFpsUpdate = now;
+         if (this.fpsElement) {
+           this.fpsElement.textContent = `FPS: ${this.currentFps}`;
+         }
+       }
+      
       for (const mdl of this.models) {
         if (mdl.body && mdl.modelMatrix) {
           const [x, y, z] = mdl.body.position;
@@ -427,11 +462,11 @@ class Renderer3D {
       });
 
       objParser.render(pass);
-      
+
       if (this.showPhysicsDebug && this.physicsDebugger) {
         this.physicsDebugger.updateBuffers(this.physics.bodies);
         this.physicsDebugger.draw(pass);
-        this.physicsDebugger.physicsGroundY = -0.5;
+        this.physicsDebugger.physicsGroundY = -0.56;
       }
 
       if (this.gizmo && this.modelMatrix) {
@@ -450,7 +485,154 @@ class Renderer3D {
 
     console.log(`[Renderer3D] ✅ OBJ loaded: ${fileName}`);
   }
+
+  private async pickObject(mouseX: number, mouseY: number): Promise<Model | null> {
+    if (!this.device || !this.context) return null;
+    if (!this.pickTexture || !this.pickTextureView) return null;
+
+    const device = this.device as GPUDevice;
+    const context = this.context as GPUCanvasContext;
+    const width = this.canvas!.width;
+    const height = this.canvas!.height;
+
+    const pickShader = device.createShaderModule({
+      code: /* wgsl */ `
+          struct SceneUniforms {
+            mvpMatrix: mat4x4<f32>,
+          };
+          @group(0) @binding(0) var<uniform> sceneUniforms : SceneUniforms;
   
+          struct VertexInput {
+            @location(0) position: vec3<f32>,
+          };
+  
+          struct VertexOutput {
+            @builtin(position) Position : vec4<f32>,
+          };
+  
+          @vertex
+          fn vs_main(input: VertexInput) -> VertexOutput {
+            var output: VertexOutput;
+            output.Position = sceneUniforms.mvpMatrix * vec4<f32>(input.position, 1.0);
+            return output;
+          }
+  
+          @group(0) @binding(1) var<uniform> colorID : vec4<f32>;
+  
+          @fragment
+          fn fs_main() -> @location(0) vec4<f32> {
+            return colorID;
+          }
+        `,
+    });
+
+    const pickPipeline = device.createRenderPipeline({
+      layout: 'auto',
+      vertex: {
+        module: pickShader,
+        entryPoint: 'vs_main',
+        buffers: [
+          {
+            arrayStride: 8 * 4,
+            attributes: [{ shaderLocation: 0, offset: 0, format: 'float32x3' }],
+          },
+        ],
+      },
+      fragment: {
+        module: pickShader,
+        entryPoint: 'fs_main',
+        targets: [{ format: this.format! }],
+      },
+      primitive: { topology: 'triangle-list', cullMode: 'none' },
+      depthStencil: {
+        format: 'depth24plus',
+        depthWriteEnabled: true,
+        depthCompare: 'less',
+      },
+    });
+
+    const pixelBuffer = device.createBuffer({
+      size: 4,
+      usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ,
+    });
+
+    const encoder = device.createCommandEncoder();
+
+    const pass = encoder.beginRenderPass({
+      colorAttachments: [
+        {
+          view: this.pickTextureView!,
+          clearValue: { r: 0, g: 0, b: 0, a: 1 },
+          loadOp: 'clear',
+          storeOp: 'store',
+        },
+      ],
+      depthStencilAttachment: {
+        view: this.depthTexture!.createView(),
+        depthClearValue: 1,
+        depthLoadOp: 'clear',
+        depthStoreOp: 'store',
+      },
+    });
+
+    pass.setPipeline(pickPipeline);
+
+    const sceneUBO = device.createBuffer({
+      size: 64,
+      usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+    });
+    const colorUBO = device.createBuffer({
+      size: 16,
+      usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+    });
+
+    for (let i = 0; i < this.models.length; ++i) {
+      const mdl = this.models[i];
+      const colorID = [((i + 1) & 0xff) / 255, (((i + 1) >> 8) & 0xff) / 255, 0, 1];
+      device.queue.writeBuffer(colorUBO, 0, new Float32Array(colorID));
+      device.queue.writeBuffer(sceneUBO, 0, mdl.modelMatrix);
+
+      const bindGroup = device.createBindGroup({
+        layout: pickPipeline.getBindGroupLayout(0),
+        entries: [
+          { binding: 0, resource: { buffer: sceneUBO } },
+          { binding: 1, resource: { buffer: colorUBO } },
+        ],
+      });
+      
+      const mvp = new Float32Array(16);
+      mat4.multiply(mvp, this.viewMatrix ?? mdl.modelMatrix, mdl.modelMatrix);
+      device.queue.writeBuffer(sceneUBO, 0, mvp);
+
+      pass.setBindGroup(0, bindGroup);
+      pass.setVertexBuffer(0, mdl.vertexBuffer);
+      pass.setIndexBuffer(mdl.indexBuffer, 'uint16');
+      pass.drawIndexed(mdl.indexBuffer.size / 2, 1, 0, 0, 0);
+    }
+    pass.end();
+
+    encoder.copyTextureToBuffer(
+      { texture: this.pickTexture!, origin: { x: mouseX, y: height - mouseY - 1 } },
+      { buffer: pixelBuffer, bytesPerRow: 256 },
+      { width: 1, height: 1, depthOrArrayLayers: 1 },
+    );
+
+    device.queue.submit([encoder.finish()]);
+
+    await pixelBuffer.mapAsync(GPUMapMode.READ);
+    const color = new Uint8Array(pixelBuffer.getMappedRange()).slice(0, 4);
+    pixelBuffer.unmap();
+
+    const id = color[0] + (color[1] << 8);
+    const selected = this.models[id - 1] ?? null;
+    if (selected) {
+      console.log(`[Renderer3D] 🎯 Picked model: ${selected.name} (index ${id - 1})`);
+    } else {
+      console.log('[Renderer3D] No object picked.');
+    }
+
+    return selected;
+  }
 
   private async loadSTLScene(fileName: string, mvpMatrix: Float32Array) {
     const stl = new STLParser(this.device as GPUDevice);
