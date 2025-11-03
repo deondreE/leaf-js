@@ -142,6 +142,7 @@ runCode();
 ## 🧩 Supported File Types
 
 |Domain|	Formats|
+| ----------- | ---------------- | 
 |3D Models|	FBX, OBJ, STL |
 |2D Assets|	PNG, JPEG, GIF, SVG|
 |Sprite Systems|Aseprite (.ase, .aseprite)|
