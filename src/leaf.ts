@@ -6,11 +6,54 @@ import { assert } from './utils/util';
 import global from './types/global';
 import { SceneConfig, SceneFactory } from './types/scene.types';
 
+/**
+ * Global window augmentation for the Leaf engine.
+ *
+ * This interface extends the built-in `Window` object to include
+ * application-specific properties and functions used by Leaf.
+ *
+ * @remarks
+ * This extension is merged with the existing Window interface (it does not override it).
+ * To ensure safe merging, keep this inside a module file (add `export {}` at top level).
+ *
+ * @example
+ * ```ts
+ * // Usage — user code must define this before the engine initializes.
+ * leaf.initScene = () => ({
+ *   name: "Demo Scene",
+ *   camera: { type: "perspective", FOV: 45 },
+ * });
+ * ```
+ *
+ * @see https://developer.mozilla.org/docs/Web/API/Window
+ * @see Leaf Engine Dynamic Scene Reference
+ */
 declare global {
   interface Window {
-    initScene?: () => SceneFactory;
+    /**
+      * Initializes and returns a Leaf {@link SceneFactory} configuration.
+      *
+      * @returns {SceneFactory}
+      * A `SceneFactory` object describing cameras, physics, animations,
+      * and render parameters for the current scene.
+      *
+      * @remarks
+      * This function is expected to be defined by user-land code
+      * and made available before `<leaf-canvas>` or `<canvas is="leaf-js">`
+      * elements initialize.
+      *
+      * The renderer calls this automatically when `src="initScene"` is detected.
+      */
+    leaf: {
+      initScene?: () => SceneFactory;
+      start?: () => void;
+      stop?: () => void;
+      awake?: () => void;
+      update?: () => void;
+    }
   }
 }
+
 
 class Leaf extends HTMLCanvasElement {
   static observedAttributes = ['src', 'particle', 'is3D', 'static'];
@@ -48,7 +91,7 @@ class Leaf extends HTMLCanvasElement {
   }
 
   private initializeDynamicScene(factoryName: string) {
-    const sceneFactory = window.initScene;
+    const sceneFactory = window.leaf?.initScene;
 
     if (typeof sceneFactory !== 'function') {
       console.error(`[Leaf] Scene factory "${factoryName}" not found on window.`);
