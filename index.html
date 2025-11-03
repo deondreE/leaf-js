@@ -6,19 +6,10 @@
     <title>Worky</title>
   </head>
   <body>
-    <!-- FIXME: Leaf dyn scenes do not work in the current state. -->
-    <canvas is="leaf-js" src="/t.obj" width="800" height="800" id="webgpu-canvas"> </canvas>
-
-    <!-- Load external modules -->
-    <script type="module" src="/src/profiler.ts"></script>
-    <script type="module" src="/src/leaf.ts"></script>
-
-    <!-- Inline setup logic -->
-    <script type="module" lang="js">
-      // import type { SceneFactory } from './src/types/scene.types';
-      // import global from './src/types/global';
-
-      const initScene = () => ({
+    <canvas is="leaf-js" src="cdd" width="800" height="800" id="webgpu-canvas"> </canvas>
+    <script type="module">
+      // Remember that <script /> is sequential.
+      window.initScene = () => ({
         name: 'Demo Scene',
 
         camera: {
@@ -31,33 +22,52 @@
         },
 
         particle: {
-          gravity: -0.0001,
-          emitter: {
-            startPos: { x: 0, y: 0, z: 0 },
-            emissionRate: 10,
-            overTimeEffects: {
-              rotationOverTime: { x: 0, y: 0.2, z: 0 },
-              velocityOverTime: { x: 0, y: 1, z: 0 },
-              colorOverTime: {
-                startColor: { r: 1, g: 1, b: 1, a: 1 },
-                endColor: { r: 1, g: 0, b: 0, a: 1 },
-              },
-              sizeOverTime: {
-                startSize: { w: 1, h: 1 },
-                endSize: { w: 0.2, h: 0.2 },
-                interperlationType: 'linear',
-              },
-            },
-            shape: 'sphere',
-          },
-          particleCount: 5_000,
+          //   gravity: -0.0001,
+          //   emitter: {
+          //     startPos: { x: 0, y: 0, z: 0 },
+          //     emissionRate: 10,
+          //     overTimeEffects: {
+          //       rotationOverTime: { x: 0, y: 0.2, z: 0 },
+          //       velocityOverTime: { x: 0, y: 1, z: 0 },
+          //       colorOverTime: {
+          //         startColor: { r: 1, g: 1, b: 1, a: 1 },
+          //         endColor: { r: 1, g: 0, b: 0, a: 1 },
+          //       },
+          //       sizeOverTime: {
+          //         startSize: { w: 1, h: 1 },
+          //         endSize: { w: 0.2, h: 0.2 },
+          //         interperlationType: 'linear',
+          //       },
+          //     },
+          //     shape: 'sphere',
+          //   },
+          //   particleCount: 5_000,
         },
+
+        /*  objects: [
+        //   {
+        //     name: 'testMesh',
+        //     shape: 'sphere',
+        //     width: 30,
+        //     height: 30,
+        //     startPos: {x: 0, y: 0, z: 0},
+        //     color: {r: 0, g: 0, b: 0, a:0},
+        //     random_spawn_pos: true,
+        //     random_animation: {
+        //        type: 'rotation' | 'bounce' | 'collide',
+        //     },
+        //     color_random: true,
+        //     amount: 100_000_000,
+        //   },
+        // ],
+        */
 
         physics: {
           enabled: true,
           gravity: { x: 0, y: -9.81, z: 0 },
           rigidBodies: [
             {
+              // TODO: mesh: 'testMesh'
               shape: 'sphere',
               mass: 1.0,
               position: { x: 0, y: 5, z: 0 },
@@ -100,8 +110,7 @@
           ],
         },
       });
-
-      window.initScene = initScene;
     </script>
+    <script type="module" src="/src/leaf.ts"></script>
   </body>
 </html>

@@ -3,11 +3,12 @@ import ParticleRenderer from './renderer.particle';
 import Scene from './scene';
 import Camera from './camera';
 import { assert } from './utils/util';
+import global from './types/global';
 import { SceneConfig, SceneFactory } from './types/scene.types';
 
 declare global {
   interface Window {
-    [key: string]: unknown;
+    initScene?: () => SceneFactory;
   }
 }
 
@@ -40,97 +41,50 @@ class Leaf extends HTMLCanvasElement {
     if (this.checkFileType(srcAttr)) {
       this.loadFileScene(srcAttr);
     } else {
-      this.loadDynamicScene(srcAttr);
+      this.initializeDynamicScene(srcAttr);
     }
 
     this.createControls();
   }
 
   private initializeDynamicScene(factoryName: string) {
-    const global = window as Record<string, unknown>;
-    const sceneFactory = global[factoryName] as SceneFactory | undefined;
+    const sceneFactory = window.initScene;
 
-    if (!sceneFactory || typeof sceneFactory !== 'function') {
-      console.warn(`[Leaf] Scene factory "${factoryName}" is not defined or not a function.`);
-      return;
-    }
-
-    const sceneConfig: SceneConfig = sceneFactory();
-    assert(sceneConfig !== null);
-
-    if (sceneConfig.camera) {
-      const {
-        type = 'perspective',
-        FOV = 45,
-        cameraBounds = 1,
-        near = 0.1,
-        far = 100,
-        zoom = 1,
-      } = sceneConfig.camera;
-
-      const cam = new Camera(FOV, cameraBounds, near, far, zoom, type);
-      cam.setup();
-      this.camera = cam;
-    }
-
-    if (sceneConfig.particle) {
-      //this.renderer = new ParticleRenderer(this);
-      // attach particle config here when system ready
-    } else {
-      this.renderer = new Renderer(this);
-    }
-
-    // if (this.camera) this.renderer!.(this.camera);
-    this.scene = new Scene(sceneConfig, this);
-  }
-
-  private loadDynamicScene(factoryName: string) {
-    const global = window as Record<string, unknown>;
-    const sceneFactory = global[factoryName] as SceneFactory | undefined;
-
-    if (!sceneFactory || typeof sceneFactory !== 'function') {
+    if (typeof sceneFactory !== 'function') {
       console.error(`[Leaf] Scene factory "${factoryName}" not found on window.`);
       return;
     }
 
-    const config: SceneConfig = sceneFactory();
-    assert(config !== null);
+    const config: any = sceneFactory();
+    if (!config) {
+      console.error('[Leaf] Invalid SceneConfig returned by initScene().');
+      return;
+    }
 
     console.log('[Leaf] Dynamic Scene Config:', config);
 
-    // Setup camera from config
-    if (config.camera) {
-      const {
-        type = 'perspective',
-        FOV = 45,
-        cameraBounds = 1.0,
-        near = 0.1,
-        far = 100.0,
-        zoom = 1.0,
-      } = config.camera;
+    // Set up camera
+    const {
+      type = 'perspective',
+      FOV = 45,
+      cameraBounds = 1,
+      near = 0.1,
+      far = 100,
+      zoom = 1,
+    } = config.camera || {};
 
-      const cam = new Camera(FOV, cameraBounds, near, far, zoom, type);
-      cam.setup();
-      this.camera = cam;
-    }
+    const camera = new Camera(FOV, cameraBounds, near, far, zoom, type);
+    camera.setup();
+    this.camera = camera;
 
-    // Choose renderer based on particle simulation
-    if (config.particle) {
-      // this.renderer = new ParticleRenderer(this);
-      console.log('[Leaf] Using ParticleRenderer.');
-    } else {
-      this.renderer = new Renderer(this);
-    }
+    // Pick renderer
+    this.renderer = new Renderer(this);
 
-    // if (this.camera) this.renderer!.setCamera(this.camera);
-
+    // Launch scene
     this.scene = new Scene(config, this);
-    // this.scene.renderer  = this.renderer;
-
-    this.scene.awake(() => console.log('[Scene] onAwake called.'));
-    this.scene.start(() => console.log('[Scene] onStart called.'));
-    this.scene.update(() => console.log(`[Scene] onUpdate `));
-
+    this.scene.awake(() => console.log('[Scene] awake'));
+    this.scene.start(() => console.log('[Scene] start'));
+    this.scene.update(() => console.log('[Scene] update'));
     this.scene.run();
   }
 

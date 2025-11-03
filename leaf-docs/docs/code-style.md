@@ -12,8 +12,7 @@ To maintain consistency across the codebase, follow these conventions when writi
 - Syntax Requirements: - Always terminate lines with a semicolon (;). - Always include commas in multi-line object or array declarations.
   - Variable Declarations:
     - Use single-line declarations whenever possible for readability and consistency.
-    - Example: - `     const x = 1, y = 2, z = 3;
-    `
+    - Example: - `    const x = 1, y = 2, z = 3;`
   - Keyword Restrictions:
     - The `var` keyword is restricted. If absolutely necessary, ask for approval before using it.
   - Type Complexity:
