@@ -20,7 +20,7 @@
         "@webgpu/types": "^0.1.52",
         "dts-bundle-generator": "^9.5.1",
         "oxlint": "^1.24.0",
-        "prettier": "^3.5.1",
+        "prettier": "^3.6.2",
         "rollup": "^4.52.5",
         "rollup-plugin-typescript3": "^3.0.5",
         "typescript": "^5.7.3",
@@ -298,7 +298,7 @@
 
     "postcss": ["postcss@8.5.6", "", { "dependencies": { "nanoid": "^3.3.11", "picocolors": "^1.1.1", "source-map-js": "^1.2.1" } }, "sha512-3Ybi1tAuwAP9s0r1UQ2J4n5Y0G05bJkpUIO0/bI9MhwmD70S5aTWbXGBwxHrelT+XM1k6dM0pk+SwNkpTRN7Pg=="],
 
-    "prettier": ["prettier@https://registry.npmjs.org/prettier/-/prettier-3.5.1.tgz", {}],
+    "prettier": ["prettier@3.6.2", "", { "bin": { "prettier": "bin/prettier.cjs" } }, "sha512-I7AIg5boAr5R0FFtJ6rCfD+LFsWHp81dolrFD8S79U9tb8Az2nGrJncnMSnys+bpQJfRUzqs9hnA81OAA3hCuQ=="],
 
     "randombytes": ["randombytes@https://registry.npmjs.org/randombytes/-/randombytes-2.1.0.tgz", { "dependencies": { "safe-buffer": "^5.1.0" } }],
 

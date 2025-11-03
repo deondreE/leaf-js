@@ -16,14 +16,13 @@ The user supplies a known file type, and the system runs the parse{FileType} fun
 
 All buffers, materials, and pipelines required for rendering are then defined within that parser class.
 
-
-|Method |	Description|
-| ----------- | ---------------- | 
-|`parse{FileType}`| 	Parses the data from the given file. Currently loads the file entirely into memory. Will support chunk-based streaming for more efficient processing in future versions.|
-|`getShaderString`|	Returns the shader source string for dynamic scenes (used by runtime-generated pipelines)|
-|`createBuffers`|	Prepares all CPU-to-GPU buffer data such as vertex, index, and uniform buffers for rendering.|
-|`createPipeline`|Creates a GPU render pipeline with state objects that match the requirements of that specific file format.|
-|`render`|Executes draw commands for the prepared object. |
+| Method            | Description                                                                                                                                                              |
+| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `parse{FileType}` | Parses the data from the given file. Currently loads the file entirely into memory. Will support chunk-based streaming for more efficient processing in future versions. |
+| `getShaderString` | Returns the shader source string for dynamic scenes (used by runtime-generated pipelines)                                                                                |
+| `createBuffers`   | Prepares all CPU-to-GPU buffer data such as vertex, index, and uniform buffers for rendering.                                                                            |
+| `createPipeline`  | Creates a GPU render pipeline with state objects that match the requirements of that specific file format.                                                               |
+| `render`          | Executes draw commands for the prepared object.                                                                                                                          |
 
 ## Data Responsibilities
 
@@ -31,19 +30,19 @@ All buffers, materials, and pipelines required for rendering are then defined wi
 - `UniformBuffer`: Shared by all models but unique per JavaScript memory reference.
 - `MVPBuffer`(Model‑View‑Projection Buffer): A shared transform buffer used by all model instances of a scene.
 
->Pain Points:
+> Pain Points:
 
 > Streaming and lazy loading (chunking) is a planned optimization.
 
 ## Rendering
 
-|Stage|	Behavior|
-| ----------- | ---------------- |
-|OnRender (internal)|	Uses staticTransform() for applying static file-based modifications and transform() for runtime mutations. Any call to transform() marks the model as dynamic.|
-|checkSource()|	Inspects file type to determine which rendering context or backend to use. Returns the proper render context if supported; throws UnsupportedTypeError otherwise.|
-|onLeafLoad()|	Validates that all loaded scenes comply with required pipelineDescriptor definitions.
-|Renderer Initialization|	Uses an enum (e.g., RendererType.WEBGPU, RendererType.WEBGL2) to select and configure the rendering context.|
-|Canvas Handling|	When no canvas is provided, Leaf creates a default <leaf-canvas> web component automatically via injectDOM(). All child scenes inherit its default pipeline. |
+| Stage                   | Behavior                                                                                                                                                          |
+| ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| OnRender (internal)     | Uses staticTransform() for applying static file-based modifications and transform() for runtime mutations. Any call to transform() marks the model as dynamic.    |
+| checkSource()           | Inspects file type to determine which rendering context or backend to use. Returns the proper render context if supported; throws UnsupportedTypeError otherwise. |
+| onLeafLoad()            | Validates that all loaded scenes comply with required pipelineDescriptor definitions.                                                                             |
+| Renderer Initialization | Uses an enum (e.g., RendererType.WEBGPU, RendererType.WEBGL2) to select and configure the rendering context.                                                      |
+| Canvas Handling         | When no canvas is provided, Leaf creates a default <leaf-canvas> web component automatically via injectDOM(). All child scenes inherit its default pipeline.      |
 
 ## Event System
 
@@ -59,8 +58,8 @@ See [MDN – Creating and triggering events](https://developer.mozilla.org/en-US
 
 Example:
 
-```js 
-const event = new CustomEvent('leaf:modelLoaded', { detail: { modelName }});
+```js
+const event = new CustomEvent('leaf:modelLoaded', { detail: { modelName } });
 window.dispatchEvent(event);
 ```
 
@@ -89,17 +88,15 @@ Particle systems are currently experimental and use icosphere instancing for sim
 
 Users provide:
 
-
 - Per‑particle color and position data,
 
 - Optional procedural distribution setup.
-
 
 Physics-based particle simulation is not yet supported in the current build.
 
 > Later iterations will use a signal-based dispatcher for inter>
 
->system communication (e.g., linking emitters or dynamic light sources).
+> system communication (e.g., linking emitters or dynamic light sources).
 
 ## File Format Support
 
@@ -107,20 +104,20 @@ Leaf supports multi‑format asset ingest for both 3D and 2D pipelines.
 
 ### 3D
 
-|Format|	Specification|
-| ----------- | ---------------- |
-|FBX|	Autodesk FBX Specification (Blender Reference)|
-|OBJ|	Wavefront OBJ Specification – Library of Congress|
-|STL|	Stereolithography geometry format, used for lightweight mesh imports.|
+| Format | Specification                                                         |
+| ------ | --------------------------------------------------------------------- |
+| FBX    | Autodesk FBX Specification (Blender Reference)                        |
+| OBJ    | Wavefront OBJ Specification – Library of Congress                     |
+| STL    | Stereolithography geometry format, used for lightweight mesh imports. |
 
 ### 2D
 
-|Format|	Notes|
-| ----------- | ---------------- |
-|GIF|	Animated 2D texture atlas (future support)|
-|PNG / JPEG|	Standard raster formats for textures|
-|SVG	|Native vector shape rendering support (planned)| 
-|Aseprite|	Aseprite File Specification – used for sprite‑sheet animation and frame data|
+| Format     | Notes                                                                        |
+| ---------- | ---------------------------------------------------------------------------- |
+| GIF        | Animated 2D texture atlas (future support)                                   |
+| PNG / JPEG | Standard raster formats for textures                                         |
+| SVG        | Native vector shape rendering support (planned)                              |
+| Aseprite   | Aseprite File Specification – used for sprite‑sheet animation and frame data |
 
 ## Summary
 

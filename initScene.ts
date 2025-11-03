@@ -38,7 +38,7 @@ export const initScene: SceneFactory = () => ({
 
   physics: {
     enabled: true,
-    gravity: { x: 0, y: -9.81, z: 0 }, 
+    gravity: { x: 0, y: -9.81, z: 0 },
     rigidBodies: [
       {
         shape: 'sphere',

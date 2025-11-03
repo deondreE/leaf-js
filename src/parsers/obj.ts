@@ -51,7 +51,7 @@ export default class WebGPUOBJParser {
   bindGroup!: GPUBindGroup;
   materialUniformBuffer!: GPUBuffer;
   objects: Record<string, { vertices: Vertex[]; indices: number[] }> = {};
-  private objectDrawRanges: { name: string, start: number, count: number }[] = [];
+  private objectDrawRanges: { name: string; start: number; count: number }[] = [];
 
   constructor(device: GPUDevice) {
     this.device = device;
@@ -164,16 +164,16 @@ export default class WebGPUOBJParser {
         console.log(
           `Parsed object "${name}": ${obj.vertices.length} vertices, ${obj.indices.length} indices.`,
         );
-        
+
         this.objectDrawRanges.push({
           name,
           start: indexOffset,
           count: obj.indices.length,
         });
-        
+
         this.vertices.push(...obj.vertices);
         this.indices.push(...obj.indices.map((i) => i + vertexOffset));
-        
+
         vertexOffset += obj.vertices.length;
         indexOffset += obj.indices.length;
       }
@@ -404,7 +404,7 @@ export default class WebGPUOBJParser {
     passEncoder.setBindGroup(0, this.bindGroup);
     passEncoder.setVertexBuffer(0, this.vertexBuffer);
     passEncoder.setIndexBuffer(this.indexBuffer, 'uint16');
-    
+
     for (const obj of this.objectDrawRanges) {
       if (obj.count <= 0) continue;
       passEncoder.drawIndexed(obj.count, 1, obj.start, 0, 0);

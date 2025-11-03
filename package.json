@@ -46,7 +46,7 @@
     "@webgpu/types": "^0.1.52",
     "dts-bundle-generator": "^9.5.1",
     "oxlint": "^1.24.0",
-    "prettier": "^3.5.1",
+    "prettier": "^3.6.2",
     "rollup": "^4.52.5",
     "rollup-plugin-typescript3": "^3.0.5",
     "typescript": "^5.7.3",

@@ -40,7 +40,7 @@ class Renderer3D {
   private showPhysicsDebug = true;
   private lastTime = 0;
   private viewMatrix: any;
-  
+
   private fpsElement: HTMLDivElement | null = null;
   private frames: number = 0;
   private lastFpsUpdate = 0;
@@ -421,15 +421,15 @@ class Renderer3D {
       if (this.physicsEnabled) this.physics.update(dt);
 
       this.frames++;
-       if (now - this.lastFpsUpdate > 1000) {
-         this.currentFps = this.frames;
-         this.frames = 0;
-         this.lastFpsUpdate = now;
-         if (this.fpsElement) {
-           this.fpsElement.textContent = `FPS: ${this.currentFps}`;
-         }
-       }
-      
+      if (now - this.lastFpsUpdate > 1000) {
+        this.currentFps = this.frames;
+        this.frames = 0;
+        this.lastFpsUpdate = now;
+        if (this.fpsElement) {
+          this.fpsElement.textContent = `FPS: ${this.currentFps}`;
+        }
+      }
+
       for (const mdl of this.models) {
         if (mdl.body && mdl.modelMatrix) {
           const [x, y, z] = mdl.body.position;
@@ -599,7 +599,7 @@ class Renderer3D {
           { binding: 1, resource: { buffer: colorUBO } },
         ],
       });
-      
+
       const mvp = new Float32Array(16);
       mat4.multiply(mvp, this.viewMatrix ?? mdl.modelMatrix, mdl.modelMatrix);
       device.queue.writeBuffer(sceneUBO, 0, mvp);

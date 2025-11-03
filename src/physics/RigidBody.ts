@@ -70,19 +70,13 @@ export default class RigidBody {
     this.shape = config.shape;
     this.mass = config.mass;
     this.position = [config.position.x, config.position.y, config.position.z];
-    this.velocity = [
-      config.velocity?.x ?? 0,
-      config.velocity?.y ?? 0,
-      config.velocity?.z ?? 0,
-    ];
+    this.velocity = [config.velocity?.x ?? 0, config.velocity?.y ?? 0, config.velocity?.z ?? 0];
     this.acceleration = [0, 0, 0];
     this.restitution = config.restitution ?? 0.8;
     this.damping = config.damping ?? 0.995;
     this.friction = config.friction ?? 0.5;
     this.radius = config.radius ?? 0.5;
-    this.size = config.size
-      ? [config.size.x, config.size.y, config.size.z]
-      : undefined;
+    this.size = config.size ? [config.size.x, config.size.y, config.size.z] : undefined;
 
     // Static bodies ignore gravity (mass = 0)
     this.useGravity = config.mass > 0;
@@ -140,9 +134,7 @@ export default class RigidBody {
       damping: this.damping,
       friction: this.friction,
       radius: this.radius,
-      size: this.size
-        ? { x: this.size[0], y: this.size[1], z: this.size[2] }
-        : undefined,
+      size: this.size ? { x: this.size[0], y: this.size[1], z: this.size[2] } : undefined,
     });
     return clone;
   }

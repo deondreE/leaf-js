@@ -83,7 +83,7 @@ class Leaf extends HTMLCanvasElement {
     // if (this.camera) this.renderer!.(this.camera);
     this.scene = new Scene(sceneConfig, this);
   }
-  
+
   private loadDynamicScene(factoryName: string) {
     const global = window as Record<string, unknown>;
     const sceneFactory = global[factoryName] as SceneFactory | undefined;
@@ -133,20 +133,20 @@ class Leaf extends HTMLCanvasElement {
 
     this.scene.run();
   }
-  
+
   private loadFileScene(src: string) {
-      console.log(`[Leaf] Loading static scene from file: ${src}`);
-  
-      this.renderer = new Renderer(this);
-  
-      const aspect = this.width / this.height;
-      const camera = new Camera(45, aspect, 0.1, 100.0, 1.0, 'perspective');
-      camera.setup();
-  
-      this.camera = camera;
-      this.renderer.setCamera(camera);
-      this.renderer.init(src);
-    }
+    console.log(`[Leaf] Loading static scene from file: ${src}`);
+
+    this.renderer = new Renderer(this);
+
+    const aspect = this.width / this.height;
+    const camera = new Camera(45, aspect, 0.1, 100.0, 1.0, 'perspective');
+    camera.setup();
+
+    this.camera = camera;
+    this.renderer.setCamera(camera);
+    this.renderer.init(src);
+  }
 
   private createControls() {
     const controls = document.createElement('div');

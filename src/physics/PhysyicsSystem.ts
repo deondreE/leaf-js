@@ -227,8 +227,7 @@ export default class PhysicsSystem {
           body.position[1] = this.groundY + r;
 
           // Reverse upward momentum.
-          if (body.velocity[1] < 0)
-            body.velocity[1] *= -(body.restitution ?? this.restitution);
+          if (body.velocity[1] < 0) body.velocity[1] *= -(body.restitution ?? this.restitution);
 
           // Apply energy loss via damping and tangential friction.
           vec3.scale(body.velocity, body.velocity, body.damping);
@@ -242,8 +241,7 @@ export default class PhysicsSystem {
         const bottom = body.position[1] - h;
         if (bottom < this.groundY) {
           body.position[1] = this.groundY + h;
-          if (body.velocity[1] < 0)
-            body.velocity[1] *= -(body.restitution ?? this.restitution);
+          if (body.velocity[1] < 0) body.velocity[1] *= -(body.restitution ?? this.restitution);
           vec3.scale(body.velocity, body.velocity, body.damping);
           vec3.scale(body.angularVelocity, body.angularVelocity, body.damping);
         }

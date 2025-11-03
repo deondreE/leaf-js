@@ -13,37 +13,32 @@ Leaf’s ultimate goal is to make web‑based games as capable as native desktop
 Leaf is designed around one core philosophy: power and simplicity should coexist.
 
 Creating a high‑fidelity 3D world shouldn’t require pages of boilerplate boilerplate WebGL code. Leaf builds an abstract rendering layer that intelligently handles low‑level GPU optimization while keeping your experience as modern and developer‑friendly as possible.
- 
+
 # 🚀 Future Goals
 
 These systems are designed to integrate tightly, providing smooth coordination between rendering, physics, lighting, and animation—targeting true high frame‑rate realism `(~1080p at 120 FPS)`.
 
 1. Advanced Lighting & Rendering
-    - Not just drawing triangles—lighting defines realism.
-    - Leaf will feature physically‑based lighting and shading models to bring natural illumination, reflections, and atmospheric depth to the web.
+   - Not just drawing triangles—lighting defines realism.
+   - Leaf will feature physically‑based lighting and shading models to bring natural illumination, reflections, and atmospheric depth to the web.
 
 2. Physics‑Based Interactions
    - Real‑world physics make digital worlds believable.
    - Leaf’s physics engine will synchronize with rendering and animation systems to produce dynamically accurate and visually cohesive scenes.
 
 3. High-Performance Optimization:
-    - A prioritized development goal is sustaining 1080p @ 120 FPS through:
-        - Persistent GPU buffer mapping
-        
-        - Multi‑threaded asset streaming
-        
-        - Scene batched‑rendering and culling
-        
-        - Adaptive LOD (Level of Detail) pipelines
+   - A prioritized development goal is sustaining 1080p @ 120 FPS through:
+     - Persistent GPU buffer mapping
+     - Multi‑threaded asset streaming
+     - Scene batched‑rendering and culling
+     - Adaptive LOD (Level of Detail) pipelines
 
 4. Extensible Plugin System:
-    - Leaf will support a plugin architecture for expanding its capabilities:
-        - Custom rendering pipelines
-        
-        - Specialized lighting or shadow engines
-        
-        - External physics or AI systems
-    - This flexibility allows both developers and studios to tailor Leaf for their specific production needs.
+   - Leaf will support a plugin architecture for expanding its capabilities:
+     - Custom rendering pipelines
+     - Specialized lighting or shadow engines
+     - External physics or AI systems
+   - This flexibility allows both developers and studios to tailor Leaf for their specific production needs.
 
 ## 🧠 Core Engine Features
 
@@ -87,9 +82,7 @@ const Simulation = () => {
 const runCode = () => {
   Leaf.scene({
     name: 'mainScene',
-    subscenes: [
-      { simulation: Simulation },
-    ],
+    subscenes: [{ simulation: Simulation }],
     models: {
       cube: {
         name: 'mainCube',
@@ -121,32 +114,32 @@ runCode();
 
 ## 🧱 Concept Breakdown
 
-|Feature|	Description|
-| ----------- | ---------------- | 
-|Leaf.scene()|	Creates or loads a new scene context.|
-|models|	Defines meshes, geometry, or imported assets.|
-|subscenes|	References child scenes or layered simulations.|
-|animations|Describes time‑based transformations over scene elements.|
-|onUpdate()|	Custom per‑frame logic with direct access to the render thread.|
+| Feature      | Description                                                     |
+| ------------ | --------------------------------------------------------------- |
+| Leaf.scene() | Creates or loads a new scene context.                           |
+| models       | Defines meshes, geometry, or imported assets.                   |
+| subscenes    | References child scenes or layered simulations.                 |
+| animations   | Describes time‑based transformations over scene elements.       |
+| onUpdate()   | Custom per‑frame logic with direct access to the render thread. |
 
 ## ⚒️ Development Philosophy
 
-| Principle| 	Description| 
-| ----------- | ---------------- | 
-|Declarative First|	Describe what you want rendered — Leaf handles how.|
-|Low‑Level Access| When Needed	Direct access to pipelines or buffers is always possible.|
-|Zero‑Boilerplate Startup|	Leaf.scene() should be enough to start a new environment.|
-|Native‑Quality Web Performance|Aim for full parity with desktop APIs like Vulkan/DirectX.|
-|Open Design|	Engine internals are modular, making extension and experimentation easy.|
+| Principle                      | Description                                                              |
+| ------------------------------ | ------------------------------------------------------------------------ |
+| Declarative First              | Describe what you want rendered — Leaf handles how.                      |
+| Low‑Level Access               | When Needed Direct access to pipelines or buffers is always possible.    |
+| Zero‑Boilerplate Startup       | Leaf.scene() should be enough to start a new environment.                |
+| Native‑Quality Web Performance | Aim for full parity with desktop APIs like Vulkan/DirectX.               |
+| Open Design                    | Engine internals are modular, making extension and experimentation easy. |
 
 ## 🧩 Supported File Types
 
-|Domain|	Formats|
-| ----------- | ---------------- | 
-|3D Models|	FBX, OBJ, STL |
-|2D Assets|	PNG, JPEG, GIF, SVG|
-|Sprite Systems|Aseprite (.ase, .aseprite)|
-|Scene|Definitions	YAML|
+| Domain         | Formats                    |
+| -------------- | -------------------------- |
+| 3D Models      | FBX, OBJ, STL              |
+| 2D Assets      | PNG, JPEG, GIF, SVG        |
+| Sprite Systems | Aseprite (.ase, .aseprite) |
+| Scene          | Definitions YAML           |
 
 ## 🧭 Quick Notes
 

@@ -13,11 +13,11 @@ The usage of the [web-component](https://developer.mozilla.org/en-US/docs/Web/AP
   </body>
   <script lang="ts">
     import * from 'leaf';
-  
+
     function initScene(): SceneFactory {
-      
+
     }
-    
+
     window.initScene = initScene()
   </script>
 </html>
