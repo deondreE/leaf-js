@@ -8,8 +8,8 @@ const isProd = process.env.NODE_ENV === "production";
 module.exports = {
   input: "src/index.ts",
   output: [
-    { file: "dist/bundle.esm.js", format: "esm", sourcemap: !isProd },
-    { file: "dist/bundle.cjs.js", format: "cjs", sourcemap: !isProd },
+    { file: "dist/index.esm.js", format: "esm", sourcemap: !isProd },
+    { file: "dist/index.cjs.js", format: "cjs", sourcemap: !isProd },
   ],
   plugins: [
     nodeResolve({

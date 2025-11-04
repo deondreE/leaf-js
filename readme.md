@@ -61,29 +61,51 @@ These systems are designed to integrate tightly, providing smooth coordination b
 > 🧪 Prototype concept — not yet implemented.
 
 ```html
-<canvas is="leaf-js" src="initScene" width="800" height="800" id="webgpu-canvas"> </canvas>
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Leaf ESM Public Test</title>
+    <style></style>
+  </head>
+  <body>
+    <canvas
+      is="leaf-js"
+      src="initScene"
+      width="800"
+      height="800"
+      id="webgpu-canvas"
+    ></canvas>
+    <script type="module">
+      window.leaf = window.leaf || {};
+      window.leaf.createScene = () => ({
+        name: 'Demo Scene',
+        objects: [
+          {
+            shape: 'sphere',
+            scale: { width: 5, height: 5, depth: 5 },
+            color: {
+              r: 255,
+              g: 255,
+              b: 255,
+              a: 255,
+            },
+          },
+        ],
+      });
+    </script>
+    <script type="module">
+      import 'leaf';
+    </script>
+    <!-- Whichever you want -->
+    <!-- <script
+      type="module"
+      src="https://cdn.jsdelivr.net/npm/leaf@2.0.9/dist/index.esm.js"
+    ></script> -->
+  </body>
+</html>
 
-<script lang="ts" type="module">
-import Leaf from 'leaf';
-
-window.leaf.initScene = () => ({
-  name 'Test scene',
-  objects: [
-    {
-      name: 'testMesh',
-      shape: 'box',
-      scale: {
-        width: 20,
-        height: 20,
-        depth: 20,
-      },
-      color: { r: 255, g: 0, b: 255, a: 255 },
-      rotation: { x: 0, y: 45, z: 45 },
-      amount: 1,
-    },
-  ],
-});
-</script>
 ```
 
 ## ⚒️ Development Philosophy
