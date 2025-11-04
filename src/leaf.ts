@@ -165,7 +165,7 @@ class Leaf extends HTMLCanvasElement {
       const color = obj.color_random
         ? { r: Math.random(), g: Math.random(), b: Math.random(), a: 1 }
         : (obj.color ?? {
-            r: 1,
+            r: 220,
             g: 1,
             b: 1,
             a: 1,

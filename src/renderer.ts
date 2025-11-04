@@ -16,6 +16,7 @@ import RigidBody from "./physics/RigidBody";
 import PhysicsSystem from "./physics/PhysyicsSystem";
 import PhysicsDebugger from "./physics/PhysicsDebugger";
 import { extractRotation } from "./matrixMath";
+import { unlink } from "fs";
 
 /** > Currently Supports static file definitions. */
 class Renderer3D {
@@ -736,7 +737,7 @@ class Renderer3D {
 
   async createPrimitive(
     shape: "box" | "sphere" | "plane",
-    color: [number, number, number, number] = [1, 1, 1, 1],
+    color: [number, number, number, number] = [0.24, 0.24, 0.24, 1],
   ) {
     if (!this.device || !this.context)
       throw new Error("Renderer not initialized");
@@ -755,11 +756,15 @@ class Renderer3D {
         vertices = new Float32Array([
           -1, -1, 1, 0, 0, 1, 1, -1, 1, 0, 0, 1, 1, 1, 1, 0, 0, 1, -1, 1, 1, 0,
           0, 1, -1, -1, -1, 0, 0, -1, 1, -1, -1, 0, 0, -1, 1, 1, -1, 0, 0, -1,
-          -1, 1, -1, 0, 0, -1,
+          -1, 1, -1, 0, 0, -1, 1, -1, -1, 1, 0, 0, 1, -1, 1, 1, 0, 0, 1, 1, 1,
+          1, 0, 0, 1, 1, -1, 1, 0, 0, -1, -1, -1, -1, 0, 0, -1, -1, 1, -1, 0, 0,
+          -1, 1, 1, -1, 0, 0, -1, 1, -1, -1, 0, 0, -1, 1, 1, 0, 1, 0, 1, 1, 1,
+          0, 1, 0, 1, 1, -1, 0, 1, 0, -1, 1, -1, 0, 1, 0, -1, -1, 1, 0, -1, 0,
+          1, -1, 1, 0, -1, 0, 1, -1, -1, 0, -1, 0, -1, -1, -1, 0, -1, 0,
         ]);
         indices = new Uint16Array([
-          0, 1, 2, 0, 2, 3, 4, 5, 6, 4, 6, 7, 4, 5, 1, 4, 1, 0, 7, 6, 2, 7, 2,
-          3, 5, 6, 2, 5, 2, 1, 4, 7, 3, 4, 3, 0,
+          0, 1, 2, 0, 2, 3, 4, 5, 6, 4, 6, 7, 8, 9, 10, 8, 10, 11, 12, 13, 14,
+          12, 14, 15, 16, 17, 18, 16, 18, 19, 20, 21, 22, 20, 22, 23,
         ]);
         break;
       case "sphere":
@@ -865,37 +870,54 @@ class Renderer3D {
     mat4.multiply(mvpMatrix, projMatrix, viewMatrix);
     mat4.multiply(mvpMatrix, mvpMatrix, modelMatrix);
 
+    const lightDir = new Float32Array([0.4, 0.7, 0.3, 0.0]);
+    const lightColor = new Float32Array([1.0, 1.0, 1.0, 0.0]);
+
+    const uniformSize = 64 + 16 + 16 + 16;
+
     const uniformBuffer = device.createBuffer({
-      size: 64 + 16,
+      size: uniformSize,
       usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
     });
     device.queue.writeBuffer(uniformBuffer, 0, mvpMatrix as Float32Array);
     device.queue.writeBuffer(uniformBuffer, 64, new Float32Array(color));
+    device.queue.writeBuffer(uniformBuffer, 80, lightDir);
+    device.queue.writeBuffer(uniformBuffer, 96, lightColor);
 
     const shader = device.createShaderModule({
       code: `
         struct SceneUniforms {
           mvpMatrix: mat4x4<f32>,
-          color: vec4<f32>,
+          baseColor: vec4<f32>,
+          lightDir: vec4<f32>,
+          lightColor: vec4<f32>,
         };
         @group(0) @binding(0) var<uniform> scene : SceneUniforms;
       
         struct VSOut {
           @builtin(position) Position : vec4<f32>,
-          @location(0) vColor : vec4<f32>,
+          @location(0) normal : vec3<f32>,
         };
         
         @vertex
         fn vs_main(@location(0) pos: vec3<f32>, @location(1) norm: vec3<f32>) -> VSOut {
           var out: VSOut;
           out.Position = scene.mvpMatrix * vec4<f32>(pos, 1.0);
-          out.vColor = scene.color;
+          out.normal = normalize(norm);
           return out;
          }
          
          @fragment
-         fn fs_main(in: VSOut) -> @location(0) vec4<f32> {
-          return in.vColor;
+         fn fs_main(input: VSOut) -> @location(0) vec4<f32> {
+            var n = normalize(input.normal);
+            var l = normalize(scene.lightDir.xyz);
+            
+            let diff = max(dot(n,l), 0.0);
+            let ambient = 0.15;
+            let brightness = ambient + diff;
+            
+            let rgb = scene.baseColor.rbg * scene.lightColor.rgb * brightness;
+         return vec4<f32>(rgb, scene.baseColor.a);
          }`,
     });
 
