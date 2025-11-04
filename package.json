@@ -1,6 +1,6 @@
 {
   "name": "leaf",
-  "version": "2.0.3",
+  "version": "2.0.4",
   "type": "module",
   "description": "A performant 3d javascript library",
   "source": "src/index.ts",

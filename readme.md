@@ -60,67 +60,31 @@ These systems are designed to integrate tightly, providing smooth coordination b
 
 > 🧪 Prototype concept — not yet implemented.
 
-```typescript
-import Leaf from 'leaf-js';
+```html
+<canvas is="leaf-js" src="initScene" width="800" height="800" id="webgpu-canvas"> </canvas>
 
-// Define a 3D Simulation
-const Simulation = () => {
-  Leaf.scene({
-    name: 'simulation',
-    models: {
-      // Write custom code directly in the update loop to modify rendering.
-      waterParticle: {
-        onUpdate: () => {
-          // Example: update vertex positions, physics, or color states here.
-        },
-      },
-    },
-  });
-};
+<script lang="ts" type="module">
+import Leaf from 'leaf';
 
-// Entry Point
-const runCode = () => {
-  Leaf.scene({
-    name: 'mainScene',
-    subscenes: [{ simulation: Simulation }],
-    models: {
-      cube: {
-        name: 'mainCube',
-        x: 0,
-        y: 0,
-        w: 100,
-        h: 100,
+window.leaf.initScene = () => ({
+  name 'Test scene',
+  objects: [
+    {
+      name: 'testMesh',
+      shape: 'box',
+      scale: {
+        width: 20,
+        height: 20,
+        depth: 20,
       },
-      importedModel: {
-        // Model loading pipeline: supports FBX, OBJ, STL etc.
-        location: 'models/model.fbx',
-        hasAnimation: true,
-        startAnimation: true,
-      },
+      color: { r: 255, g: 0, b: 255, a: 255 },
+      rotation: { x: 0, y: 45, z: 45 },
+      amount: 1,
     },
-    animations: {
-      rotation: {
-        mainCube: {
-          x: -90,
-          time: '1s',
-        },
-      },
-    },
-  });
-};
-
-runCode();
+  ],
+});
+</script>
 ```
-
-## 🧱 Concept Breakdown
-
-| Feature      | Description                                                     |
-| ------------ | --------------------------------------------------------------- |
-| Leaf.scene() | Creates or loads a new scene context.                           |
-| models       | Defines meshes, geometry, or imported assets.                   |
-| subscenes    | References child scenes or layered simulations.                 |
-| animations   | Describes time‑based transformations over scene elements.       |
-| onUpdate()   | Custom per‑frame logic with direct access to the render thread. |
 
 ## ⚒️ Development Philosophy
 
