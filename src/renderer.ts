@@ -738,9 +738,9 @@ class Renderer3D {
   }
 
   async createPrimitive(
-    shape: "box" | "sphere" | "plane",
+    shape: "box" | "sphere" | "plane" | "torus" | "cone",
     color: [number, number, number, number] = [0.24, 0.24, 0.24, 1],
-    instanceCount: number = 100,
+    instanceCount: number = 1,
   ) {
     if (!this.device || !this.context)
       throw new Error("Renderer not initialized");
@@ -769,7 +769,7 @@ class Renderer3D {
           12, 14, 15, 16, 17, 18, 16, 18, 19, 20, 21, 22, 20, 22, 23,
         ]);
         break;
-      case "sphere":
+      case "sphere": {
         const latBands = 16;
         const longBands = 16;
         const radius = 1;
@@ -815,7 +815,8 @@ class Renderer3D {
         vertices = interleaved;
         indices = new Uint16Array(idx);
         break;
-      case "plane":
+      }
+      case "plane": {
         vertices = new Float32Array([
           -1, 0, -1, 0, 1, 0, 1, 0, -1, 0, 1, 0, 1, 0, 1, 0, 1, 0, -1, 0, 1, 0,
           0,
@@ -823,6 +824,65 @@ class Renderer3D {
 
         indices = new Uint16Array([0, 1, 2, 0, 2, 3]);
         break;
+      }
+      case "torus": {
+        const segmentsR = 64; // main ring divisions
+        const segmentsT = 32; // tube divisions
+        const R = 8; // major radius  (distance from center)
+        const r = 2; // minor radius  (tube thickness)
+
+        const positions: number[] = [];
+        const normals: number[] = [];
+        const indicesArr: number[] = [];
+
+        // vertices + normals
+        for (let i = 0; i <= segmentsR; ++i) {
+          const u = (i / segmentsR) * Math.PI * 2;
+          const cosU = Math.cos(u);
+          const sinU = Math.sin(u);
+
+          for (let j = 0; j <= segmentsT; ++j) {
+            const v = (j / segmentsT) * Math.PI * 2;
+            const cosV = Math.cos(v);
+            const sinV = Math.sin(v);
+
+            const x = (R + r * cosV) * cosU;
+            const y = r * sinV;
+            const z = (R + r * cosV) * sinU;
+            positions.push(x, y, z);
+
+            const nx = cosU * cosV;
+            const ny = sinV;
+            const nz = sinU * cosV;
+            normals.push(nx, ny, nz);
+          }
+        }
+
+        for (let i = 0; i < segmentsR; ++i) {
+          for (let j = 0; j < segmentsT; ++j) {
+            const first = i * (segmentsT + 1) + j;
+            const second = (i + 1) * (segmentsT + 1) + j;
+
+            indicesArr.push(first, second, first + 1);
+            indicesArr.push(second, second + 1, first + 1);
+          }
+        }
+
+        // interleave position + normal
+        const interleaved = new Float32Array(positions.length * 2);
+        for (let i = 0, j = 0; i < positions.length / 3; ++i) {
+          interleaved.set(positions.slice(i * 3, i * 3 + 3), j);
+          interleaved.set(normals.slice(i * 3, i * 3 + 3), j + 3);
+          j += 6;
+        }
+
+        vertices = interleaved;
+        indices = new Uint16Array(indicesArr);
+        break;
+      }
+      case "cone": {
+        break;
+      }
     }
 
     const vbuf = device.createBuffer({

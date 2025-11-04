@@ -179,6 +179,12 @@ class Leaf extends HTMLCanvasElement {
         case "sphere":
           await this.renderer?.createPrimitive("sphere");
           break;
+        case "torus":
+          await this.renderer?.createPrimitive("torus");
+          break;
+        case "cone":
+          await this.renderer?.createPrimitive("cone");
+          break;
       }
 
       if (obj.random_animation) {

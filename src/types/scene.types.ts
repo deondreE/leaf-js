@@ -221,7 +221,7 @@ export type RandomAnimationType = "rotation" | "bounce" | "collide";
 
 export interface SceneObject {
   name?: string;
-  shape: "sphere" | "box" | "plane" | "capsule";
+  shape: "sphere" | "box" | "plane" | "capsule" | "torus" | "rope" | "cone";
   width?: number;
   height?: number;
   depth?: number;
