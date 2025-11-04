@@ -18,6 +18,7 @@ import PhysicsDebugger from "./physics/PhysicsDebugger";
 import { extractRotation } from "./matrixMath";
 import { Vec3 } from "wgpu-matrix";
 import { isInt8Array } from "node:util/types";
+import { radToDeg } from "wgpu-matrix/dist/3.x/utils";
 
 /** > Currently Supports static file definitions. */
 class Renderer3D {
@@ -818,11 +819,17 @@ class Renderer3D {
       }
       case "plane": {
         vertices = new Float32Array([
-          -1, 0, -1, 0, 1, 0, 1, 0, -1, 0, 1, 0, 1, 0, 1, 0, 1, 0, -1, 0, 1, 0,
-          0,
+          // bottom-left
+          -1, 0, -1, 0, 1, 0,
+          // bottom-right
+          1, 0, -1, 0, 1, 0,
+          // top-right
+          1, 0, 1, 0, 1, 0,
+          // top-left
+          -1, 0, 1, 0, 1, 0,
         ]);
 
-        indices = new Uint16Array([0, 1, 2, 0, 2, 3]);
+        indices = new Uint16Array([0, 1, 2, 2, 3, 0]);
         break;
       }
       case "torus": {
@@ -881,6 +888,64 @@ class Renderer3D {
         break;
       }
       case "cone": {
+        const radialSegments = 128;
+        const height = 8;
+        const radius = 10;
+
+        const positons: number[] = [];
+        const normals: number[] = [];
+        const indicesArr: number[] = [];
+
+        const halfH = height / 2;
+        const tip = [0, halfH, 0];
+        const baseCenter = [0, -halfH, 0];
+
+        for (let i = 0; i <= radialSegments; ++i) {
+          const theta = (i / radialSegments) * Math.PI * 2;
+          const cosT = Math.cos(theta);
+          const sinT = Math.sin(theta);
+
+          const x = radius * cosT;
+          const y = -halfH;
+          const z = radius * sinT;
+          positons.push(x, y, z);
+
+          const slope = Math.atan(radius / height);
+          const nx = cosT * Math.sin(slope);
+          const ny = Math.cos(slope);
+          const nz = sinT * Math.sin(slope);
+          normals.push(nx, ny, nz);
+        }
+
+        const baseCenterIndex = positons.length / 3;
+        positons.push(...baseCenter);
+        normals.push(0, 1, 0);
+
+        const tipIndex = positons.length / 3;
+        positons.push(...tip);
+        normals.push(0, 1, 0);
+
+        // side
+        for (let i = 0; i < radialSegments; ++i) {
+          const next = (i + 1) % radialSegments;
+          indicesArr.push(tipIndex, 1, next);
+        }
+
+        // base
+        for (let i = 0; i < radialSegments; ++i) {
+          const next = (i + 1) % radialSegments;
+          indicesArr.push(baseCenterIndex, next, i);
+        }
+
+        const interleaved = new Float32Array(positons.length * 2);
+        for (let i = 0, j = 0; i < positons.length / 3; ++i) {
+          interleaved.set(positons.slice(i * 3, i * 3 + 3), j);
+          interleaved.set(positons.slice(i * 3, i * 3 + 3), j);
+          j += 6;
+        }
+
+        vertices = interleaved;
+        indices = new Uint16Array(indicesArr);
         break;
       }
     }
