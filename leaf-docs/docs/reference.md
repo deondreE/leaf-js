@@ -24,6 +24,76 @@ All buffers, materials, and pipelines required for rendering are then defined wi
 | `createPipeline`  | Creates a GPU render pipeline with state objects that match the requirements of that specific file format.                                                               |
 | `render`          | Executes draw commands for the prepared object.                                                                                                                          |
 
+## Primitives
+
+### Overview
+
+Primitives are dynamically generated geometric shapes created entirely on the GPU or CPU at runtime, without the need for file‑based asset ingestion. They are ideal for procedural scenes, rapid prototyping, or simulation objects that do not require importing from disk. Primitives share the same render pipeline architecture as static models, allowing them to coexist with imported assets seamlessly within the same WebGPU or WebGL2 context.
+
+### Supported Primitive Types
+
+|Shape |	Description|
+| ----------------- | --------------------------------------------------------- |
+|box	|Basic cube mesh with 6 faces, 24 vertices, full normal shading supported.|
+|sphere|	UV‑sphere generated parametrically using latitude / longitude subdivision.|
+|plane|	XZ‑aligned ground surface used for floors and terrain patches.|
+|quad|	XY‑aligned billboard oriented toward +Z; useful for 2D sprites or decals.|
+|torus|	Donut‑shaped parametric surface defined by major and minor radii.|
+|cone|	Conical mesh with configurable height and base radius; includes base cap.|
+|custom|	Future extension: user‑supplied procedural vertex function.|
+
+---
+
+## Geometry Generation
+
+Each primitive defines a parametric vertex generator. Vertices are computed on a background WebWorker thread to avoid blocking the main render loop.
+
+Generated data includes 
+  - `positions`: Array of vertex positions [x, y, z]
+  
+  - `normals`: Array of surface normals [nx, ny, nz]
+  
+  - `indices`: Triangle connectivity for efficient drawing
+  
+  - `optional`: color, UVs, tangents (future)
+The main thread receives binary buffers (Float32Array / Uint16Array) via transferable objects and uploads them directly into GPU buffers.
+
+---
+
+## Instance Rendering
+
+All primitives are rendered through instancing, allowing thousands of copies to share one geometry set and shader pipeline.
+
+|Buffer Type |	Contents |	Step Mode |
+| ----------------- | ---------------------------|------------------------------ |
+|Geometry Buffer|	Vertex + normal data	| `vertex`|
+|Instance| Buffer	Model transform (mat4) + color (vec4)|	`instance`|
+
+Each frame uses one draw call per primitive type:
+
+```glsl
+drawIndexed(indexCount, instanceCount);
+```
+This architecture enables 1‑to‑10000 simultaneous instances without CPU bottlenecks.
+
+---
+
+## Runtime Properties
+
+Each primitive accepts runtime‑configurable parameters that mirror your SceneObject schema:
+
+|Property	|Type|	Description|
+| ----------------- | ---------------------------|------------------------------ |
+|color|	Vec4| (0–1 or 0–255)	Base RGBA color normalized automatically.|
+|width / height / depth	|number	| Physical dimensions applied as model scale.|
+| rotation |	{x, y, z} (deg)	| Static rotation applied per instance. |
+|position|	{x, y, z}	|World translation; randomized if random_spawn_pos is true. |
+|amount	|number	|Number of instances to generate for this object. |
+|color_random|	boolean|	Randomizes instance color within HSV or RGB range.|
+|random_animation	|`{ type: 'rotation'	'bounce'|------ |
+
+---
+
 ## Data Responsibilities
 
 - `VertexBuffer`: Defined within the parser class; produced directly from parsed file data.

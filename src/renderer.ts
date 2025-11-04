@@ -2,7 +2,7 @@ import { mat4, ReadonlyVec3 } from "gl-matrix";
 import OBJParser from "./parsers/obj";
 import STLParser from "./parsers/stl";
 
-import { Model, GeometryBuffers } from "./types/scene.types";
+import { Model, GeometryBuffers, Vec4 } from "./types/scene.types";
 import { v4 as uuid } from "uuid";
 import Camera from "./camera";
 import {
@@ -19,6 +19,7 @@ import { extractRotation } from "./matrixMath";
 import { Vec3 } from "wgpu-matrix";
 import { isInt8Array } from "node:util/types";
 import { radToDeg } from "wgpu-matrix/dist/3.x/utils";
+import { normalizeColor } from "./color";
 
 /** > Currently Supports static file definitions. */
 class Renderer3D {
@@ -740,11 +741,24 @@ class Renderer3D {
 
   async createPrimitive(
     shape: "box" | "sphere" | "plane" | "torus" | "cone" | "quad",
-    color: [number, number, number, number] = [0.24, 0.24, 0.24, 1],
+    color: Vec4 = {
+      r: 0.24,
+      g: 0.24,
+      b: 0.24,
+      a: 1,
+    },
     instanceCount: number = 1,
+    scale: { width: number; height: number; depth: number } = {
+      width: 1,
+      height: 1,
+      depth: 1,
+    },
+    rotation: { x: number; y: number; z: number } = { x: 0, y: 0, z: 0 },
   ) {
     if (!this.device || !this.context)
       throw new Error("Renderer not initialized");
+
+    const colorArray = normalizeColor(color);
 
     const sampleCount = 4;
     const device = this.device as GPUDevice;
@@ -1001,15 +1015,13 @@ class Renderer3D {
             (y - gridSize / 2) * spacing,
             (z - gridSize / 2) * spacing,
           ]);
+          mat4.rotateX(model, model, (rotation.x * Math.PI) / 180);
+          mat4.rotateY(model, model, (rotation.y * Math.PI) / 180);
+          mat4.rotateZ(model, model, (rotation.z * Math.PI) / 180);
+          let scaleNums = [scale.width, scale.height, scale.depth];
+          mat4.scale(model, model, new Float32Array(scaleNums));
 
-          const col = [
-            color[0] * (0.5 + Math.random() * 0.5),
-            color[1] * (0.5 + Math.random() * 0.5),
-            color[2] * (0.5 + Math.random() * 0.5),
-            1,
-          ];
-
-          instanceArray.push(...model, ...col);
+          instanceArray.push(...model, ...colorArray);
           ++index;
         }
       }
@@ -1039,7 +1051,7 @@ class Renderer3D {
     const modelMatrix = mat4.create();
     const viewMatrix = mat4.create();
     const projMatrix = mat4.create();
-    mat4.lookAt(viewMatrix, [0, 10, 50], [0, 0, 0], [0, 1, 0]);
+    mat4.lookAt(viewMatrix, [0, 10, 100], [0, 0, 0], [0, 1, 0]);
     mat4.perspective(
       projMatrix,
       Math.PI / 4,
@@ -1060,7 +1072,7 @@ class Renderer3D {
       usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
     });
     device.queue.writeBuffer(uniformBuffer, 0, mvpMatrix as Float32Array);
-    device.queue.writeBuffer(uniformBuffer, 64, new Float32Array(color));
+    device.queue.writeBuffer(uniformBuffer, 64, new Float32Array(colorArray));
     device.queue.writeBuffer(uniformBuffer, 80, lightDir);
     device.queue.writeBuffer(uniformBuffer, 96, lightColor);
 

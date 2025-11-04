@@ -26,14 +26,18 @@
           enabled: false,
         },
 
-         objects: [
+        objects: [
           {
             name: 'testMesh',
-            shape: 'quad',
-            width: 30,
-            height: 30,
-            startPos: {x: 0, y: 0, z: 0},
-            color: {r: 1, g: 1, b: 1, a:1},
+            shape: 'box',
+            scale: {
+              width: 20,
+              height: 20,
+              depth: 20,
+            },
+            color: { r: 255, g: 0, b: 255, a: 255 },
+            rotation: { x: 0, y: 45, z: 45 },
+            amount: 1,
           },
         ],
 

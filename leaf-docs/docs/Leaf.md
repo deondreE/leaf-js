@@ -14,11 +14,67 @@ The usage of the [web-component](https://developer.mozilla.org/en-US/docs/Web/AP
   <script lang="ts">
     import * from 'leaf';
 
-    function initScene(): SceneFactory {
+    window.leaf.initScene = () => ({
+      name: 'Demo Scene',
 
-    }
+      camera: {
+        type: 'orthographic',
+        FOV: 45,
+        cameraBounds: 1.0,
+        near: 0.1,
+        far: 100.0,
+        zoom: 1.0,
+      },
 
-    window.initScene = initScene()
+      particle: {
+        enabled: false,
+      },
+
+      objects: [
+        {
+          name: 'testMesh',
+          shape: 'box',
+          scale: {
+            width: 20,
+            height: 20,
+            depth: 20,
+          },
+          color: { r: 255, g: 0, b: 255, a: 255 },
+          rotation: { x: 0, y: 45, z: 45 },
+          amount: 1,
+        },
+      ],
+
+      physics: {
+        enabled: false,
+      },
+
+      animations: {
+        enabled: true,
+        duration: 5.0,
+        tracks: [
+          {
+            target: 'camera',
+            property: 'position.z',
+            keyframes: [
+              { time: 0, value: 10 },
+              { time: 2.5, value: 5 },
+              { time: 5, value: 10 },
+            ],
+            loop: true,
+          },
+          {
+            target: 'light',
+            property: 'rotation.y',
+            keyframes: [
+              { time: 0, value: 0 },
+              { time: 5, value: 6.28 },
+            ],
+            loop: true,
+          },
+        ],
+      },
+    }); 
   </script>
 </html>
 ```

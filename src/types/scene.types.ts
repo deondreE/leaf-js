@@ -15,6 +15,13 @@ export interface Vec3 {
   z: number;
 }
 
+export interface Vec4 {
+  r: number;
+  g: number;
+  b: number;
+  a: number;
+}
+
 /** A color / 4 channel vector. */
 export interface Vec4 {
   /** Red (0-1) Range or 0-255 optioanlly */
@@ -230,12 +237,13 @@ export interface SceneObject {
     | "rope"
     | "cone"
     | "quad";
-  width?: number;
-  height?: number;
-  depth?: number;
+  scale?: {
+    width: number;
+    height: number;
+    depth: number;
+  };
   startPos?: Vec3;
   rotation?: Vec3;
-  scale?: Vec3;
   color?: Vec4;
   random_spawn_pos?: boolean;
   random_animation?: { type: RandomAnimationType };

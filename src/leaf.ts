@@ -164,32 +164,69 @@ class Leaf extends HTMLCanvasElement {
 
       const color = obj.color_random
         ? { r: Math.random(), g: Math.random(), b: Math.random(), a: 1 }
-        : (obj.color ?? {
-            r: 220,
-            g: 1,
-            b: 1,
-            a: 1,
-          });
+        : obj.color;
+
+      const amount = obj.amount ? obj.amount : 1;
+
+      const rotation = obj.rotation ? obj.rotation : { x: 0, y: 0, z: 0 };
+
+      const scale = obj.scale ? obj.scale : { width: 1, height: 1, depth: 1 };
 
       // Object Type
       switch (obj.shape) {
         case "box":
-          await this.renderer?.createPrimitive("box");
+          await this.renderer?.createPrimitive(
+            "box",
+            color,
+            amount,
+            scale,
+            rotation,
+          );
           break;
         case "sphere":
-          await this.renderer?.createPrimitive("sphere");
+          await this.renderer?.createPrimitive(
+            "sphere",
+            color,
+            amount,
+            scale,
+            rotation,
+          );
           break;
         case "torus":
-          await this.renderer?.createPrimitive("torus");
+          await this.renderer?.createPrimitive(
+            "torus",
+            color,
+            amount,
+            scale,
+            rotation,
+          );
           break;
         case "cone":
-          await this.renderer?.createPrimitive("cone");
+          await this.renderer?.createPrimitive(
+            "cone",
+            color,
+            amount,
+            scale,
+            rotation,
+          );
           break;
         case "plane":
-          await this.renderer?.createPrimitive("plane");
+          await this.renderer?.createPrimitive(
+            "plane",
+            color,
+            amount,
+            scale,
+            rotation,
+          );
           break;
         case "quad":
-          await this.renderer?.createPrimitive("quad");
+          await this.renderer?.createPrimitive(
+            "quad",
+            color,
+            amount,
+            scale,
+            rotation,
+          );
           break;
       }
 
