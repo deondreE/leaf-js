@@ -4,7 +4,13 @@ import Scene from "./scene";
 import Camera from "./camera";
 import { assert } from "./utils/util";
 import global from "./types/global";
-import { SceneConfig, SceneFactory } from "./types/scene.types";
+import {
+  SceneConfig,
+  SceneFactory,
+  SceneObject,
+  RandomAnimationType,
+} from "./types/scene.types";
+import Renderer3D from "./renderer";
 
 /**
  * Global window augmentation for the Leaf engine.
@@ -57,7 +63,7 @@ declare global {
 class Leaf extends HTMLCanvasElement {
   static observedAttributes = ["src", "particle", "is3D", "static"];
 
-  private renderer: Renderer | ParticleRenderer | null = null;
+  private renderer: Renderer3D | null = null;
   private scene: Scene | null = null;
   private camera: Camera | null = null;
 
@@ -89,7 +95,7 @@ class Leaf extends HTMLCanvasElement {
     this.createControls();
   }
 
-  private initializeDynamicScene(factoryName: string) {
+  private async initializeDynamicScene(factoryName: string) {
     const sceneFactory = window.leaf?.initScene;
 
     if (typeof sceneFactory !== "function") {
@@ -123,6 +129,16 @@ class Leaf extends HTMLCanvasElement {
 
     // Pick renderer
     this.renderer = new Renderer(this);
+    this.renderer.setCamera(camera);
+    await this.renderer.init("");
+
+    if (config.objects && config.objects.length > 0) {
+      console.log("[Leaf] Instantianting scene objects...");
+      for (const obj of config.objects) {
+        console.log(obj);
+        this.createSceneObject(obj);
+      }
+    }
 
     // Launch scene
     this.scene = new Scene(config, this);
@@ -130,6 +146,62 @@ class Leaf extends HTMLCanvasElement {
     this.scene.start(() => console.log("[Scene] start"));
     this.scene.update(() => console.log("[Scene] update"));
     this.scene.run();
+  }
+
+  private async createSceneObject(obj: SceneObject) {
+    const count = obj.amount ?? 1;
+
+    for (let i = 0; i < count; ++i) {
+      const x = obj.random_spawn_pos
+        ? (Math.random() - 0.5) * 100
+        : (obj.startPos?.x ?? 0);
+      const y = obj.random_spawn_pos
+        ? Math.random() * 50
+        : (obj.startPos?.y ?? 0);
+      const z = obj.random_spawn_pos
+        ? (Math.random() - 0.5) * 100
+        : (obj.startPos?.z ?? 0);
+
+      const color = obj.color_random
+        ? { r: Math.random(), g: Math.random(), b: Math.random(), a: 1 }
+        : (obj.color ?? {
+            r: 1,
+            g: 1,
+            b: 1,
+            a: 1,
+          });
+
+      // Object Type
+      switch (obj.shape) {
+        case "box":
+          await this.renderer?.createPrimitive("box");
+          break;
+        case "sphere":
+          await this.renderer?.createPrimitive("sphere");
+          break;
+      }
+
+      if (obj.random_animation) {
+        this.applyRandomAnimation(obj.random_animation.type, { x, y, z });
+      }
+    }
+  }
+
+  private applyRandomAnimation(
+    type: RandomAnimationType,
+    pos: { x: number; y: number; z: number },
+  ) {
+    switch (type) {
+      case "rotation":
+        console.log(`[Leaf] rotating object at`, pos);
+        break;
+      case "bounce":
+        console.log(`[Leaf] bouncing object at`, pos);
+        break;
+      case "collide":
+        console.log(`[Leaf] collision animation at`, pos);
+        break;
+    }
   }
 
   private loadFileScene(src: string) {

@@ -178,6 +178,28 @@ export interface AnimationConfig {
   tracks: AnimationTrack[];
 }
 
+export interface ObjectTexture {
+  normal_map?: string;
+  albedo_map?: string;
+  texture?: string;
+}
+
+export type RandomAnimationType = "rotation" | "bounce" | "collide";
+
+export interface SceneObject {
+  name: string;
+  shape: "sphere" | "box" | "plane" | "capsule";
+  width?: number;
+  height?: number;
+  startPos?: { x: number; y: number; z: number };
+  color?: { r: number; g: number; b: number; a: number };
+  random_spawn_pos?: boolean;
+  random_animation?: { type: RandomAnimationType };
+  textures?: ObjectTexture;
+  color_random?: boolean;
+  amount?: number;
+}
+
 /**
  * The complete configuration returned by a SceneFactory.
  * Used to construct Camera, Physics, Particles, Animation systems, etc.
@@ -193,6 +215,8 @@ export interface SceneConfig {
   physics?: PhysicsConfig;
   /** Optional animation configuration. */
   animations?: AnimationConfig;
+  /** Objects -- */
+  objects?: SceneObject[];
 }
 
 /**

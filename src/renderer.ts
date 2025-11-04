@@ -734,6 +734,237 @@ class Renderer3D {
     ]);
   }
 
+  async createPrimitive(
+    shape: "box" | "sphere" | "plane",
+    color: [number, number, number, number] = [1, 1, 1, 1],
+  ) {
+    if (!this.device || !this.context)
+      throw new Error("Renderer not initialized");
+
+    const sampleCount = 4;
+    const device = this.device as GPUDevice;
+    const ctx = this.context as GPUCanvasContext;
+    const format = this.format!;
+    // const depthView = this.depthTexture!.createView();
+
+    let vertices: Float32Array | undefined = new Float32Array();
+    let indices: Uint16Array | undefined = new Uint16Array();
+
+    switch (shape) {
+      case "box":
+        vertices = new Float32Array([
+          -1, -1, 1, 0, 0, 1, 1, -1, 1, 0, 0, 1, 1, 1, 1, 0, 0, 1, -1, 1, 1, 0,
+          0, 1, -1, -1, -1, 0, 0, -1, 1, -1, -1, 0, 0, -1, 1, 1, -1, 0, 0, -1,
+          -1, 1, -1, 0, 0, -1,
+        ]);
+        indices = new Uint16Array([
+          0, 1, 2, 0, 2, 3, 4, 5, 6, 4, 6, 7, 4, 5, 1, 4, 1, 0, 7, 6, 2, 7, 2,
+          3, 5, 6, 2, 5, 2, 1, 4, 7, 3, 4, 3, 0,
+        ]);
+        break;
+      case "sphere":
+        const latBands = 16;
+        const longBands = 16;
+        const radius = 1;
+        const positions: number[] = [];
+        const normals: number[] = [];
+        const idx: number[] = [];
+
+        for (let lat = 0; lat <= latBands; ++lat) {
+          const theta = (lat * Math.PI) / latBands;
+          const sinTheta = Math.sin(theta);
+          const cosTheta = Math.cos(theta);
+
+          for (let long = 0; long <= longBands; ++long) {
+            const phi = (long * 2 * Math.PI) / longBands;
+            const sinPhi = Math.sin(phi);
+            const cosPhi = Math.cos(phi);
+            const x = cosPhi * sinTheta;
+            const y = cosTheta;
+            const z = sinPhi * sinTheta;
+
+            positions.push(radius * x, radius * y, radius * z);
+            normals.push(x, y, z);
+          }
+        }
+
+        for (let lat = 0; lat < latBands; ++lat) {
+          for (let long = 0; long < longBands; ++long) {
+            const first = lat * (longBands + 1) + long;
+            const second = first + longBands + 1;
+            const next = (long + 1) % (longBands + 1);
+            idx.push(first, second, second + next - long);
+            idx.push(first, second + next - long, first + next - long);
+          }
+        }
+
+        const interleaved = new Float32Array(positions.length + normals.length);
+        for (let i = 0, j = 0; i < positions.length / 3; ++i) {
+          interleaved.set(positions.slice(i * 3, i * 3 + 3), j);
+          interleaved.set(normals.slice(i * 3, i * 3 + 3), j + 3);
+          j += 6;
+        }
+
+        vertices = interleaved;
+        indices = new Uint16Array(idx);
+        break;
+      case "plane":
+        vertices = new Float32Array([
+          -1, 0, -1, 0, 1, 0, 1, 0, -1, 0, 1, 0, 1, 0, 1, 0, 1, 0, -1, 0, 1, 0,
+          0,
+        ]);
+
+        indices = new Uint16Array([0, 1, 2, 0, 2, 3]);
+        break;
+    }
+
+    const vbuf = device.createBuffer({
+      size: vertices.byteLength,
+      usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
+      mappedAtCreation: true,
+    });
+    new Float32Array(vbuf.getMappedRange()).set(vertices);
+    vbuf.unmap();
+
+    var ibuf = device.createBuffer({
+      size: indices.byteLength,
+      usage: GPUBufferUsage.INDEX | GPUBufferUsage.COPY_DST,
+      mappedAtCreation: true,
+    });
+    new Uint16Array(ibuf.getMappedRange()).set(indices);
+    ibuf.unmap();
+
+    const msaaColorTexture = device.createTexture({
+      size: [this.canvas!.width, this.canvas!.height],
+      sampleCount,
+      format,
+      usage: GPUTextureUsage.RENDER_ATTACHMENT,
+    });
+    const msaaColorView = msaaColorTexture.createView();
+
+    this.depthTexture = device.createTexture({
+      size: [this.canvas!.width, this.canvas!.height],
+      format: "depth24plus",
+      sampleCount,
+      usage: GPUTextureUsage.RENDER_ATTACHMENT,
+    });
+    const depthView = this.depthTexture.createView();
+
+    const modelMatrix = mat4.create();
+    const viewMatrix = mat4.create();
+    const projMatrix = mat4.create();
+    mat4.lookAt(viewMatrix, [3, 3, 5], [0, 0, 0], [0, 1, 0]);
+    mat4.perspective(
+      projMatrix,
+      Math.PI / 4,
+      this.canvas!.width / this.canvas!.height,
+      0.1,
+      100,
+    );
+    const mvpMatrix = mat4.create();
+    mat4.multiply(mvpMatrix, projMatrix, viewMatrix);
+    mat4.multiply(mvpMatrix, mvpMatrix, modelMatrix);
+
+    const uniformBuffer = device.createBuffer({
+      size: 64 + 16,
+      usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+    });
+    device.queue.writeBuffer(uniformBuffer, 0, mvpMatrix as Float32Array);
+    device.queue.writeBuffer(uniformBuffer, 64, new Float32Array(color));
+
+    const shader = device.createShaderModule({
+      code: `
+        struct SceneUniforms {
+          mvpMatrix: mat4x4<f32>,
+          color: vec4<f32>,
+        };
+        @group(0) @binding(0) var<uniform> scene : SceneUniforms;
+      
+        struct VSOut {
+          @builtin(position) Position : vec4<f32>,
+          @location(0) vColor : vec4<f32>,
+        };
+        
+        @vertex
+        fn vs_main(@location(0) pos: vec3<f32>, @location(1) norm: vec3<f32>) -> VSOut {
+          var out: VSOut;
+          out.Position = scene.mvpMatrix * vec4<f32>(pos, 1.0);
+          out.vColor = scene.color;
+          return out;
+         }
+         
+         @fragment
+         fn fs_main(in: VSOut) -> @location(0) vec4<f32> {
+          return in.vColor;
+         }`,
+    });
+
+    const pipeline = device.createRenderPipeline({
+      layout: "auto",
+      multisample: { count: sampleCount },
+      vertex: {
+        module: shader,
+        entryPoint: "vs_main",
+        buffers: [
+          {
+            arrayStride: 6 * 4,
+            attributes: [
+              { shaderLocation: 0, offset: 0, format: "float32x3" },
+              { shaderLocation: 1, offset: 3 * 4, format: "float32x3" },
+            ],
+          },
+        ],
+      },
+      fragment: {
+        module: shader,
+        entryPoint: "fs_main",
+        targets: [{ format }],
+      },
+      depthStencil: {
+        format: "depth24plus",
+        depthWriteEnabled: true,
+        depthCompare: "less",
+      },
+      primitive: {
+        topology: "triangle-list",
+        cullMode: "back",
+      },
+    });
+
+    const bindGroup = device.createBindGroup({
+      layout: pipeline.getBindGroupLayout(0),
+      entries: [{ binding: 0, resource: { buffer: uniformBuffer } }],
+    });
+
+    const encoder = device.createCommandEncoder();
+    const pass = encoder.beginRenderPass({
+      colorAttachments: [
+        {
+          view: msaaColorView,
+          resolveTarget: ctx.getCurrentTexture().createView(),
+          loadOp: "clear",
+          storeOp: "store",
+          clearValue: { r: 0.05, g: 0.05, b: 0.1, a: 1 },
+        },
+      ],
+      depthStencilAttachment: {
+        view: depthView,
+        depthLoadOp: "clear",
+        depthStoreOp: "store",
+        depthClearValue: 1.0,
+      },
+    });
+    pass.setPipeline(pipeline);
+    pass.setBindGroup(0, bindGroup);
+    pass.setVertexBuffer(0, vbuf);
+    pass.setIndexBuffer(ibuf, "uint16");
+    pass.drawIndexed(indices.length);
+    pass.end();
+
+    device.queue.submit([encoder.finish()]);
+    console.log(`[Renderer3D] Drew: ${shape} primitive`);
+  }
+
   private render(fn: () => void): void {
     if (typeof fn === "function") fn();
   }
