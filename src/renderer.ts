@@ -1,8 +1,8 @@
-import { mat4 } from "gl-matrix";
+import { mat4, ReadonlyVec3 } from "gl-matrix";
 import OBJParser from "./parsers/obj";
 import STLParser from "./parsers/stl";
 
-import { Model } from "./types/scene.types";
+import { Model, GeometryBuffers } from "./types/scene.types";
 import { v4 as uuid } from "uuid";
 import Camera from "./camera";
 import {
@@ -16,7 +16,8 @@ import RigidBody from "./physics/RigidBody";
 import PhysicsSystem from "./physics/PhysyicsSystem";
 import PhysicsDebugger from "./physics/PhysicsDebugger";
 import { extractRotation } from "./matrixMath";
-import { unlink } from "fs";
+import { Vec3 } from "wgpu-matrix";
+import { isInt8Array } from "node:util/types";
 
 /** > Currently Supports static file definitions. */
 class Renderer3D {
@@ -41,6 +42,7 @@ class Renderer3D {
   private showPhysicsDebug = true;
   private lastTime = 0;
   private viewMatrix: any;
+  private geometries: Map<string, GeometryBuffers> = new Map();
 
   private fpsElement: HTMLDivElement | null = null;
   private frames: number = 0;
@@ -738,6 +740,7 @@ class Renderer3D {
   async createPrimitive(
     shape: "box" | "sphere" | "plane",
     color: [number, number, number, number] = [0.24, 0.24, 0.24, 1],
+    instanceCount: number = 100,
   ) {
     if (!this.device || !this.context)
       throw new Error("Renderer not initialized");
@@ -746,7 +749,6 @@ class Renderer3D {
     const device = this.device as GPUDevice;
     const ctx = this.context as GPUCanvasContext;
     const format = this.format!;
-    // const depthView = this.depthTexture!.createView();
 
     let vertices: Float32Array | undefined = new Float32Array();
     let indices: Uint16Array | undefined = new Uint16Array();
@@ -839,6 +841,45 @@ class Renderer3D {
     new Uint16Array(ibuf.getMappedRange()).set(indices);
     ibuf.unmap();
 
+    const BYTES_PER_INSTANCE = 80;
+    const instanceBuffer = device.createBuffer({
+      size: Math.ceil(instanceCount * BYTES_PER_INSTANCE),
+      usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
+    });
+
+    const instanceArray: number[] = [];
+
+    const gridSize = Math.ceil(Math.cbrt(instanceCount));
+    const spacing = 3;
+    let index = 0;
+    for (let x = 0; x < gridSize && index < instanceCount; ++x) {
+      for (let y = 0; y < gridSize && index < instanceCount; ++y) {
+        for (let z = 0; z < gridSize && index < instanceCount; ++z) {
+          const model = mat4.create();
+          mat4.translate(model, model, [
+            (x - gridSize / 2) * spacing,
+            (y - gridSize / 2) * spacing,
+            (z - gridSize / 2) * spacing,
+          ]);
+
+          const col = [
+            color[0] * (0.5 + Math.random() * 0.5),
+            color[1] * (0.5 + Math.random() * 0.5),
+            color[2] * (0.5 + Math.random() * 0.5),
+            1,
+          ];
+
+          instanceArray.push(...model, ...col);
+          ++index;
+        }
+      }
+    }
+    device.queue.writeBuffer(
+      instanceBuffer,
+      0,
+      new Float32Array(instanceArray),
+    );
+
     const msaaColorTexture = device.createTexture({
       size: [this.canvas!.width, this.canvas!.height],
       sampleCount,
@@ -858,13 +899,13 @@ class Renderer3D {
     const modelMatrix = mat4.create();
     const viewMatrix = mat4.create();
     const projMatrix = mat4.create();
-    mat4.lookAt(viewMatrix, [3, 3, 5], [0, 0, 0], [0, 1, 0]);
+    mat4.lookAt(viewMatrix, [0, 10, 50], [0, 0, 0], [0, 1, 0]);
     mat4.perspective(
       projMatrix,
       Math.PI / 4,
       this.canvas!.width / this.canvas!.height,
       0.1,
-      100,
+      1000,
     );
     const mvpMatrix = mat4.create();
     mat4.multiply(mvpMatrix, projMatrix, viewMatrix);
@@ -874,7 +915,6 @@ class Renderer3D {
     const lightColor = new Float32Array([1.0, 1.0, 1.0, 0.0]);
 
     const uniformSize = 64 + 16 + 16 + 16;
-
     const uniformBuffer = device.createBuffer({
       size: uniformSize,
       usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
@@ -897,13 +937,24 @@ class Renderer3D {
         struct VSOut {
           @builtin(position) Position : vec4<f32>,
           @location(0) normal : vec3<f32>,
+          @location(1) vColor : vec4<f32>,
+        };
+        
+        struct InstanceInput {
+          @location(2) mat0 : vec4<f32>,
+          @location(3) mat1 : vec4<f32>,
+          @location(4) mat2 : vec4<f32>,
+          @location(5) mat3 : vec4<f32>,
+          @location(6) color : vec4<f32>,
         };
         
         @vertex
-        fn vs_main(@location(0) pos: vec3<f32>, @location(1) norm: vec3<f32>) -> VSOut {
+        fn vs_main(@location(0) pos: vec3<f32>, @location(1) norm: vec3<f32>, inst: InstanceInput) -> VSOut {
+          var model = mat4x4<f32>(inst.mat0, inst.mat1, inst.mat2, inst.mat3); 
           var out: VSOut;
-          out.Position = scene.mvpMatrix * vec4<f32>(pos, 1.0);
+          out.Position = scene.mvpMatrix * model * vec4<f32>(pos, 1.0);
           out.normal = normalize(norm);
+          out.vColor = inst.color;
           return out;
          }
          
@@ -916,8 +967,8 @@ class Renderer3D {
             let ambient = 0.15;
             let brightness = ambient + diff;
             
-            let rgb = scene.baseColor.rbg * scene.lightColor.rgb * brightness;
-         return vec4<f32>(rgb, scene.baseColor.a);
+            let rgb = input.vColor.rbg * scene.lightColor.rgb * brightness;
+            return vec4<f32>(rgb, scene.baseColor.a);
          }`,
     });
 
@@ -935,6 +986,17 @@ class Renderer3D {
               { shaderLocation: 1, offset: 3 * 4, format: "float32x3" },
             ],
           },
+          {
+            arrayStride: BYTES_PER_INSTANCE,
+            stepMode: "instance",
+            attributes: [
+              { shaderLocation: 2, offset: 0, format: "float32x4" },
+              { shaderLocation: 3, offset: 16, format: "float32x4" },
+              { shaderLocation: 4, offset: 32, format: "float32x4" },
+              { shaderLocation: 5, offset: 48, format: "float32x4" },
+              { shaderLocation: 6, offset: 64, format: "float32x4" },
+            ],
+          },
         ],
       },
       fragment: {
@@ -949,7 +1011,7 @@ class Renderer3D {
       },
       primitive: {
         topology: "triangle-list",
-        cullMode: "back",
+        cullMode: "none",
       },
     });
 
@@ -958,33 +1020,40 @@ class Renderer3D {
       entries: [{ binding: 0, resource: { buffer: uniformBuffer } }],
     });
 
-    const encoder = device.createCommandEncoder();
-    const pass = encoder.beginRenderPass({
-      colorAttachments: [
-        {
-          view: msaaColorView,
-          resolveTarget: ctx.getCurrentTexture().createView(),
-          loadOp: "clear",
-          storeOp: "store",
-          clearValue: { r: 0.05, g: 0.05, b: 0.1, a: 1 },
-        },
-      ],
-      depthStencilAttachment: {
-        view: depthView,
-        depthLoadOp: "clear",
-        depthStoreOp: "store",
-        depthClearValue: 1.0,
-      },
-    });
-    pass.setPipeline(pipeline);
-    pass.setBindGroup(0, bindGroup);
-    pass.setVertexBuffer(0, vbuf);
-    pass.setIndexBuffer(ibuf, "uint16");
-    pass.drawIndexed(indices.length);
-    pass.end();
+    let prev = 0;
+    const renderFrame = (now: number) => {
+      const encoder = device.createCommandEncoder();
 
-    device.queue.submit([encoder.finish()]);
-    console.log(`[Renderer3D] Drew: ${shape} primitive`);
+      const pass = encoder.beginRenderPass({
+        colorAttachments: [
+          {
+            view: msaaColorView,
+            resolveTarget: ctx.getCurrentTexture().createView(),
+            loadOp: "clear",
+            storeOp: "store",
+            clearValue: { r: 0.05, g: 0.05, b: 0.1, a: 1 },
+          },
+        ],
+        depthStencilAttachment: {
+          view: depthView,
+          depthLoadOp: "clear",
+          depthStoreOp: "store",
+          depthClearValue: 1.0,
+        },
+      });
+      pass.setPipeline(pipeline);
+      pass.setBindGroup(0, bindGroup);
+      pass.setVertexBuffer(0, vbuf);
+      pass.setVertexBuffer(1, instanceBuffer);
+      pass.setIndexBuffer(ibuf, "uint16");
+      pass.drawIndexed(indices.length, instanceCount);
+      pass.end();
+
+      device.queue.submit([encoder.finish()]);
+      requestAnimationFrame(renderFrame);
+      console.log(`[Renderer3D] Drew: ${shape} primitive`);
+    };
+    requestAnimationFrame(renderFrame);
   }
 
   private render(fn: () => void): void {

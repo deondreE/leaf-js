@@ -51,7 +51,7 @@ declare global {
      * The renderer calls this automatically when `src="initScene"` is detected.
      */
     leaf: {
-      initScene?: () => SceneFactory;
+      createScene?: () => SceneFactory;
       start?: () => void;
       stop?: () => void;
       awake?: () => void;
@@ -96,7 +96,7 @@ class Leaf extends HTMLCanvasElement {
   }
 
   private async initializeDynamicScene(factoryName: string) {
-    const sceneFactory = window.leaf?.initScene;
+    const sceneFactory = window.leaf?.createScene;
 
     if (typeof sceneFactory !== "function") {
       console.error(

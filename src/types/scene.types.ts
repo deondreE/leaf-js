@@ -27,26 +27,55 @@ export interface Vec4 {
   a: number;
 }
 
+/** Lighting configuration for a scene. */
+export interface LightConfig {
+  /** Light type: directional or point. (default: directional) */
+  type?: "directional" | "point" | "spot";
+  /** Direction the light rays travel toward (world-space). */
+  direction?: Vec3;
+  /** Position for point/spot lights. */
+  position?: Vec3;
+  /** RGB intensity multiplier (default: white [1,1,1]) */
+  color?: Vec3;
+  /** Falloff for point/spot types. */
+  intensity?: number;
+  /** Inner/Outer cone for spot lights (in radians). */
+  cone?: { inner: number; outer: number };
+}
+
+/** Ambient/background render configuration. */
+export interface RenderConfig {
+  /** When true, WebGPU uses MSAA for smoother geometry. */
+  antialias?: boolean;
+  /** Scene background color [0-1]. */
+  background?: [number, number, number];
+  /** Optional exposure scalar. */
+  exposure?: number;
+}
+
 /* ---------------------------------------------------------------------
  * Camera configuration
  * ------------------------------------------------------------------- */
 
 /** Describes how a camera should be inialized for the scene. */
 export interface CameraConfig {
-  /** Camera projection type */
+  /** Perspective or Orthographic projection */
   type: "perspective" | "orthographic";
-  /** Field of View in `degrees` (for perspective cameras). */
-  FOV: number;
-  /** Horizontal / vertical aspect ratio. */
-  cameraBounds: number;
-  /** Near clipping plane distance. */
-  near: number;
-  /** Far clipping plane distance. */
-  far: number;
-  /** Additional zoom multipier */
-  zoom: number;
+  /** Field of view in degrees (perspective only). */
+  FOV?: number;
+  /** Horizontal/vertical aspect or orthographic bounds. */
+  cameraBounds?: number;
+  /** Near clip distance. */
+  near?: number;
+  /** Far clip distance. */
+  far?: number;
+  /** Zoom multiplier. */
+  zoom?: number;
+  /** Explicit position of the camera. */
+  position?: Vec3;
+  /** Target point where the camera looks at. */
+  lookAt?: Vec3;
 }
-
 /* ---------------------------------------------------------------------
  * Particle System
  * ------------------------------------------------------------------- */
@@ -99,6 +128,8 @@ export interface ParticleConfig {
   emitter: ParticleEmitter;
   /** Total number of particles that can exist simultaneously */
   particleCount: number;
+  /** When true, the system starts active. */
+  enabled?: boolean;
 }
 
 /* ---------------------------------------------------------------------
@@ -158,14 +189,13 @@ export interface Keyframe<T> {
 
 /** A single animated property track. */
 export interface AnimationTrack {
-  /** Target object identifier, e.g. "camera" or "mesh1". */
+  /** Which scene entity this track affects (e.g., "camera", "light", "mesh1"). */
   target: string;
-  /** Property path to animate, e.g. "position.y" or "rotation.z". */
+  /** Property path; e.g. position.x or rotation.y. */
   property: string;
-  /** Array of keyframes defining interpolation points. */
   keyframes: Keyframe<number>[];
-  /** Should this animation loop after finishing? */
   loop?: boolean;
+  easing?: "linear" | "easeIn" | "easeOut" | "easeInOut" | "elastic" | "bounce";
 }
 
 /** High-level animation control block. */
@@ -179,25 +209,33 @@ export interface AnimationConfig {
 }
 
 export interface ObjectTexture {
-  normal_map?: string;
-  albedo_map?: string;
-  texture?: string;
+  /** Standard color map. */
+  albedo?: string;
+  /** Normal map file path. */
+  normal?: string;
+  /** Optional metallic/roughness/combined map. */
+  material?: string;
 }
 
 export type RandomAnimationType = "rotation" | "bounce" | "collide";
 
 export interface SceneObject {
-  name: string;
+  name?: string;
   shape: "sphere" | "box" | "plane" | "capsule";
   width?: number;
   height?: number;
-  startPos?: { x: number; y: number; z: number };
-  color?: { r: number; g: number; b: number; a: number };
+  depth?: number;
+  startPos?: Vec3;
+  rotation?: Vec3;
+  scale?: Vec3;
+  color?: Vec4;
   random_spawn_pos?: boolean;
   random_animation?: { type: RandomAnimationType };
   textures?: ObjectTexture;
   color_random?: boolean;
   amount?: number;
+  /** Continuous rotation or animation on this object. */
+  spin?: { axis?: Vec3; speed?: number } | boolean;
 }
 
 /**
@@ -205,17 +243,24 @@ export interface SceneObject {
  * Used to construct Camera, Physics, Particles, Animation systems, etc.
  */
 export interface SceneConfig {
-  /** Optional human‑friendly scene name. */
+  /** Human‑friendly scene name. */
   name?: string;
-  /** Optional camera configuration. */
+  /** Camera setup. */
   camera?: CameraConfig;
-  /** Optional particle system definition. */
+  /** Lighting setup (optional). */
+  lighting?: {
+    ambient?: number;
+    lights?: LightConfig[];
+  };
+  /** Global Renderer/RenderPass config (background color, MSAA, etc.). */
+  render?: RenderConfig;
+  /** Optional particle system. */
   particle?: ParticleConfig;
-  /** Optional physics world configuration. */
+  /** Optional physics world. */
   physics?: PhysicsConfig;
-  /** Optional animation configuration. */
+  /** Optional animations. */
   animations?: AnimationConfig;
-  /** Objects -- */
+  /** Scene objects. */
   objects?: SceneObject[];
 }
 
@@ -244,3 +289,9 @@ export interface Model {
   shader: string;
   modelMatrix: Mat4;
 }
+
+export type GeometryBuffers = {
+  vertexBuffer: GPUBuffer;
+  indexBuffer: GPUBuffer;
+  indexCount: number;
+};
