@@ -739,7 +739,7 @@ class Renderer3D {
   }
 
   async createPrimitive(
-    shape: "box" | "sphere" | "plane" | "torus" | "cone",
+    shape: "box" | "sphere" | "plane" | "torus" | "cone" | "quad",
     color: [number, number, number, number] = [0.24, 0.24, 0.24, 1],
     instanceCount: number = 1,
   ) {
@@ -827,6 +827,21 @@ class Renderer3D {
           1, 0, 1, 0, 1, 0,
           // top-left
           -1, 0, 1, 0, 1, 0,
+        ]);
+
+        indices = new Uint16Array([0, 1, 2, 2, 3, 0]);
+        break;
+      }
+      case "quad": {
+        vertices = new Float32Array([
+          // bottom-left
+          -1, -1, 0, 0, 0, 1,
+          // bottom-right
+          1, -1, 0, 0, 0, 1,
+          // top-right
+          1, 1, 0, 0, 0, 1,
+          // top-left
+          -1, 1, 0, 0, 0, 1,
         ]);
 
         indices = new Uint16Array([0, 1, 2, 2, 3, 0]);
