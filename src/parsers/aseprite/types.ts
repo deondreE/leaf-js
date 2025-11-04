@@ -1,4 +1,4 @@
-import { LfPair, LfQuad, LfTriplet } from '../types';
+import { LfPair, LfQuad, LfTriplet } from "../types";
 
 export type ReaderFunc<T = number> = (s?: number) => T;
 
@@ -32,7 +32,7 @@ export type AseChunk =
   | AseSlice
   | AseTileset;
 
-export type AseChunkType = AseChunk['chunkType'];
+export type AseChunkType = AseChunk["chunkType"];
 
 export type AseLegacyPalette = {
   chunkType: 0x0004 | 0x0011;
@@ -207,23 +207,32 @@ export type AsePropertyTypes =
   | AsePropertyArray
   | AsePropertyMap;
 
-export type AsePropType<T extends AsePropertyTypers | 0x0 = 0> = T extends 0x0001
-  ? boolean
-  : T extends 0x0002 | 0x0003 | 0x0004 | 0x0005 | 0x0006 | 0x0007 | 0x000a | 0x000b
-    ? number
-    : T extends 0x0008 | 0x0009 | 0x000c
-      ? bigint
-      : T extends 0x000d | 0x0013
-        ? string
-        : T extends 0x000e | 0x000f
-          ? LfPair
-          : T extends 0x0010
-            ? LfQuad
-            : T extends 0x0011
-              ? AsePropertyArray
-              : T extends 0x0012
-                ? AsePropertyMap
-                : AsePropertyTypes;
+export type AsePropType<T extends AsePropertyTypers | 0x0 = 0> =
+  T extends 0x0001
+    ? boolean
+    : T extends
+          | 0x0002
+          | 0x0003
+          | 0x0004
+          | 0x0005
+          | 0x0006
+          | 0x0007
+          | 0x000a
+          | 0x000b
+      ? number
+      : T extends 0x0008 | 0x0009 | 0x000c
+        ? bigint
+        : T extends 0x000d | 0x0013
+          ? string
+          : T extends 0x000e | 0x000f
+            ? LfPair
+            : T extends 0x0010
+              ? LfQuad
+              : T extends 0x0011
+                ? AsePropertyArray
+                : T extends 0x0012
+                  ? AsePropertyMap
+                  : AsePropertyTypes;
 
 export interface AsePropertyArray extends Array<AsePropertyTypes> {}
 

@@ -1,4 +1,4 @@
-import rawPlugin from 'vite-raw-plugin';
+import rawPlugin from "vite-raw-plugin";
 
 export default {
   plugins: [

@@ -35,7 +35,10 @@ export default class LeafView extends DataView<ArrayBuffer> {
   }
 
   fixed(s: number = 0): number {
-    return this.next(this.getInt32(this.offset, this.littleEndian) / 65536, 4 + s);
+    return this.next(
+      this.getInt32(this.offset, this.littleEndian) / 65536,
+      4 + s,
+    );
   }
 
   float(s: number = 0): number {
@@ -55,7 +58,10 @@ export default class LeafView extends DataView<ArrayBuffer> {
   }
 
   array(len: number, s: number = 0): Uint8Array {
-    return this.next(new Uint8Array(this.buffer.slice(this.offset, this.offset + len)), len + s);
+    return this.next(
+      new Uint8Array(this.buffer.slice(this.offset, this.offset + len)),
+      len + s,
+    );
   }
 
   str(len: number, s: number = 0): string {
@@ -92,14 +98,14 @@ export default class LeafView extends DataView<ArrayBuffer> {
   rgb(width: number, height: number): Promise<ImageBitmap> {
     const len = width * height;
     const bitmap = new Uint8ClampedArray(width * height * 4);
-    console.log('Populating bitmap', width * height);
+    console.log("Populating bitmap", width * height);
 
     for (let i = 0; i < len; i) {
       const rgb = this.array(3);
       bitmap.set([...rgb, 255], i * 4);
     }
 
-    console.log('bitmap', bitmap);
+    console.log("bitmap", bitmap);
 
     return createImageBitmap(new ImageData(bitmap, width, height));
   }

@@ -1,10 +1,10 @@
-import { Mat4, mat4, vec3 } from 'wgpu-matrix';
+import { Mat4, mat4, vec3 } from "wgpu-matrix";
 
 /**
  * Camera class that reproduces the same behavior as the original mat4 sequence.
  */
 class Camera {
-  type: 'perspective' | 'orthographic';
+  type: "perspective" | "orthographic";
   FOV: number;
   cameraBounds: number;
   near: number;
@@ -27,7 +27,7 @@ class Camera {
     near: number = 0.1,
     far: number = 100.0,
     zoom: number = 1.0,
-    type: 'perspective' | 'orthographic' = 'perspective',
+    type: "perspective" | "orthographic" = "perspective",
     aspect: number = 1.0,
   ) {
     this.FOV = FOV;
@@ -57,10 +57,15 @@ class Camera {
 
     // Build projection
     switch (this.type) {
-      case 'perspective':
-        this.pMatrix = this.createPerspectiveProjection(this.FOV, this.aspect, this.near, this.far);
+      case "perspective":
+        this.pMatrix = this.createPerspectiveProjection(
+          this.FOV,
+          this.aspect,
+          this.near,
+          this.far,
+        );
         break;
-      case 'orthographic':
+      case "orthographic":
         this.pMatrix = this.createOrthographicProjection(
           -this.cameraBounds,
           this.cameraBounds,

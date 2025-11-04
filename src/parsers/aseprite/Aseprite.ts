@@ -1,6 +1,6 @@
-import { assert } from '../../utils/util';
-import AseView from './AseView';
-import { rgbaNormal } from './blendFunctions';
+import { assert } from "../../utils/util";
+import AseView from "./AseView";
+import { rgbaNormal } from "./blendFunctions";
 import {
   AseLayer,
   AseColorProfile,
@@ -12,8 +12,8 @@ import {
   AseTileset,
   AseImageCel,
   AseTag,
-} from './types';
-import { LfPair, LfQuad } from '../types';
+} from "./types";
+import { LfPair, LfQuad } from "../types";
 export type AsepriteOptions = {
   layers?: string[];
   animations?: string[];
@@ -28,7 +28,10 @@ export default class Aseprite {
     this.size = size;
   }
 
-  static async init(buffer: ArrayBuffer, options: AsepriteOptions = {}): Promise<Aseprite> {
+  static async init(
+    buffer: ArrayBuffer,
+    options: AsepriteOptions = {},
+  ): Promise<Aseprite> {
     const v = new AseView(buffer);
     const fileSize = v.dword();
     assert(v.word() === 0xa5e0, `Invalid File format`);
@@ -55,7 +58,7 @@ export default class Aseprite {
 
     for (let i = 0; i < len; i++) {
       const end = v.offset + v.dword();
-      assert(v.word(2) === 0xf1fa, 'Frame mismatch');
+      assert(v.word(2) === 0xf1fa, "Frame mismatch");
       const duration = v.word(2);
       const chunkLen = v.dword();
       const cels: Record<number, AseCel[]> = {};
@@ -71,7 +74,7 @@ export default class Aseprite {
             //console.log("Got layer");
             chunk.cels = new Array(len); //this is a second frame representation to enable explicit linking without traversing the entire file.
             layers.push(chunk);
-            if (chunk.tileIndex) console.log('Chunk with tileIndex', chunk);
+            if (chunk.tileIndex) console.log("Chunk with tileIndex", chunk);
             break;
           case 0x2005: {
             //console.log("Got cel");
@@ -90,12 +93,14 @@ export default class Aseprite {
             }
 
             if (chunk.celType === 2 && pixelFormat != 4) {
-              if (pixelFormat === 1) chunk.pixels = v.indexedToRGBA(chunk.pixels, colorPalette);
-              else if (pixelFormat === 2) chunk.pixels = v.greyToRGBA(chunk.pixels);
+              if (pixelFormat === 1)
+                chunk.pixels = v.indexedToRGBA(chunk.pixels, colorPalette);
+              else if (pixelFormat === 2)
+                chunk.pixels = v.greyToRGBA(chunk.pixels);
             }
 
             if (chunk.celType === 3) {
-              console.log('Tilecel', chunk);
+              console.log("Tilecel", chunk);
             }
             break;
           }
@@ -106,14 +111,14 @@ export default class Aseprite {
             else colorProfile[0] = chunk;
             break;
           case 0x2008:
-            console.log('Got externals');
+            console.log("Got externals");
             externals.push(chunk);
             break;
           case 0x2018: {
-            console.log('Got tags', i, chunk);
+            console.log("Got tags", i, chunk);
 
             for (const tag of chunk.tags) {
-              tags[tag.tagName.replace(/\s/g, '')] = tag;
+              tags[tag.tagName.replace(/\s/g, "")] = tag;
             }
             break; //tags are not necessary yet
           }
@@ -138,12 +143,12 @@ export default class Aseprite {
             //console.log("Got user data", chunk);
             break; //im not doing anything with user data just yet.
           case 0x2022:
-            console.log('Got slice');
+            console.log("Got slice");
             const slice = v.slice();
             console.log(slice);
             break; //I am pretty sure a slice just describes a reusable set of frames to render the base frames this should be uncessary.
           case 0x2023:
-            console.log('Got tileset', chunk);
+            console.log("Got tileset", chunk);
             tileset = chunk;
             break; //I am not ready to support tilesets.
         }
@@ -154,7 +159,11 @@ export default class Aseprite {
         .sort();
       for (const i of lyrs) {
         for (const lyr of cels[i]) {
-          if (options.layers && !options.layers.includes(layers[lyr.layerIndex].name)) continue;
+          if (
+            options.layers &&
+            !options.layers.includes(layers[lyr.layerIndex].name)
+          )
+            continue;
           //console.log(options.layers, layers[lyr.layerIndex].name)
           if (lyr.celType === 0 || lyr.celType === 2) {
             //if(!(layers[lyr.layerIndex].flags & 0x1))continue; //layer is not visible
@@ -178,7 +187,7 @@ export default class Aseprite {
               layers[lyr.layerIndex].cels[lyr.frame].celType !== 0 &&
               layers[lyr.layerIndex].cels[lyr.frame].celType !== 2
             ) {
-              console.warn('Only image references are supported');
+              console.warn("Only image references are supported");
               continue;
             }
             const l = layers[lyr.layerIndex].cels[lyr.frame] as AseImageCel;
@@ -198,7 +207,9 @@ export default class Aseprite {
             }
             //console.log("Linked", i, lyr, layers[lyr.frame]);
           } else {
-            console.log(`Need additional render support 0x${lyr.celType.toString(16)}`);
+            console.log(
+              `Need additional render support 0x${lyr.celType.toString(16)}`,
+            );
           }
         }
       }

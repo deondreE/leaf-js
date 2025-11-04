@@ -1,2 +1,2 @@
-export { default } from './Psd';
-export * from './Psd';
+export { default } from "./Psd";
+export * from "./Psd";

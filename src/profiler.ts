@@ -1,5 +1,5 @@
-import { Y } from 'vitest/dist/chunks/reporters.DTtkbAtP.js';
-import { assert } from './utils/util';
+import { Y } from "vitest/dist/chunks/reporters.DTtkbAtP.js";
+import { assert } from "./utils/util";
 
 export interface LProfilerProps {
   targetId?: string;
@@ -17,7 +17,7 @@ interface CallStackEvent {
  * Profiler is a web component built for understanding the performance of the canvas specifically.
  * */
 export class Profiler extends HTMLCanvasElement {
-  static observedAttributes = ['target-id', 'width', 'height'];
+  static observedAttributes = ["target-id", "width", "height"];
   targetCanvas: HTMLCanvasElement | null = null;
   ctx: CanvasRenderingContext2D | null = null;
   frameTimes: number[] = [];
@@ -27,14 +27,14 @@ export class Profiler extends HTMLCanvasElement {
   tracking = false;
   paused = false;
   showBoundingBoxes = true;
-  type: '2d' | 'gpu' = '2d';
+  type: "2d" | "gpu" = "2d";
   boundingBoxes: { x: number; y: number; width: number; height: number }[] = [];
 
   animationFrameProgress: number = 0;
   animationFrameCount: number = 0;
   lastAnimationUpdateTime: number = performance.now();
 
-  private _currentTab: 'performance' | 'callstack' = 'performance';
+  private _currentTab: "performance" | "callstack" = "performance";
   displayCallStack: boolean = true; // Flag to toggle call stack display
   callStackEvents: CallStackEvent[] = [];
   callStackScrollOffset: number = 0; // New: Vertical scroll offset for the call stack
@@ -44,12 +44,12 @@ export class Profiler extends HTMLCanvasElement {
   }
 
   connectedCallback() {
-    this.id = 'profiler-canvas';
-    this.ctx = this.getContext('2d');
+    this.id = "profiler-canvas";
+    this.ctx = this.getContext("2d");
     this.updateTarget();
 
     // Add event listeners for tab switching
-    this.addEventListener('click', (event) => {
+    this.addEventListener("click", (event) => {
       // Get mouse position relative to the canvas
       const rect = this.getBoundingClientRect();
       const x = event.clientX - rect.left;
@@ -63,40 +63,46 @@ export class Profiler extends HTMLCanvasElement {
       if (y >= tabY && y <= tabY + tabHeight) {
         if (x >= 0 && x < tabWidth) {
           // Clicked on Performance tab
-          this.switchTab('performance');
+          this.switchTab("performance");
         } else if (x >= tabWidth && x < this.width) {
           // Clicked on Call Stack tab
-          this.switchTab('callstack');
+          this.switchTab("callstack");
         }
       }
     });
 
     // New: Add mouse wheel listener for scrolling the call stack
-    this.addEventListener('wheel', this.handleScroll.bind(this), {
+    this.addEventListener("wheel", this.handleScroll.bind(this), {
       passive: false,
     });
   }
 
   disconnectedCallback() {
-    console.log('Profiler canvas removed.');
+    console.log("Profiler canvas removed.");
     // Remove event listener to prevent memory leaks
-    this.removeEventListener('wheel', this.handleScroll.bind(this)); // Ensure same bound function is removed
+    this.removeEventListener("wheel", this.handleScroll.bind(this)); // Ensure same bound function is removed
   }
 
   adoptedCallback() {
-    console.log('Profiler canvas moved to a new document.');
+    console.log("Profiler canvas moved to a new document.");
   }
 
-  attributeChangedCallback(name: string, oldValue: string | null, newValue: string | null) {
-    if (name === 'target-id') {
+  attributeChangedCallback(
+    name: string,
+    oldValue: string | null,
+    newValue: string | null,
+  ) {
+    if (name === "target-id") {
       this.updateTarget();
     }
   }
 
   updateTarget() {
-    const targetId = this.getAttribute('target-id');
+    const targetId = this.getAttribute("target-id");
     if (targetId) {
-      this.targetCanvas = document.getElementById(targetId) as HTMLCanvasElement;
+      this.targetCanvas = document.getElementById(
+        targetId,
+      ) as HTMLCanvasElement;
     }
     if (this.targetCanvas) {
       console.log(`Profiler Monitoring: ${targetId}`);
@@ -110,12 +116,12 @@ export class Profiler extends HTMLCanvasElement {
     if (!this.targetCanvas) return;
 
     const targetCtx =
-      this.targetCanvas.getContext('2d') ||
-      this.targetCanvas.getContext('webgl') ||
-      this.targetCanvas.getContext('webgl2');
+      this.targetCanvas.getContext("2d") ||
+      this.targetCanvas.getContext("webgl") ||
+      this.targetCanvas.getContext("webgl2");
 
     if (!targetCtx) {
-      console.warn('Profiler: Unable to hook into canvas context.');
+      console.warn("Profiler: Unable to hook into canvas context.");
       return;
     }
 
@@ -177,26 +183,28 @@ export class Profiler extends HTMLCanvasElement {
     if (targetCtx instanceof CanvasRenderingContext2D) {
       // @ts-ignore
       targetCtx.fillRect = (...args) => {
-        this.addEventToCallStack('fillRect', args);
+        this.addEventToCallStack("fillRect", args);
         originalFillRect.apply(targetCtx, args);
       };
       // @ts-ignore
       targetCtx.strokeRect = (...args) => {
-        this.addEventToCallStack('strokeRect', args);
+        this.addEventToCallStack("strokeRect", args);
         originalStrokeRect.apply(targetCtx, args);
       };
       // @ts-ignore
       targetCtx.drawImage = (...args) => {
-        this.addEventToCallStack('drawImage', args);
+        this.addEventToCallStack("drawImage", args);
         originalDrawImage.apply(targetCtx, args);
       };
       // @ts-ignore
       targetCtx.clearRect = (...args: any[]) => {
-        this.addEventToCallStack('clearRect', args);
+        this.addEventToCallStack("clearRect", args);
         originalClearRect.apply(targetCtx, args);
       };
     } else {
-      console.warn('Profiler: Context is not 2D. Method patching may not be effective.');
+      console.warn(
+        "Profiler: Context is not 2D. Method patching may not be effective.",
+      );
     }
 
     monitorFrame(); // Start the monitoring loop
@@ -222,7 +230,7 @@ export class Profiler extends HTMLCanvasElement {
     const lineHeight = 20;
     const maxVisibleLines = Math.floor((this.height - 30) / lineHeight);
 
-    if (this._currentTab === 'callstack') {
+    if (this._currentTab === "callstack") {
       const contentHeight = this.callStackEvents.length * lineHeight;
       const visibleContentHeight = this.height - 30; // 30px for tabs
 
@@ -231,7 +239,10 @@ export class Profiler extends HTMLCanvasElement {
         this.callStackScrollOffset >= contentHeight - visibleContentHeight ||
         contentHeight < visibleContentHeight
       ) {
-        this.callStackScrollOffset = Math.max(0, contentHeight - visibleContentHeight);
+        this.callStackScrollOffset = Math.max(
+          0,
+          contentHeight - visibleContentHeight,
+        );
       }
     }
 
@@ -263,7 +274,7 @@ export class Profiler extends HTMLCanvasElement {
     const maxFrameTime = Math.max(...this.frameTimes, 16.67); // Include 60fps target
     const scaleY = graphHeight / (maxFrameTime * 1.2); // Scale to fit, with some padding
 
-    ctx.strokeStyle = this.paused ? '#666' : '#00ff00'; // Gray when paused, otherwise green
+    ctx.strokeStyle = this.paused ? "#666" : "#00ff00"; // Gray when paused, otherwise green
     ctx.lineWidth = 1.5;
     ctx.beginPath();
 
@@ -279,7 +290,7 @@ export class Profiler extends HTMLCanvasElement {
 
     // Draw 16.67ms (60 FPS) line
     const targetFPSLineY = graphYOffset + graphHeight - 16.67 * scaleY;
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)'; // White dashed line
+    ctx.strokeStyle = "rgba(255, 255, 255, 0.5)"; // White dashed line
     ctx.setLineDash([5, 5]);
     ctx.beginPath();
     ctx.moveTo(0, targetFPSLineY);
@@ -288,10 +299,14 @@ export class Profiler extends HTMLCanvasElement {
     ctx.setLineDash([]); // Reset line dash
 
     // Text labels
-    ctx.fillStyle = '#00ff00'; // Green for frame time
-    ctx.font = '12px Arial';
-    ctx.fillText(`Frame Time (ms) - Max: ${maxFrameTime.toFixed(2)}`, 10, graphYOffset + 15);
-    ctx.fillText('16.67ms (60 FPS)', 10, targetFPSLineY - 5);
+    ctx.fillStyle = "#00ff00"; // Green for frame time
+    ctx.font = "12px Arial";
+    ctx.fillText(
+      `Frame Time (ms) - Max: ${maxFrameTime.toFixed(2)}`,
+      10,
+      graphYOffset + 15,
+    );
+    ctx.fillText("16.67ms (60 FPS)", 10, targetFPSLineY - 5);
 
     if (this.fpsValues.length > 0) {
       const latestFPS = this.fpsValues[this.fpsValues.length - 1];
@@ -308,18 +323,18 @@ export class Profiler extends HTMLCanvasElement {
     const graphHeight = tabContentHeight * 0.3; // Use a portion for memory
     const graphYOffset = tabContentHeight * 0.55; // Position below frame time graph
 
-    ctx.fillStyle = '#1a1a1a'; // Dark background for this section
+    ctx.fillStyle = "#1a1a1a"; // Dark background for this section
     ctx.fillRect(0, graphYOffset, this.width, graphHeight);
 
     // Draw a border for the memory graph section
-    ctx.strokeStyle = '#333';
+    ctx.strokeStyle = "#333";
     ctx.strokeRect(0, graphYOffset, this.width, graphHeight);
 
     const maxMemory = Math.max(...this.memoryUsage, 50); // Minimum 50MB for scaling
     const barWidth = this.width / this.memoryUsage.length;
     const scaleY = graphHeight / (maxMemory * 1.2);
 
-    ctx.fillStyle = '#ff8c00'; // Orange for memory bars
+    ctx.fillStyle = "#ff8c00"; // Orange for memory bars
     for (let i = 0; i < this.memoryUsage.length; ++i) {
       const barHeight = this.memoryUsage[i] * scaleY;
       const x = i * barWidth;
@@ -328,13 +343,17 @@ export class Profiler extends HTMLCanvasElement {
     }
 
     // Text labels
-    ctx.fillStyle = '#ff8c00';
-    ctx.font = '12px Arial';
-    ctx.fillText('Memory Usage (MB)', 100, graphYOffset + 10);
+    ctx.fillStyle = "#ff8c00";
+    ctx.font = "12px Arial";
+    ctx.fillText("Memory Usage (MB)", 100, graphYOffset + 10);
 
     if (this.memoryUsage.length > 0) {
       const latestMemory = this.memoryUsage[this.memoryUsage.length - 1];
-      ctx.fillText(`Current: ${latestMemory.toFixed(2)} MB`, 10, graphYOffset + 30);
+      ctx.fillText(
+        `Current: ${latestMemory.toFixed(2)} MB`,
+        10,
+        graphYOffset + 30,
+      );
     }
   }
 
@@ -347,15 +366,15 @@ export class Profiler extends HTMLCanvasElement {
     const sectionHeight = tabContentHeight * 0.1;
     const sectionYOffset = tabContentHeight * 0.9;
 
-    ctx.fillStyle = '#0a0a0a'; // Even darker background
+    ctx.fillStyle = "#0a0a0a"; // Even darker background
     ctx.fillRect(0, sectionYOffset, this.width, sectionHeight);
 
-    ctx.strokeStyle = '#333';
+    ctx.strokeStyle = "#333";
     ctx.strokeRect(0, sectionYOffset, this.width, sectionHeight);
 
-    ctx.fillStyle = 'white';
-    ctx.font = '12px Arial';
-    ctx.fillText('Animation Frame Progress', 10, sectionYOffset + 15);
+    ctx.fillStyle = "white";
+    ctx.font = "12px Arial";
+    ctx.fillText("Animation Frame Progress", 10, sectionYOffset + 15);
 
     // Simple progress bar
     const barPadding = 20;
@@ -364,14 +383,18 @@ export class Profiler extends HTMLCanvasElement {
     const barX = barPadding;
     const barY = sectionYOffset + sectionHeight - barHeight - 10;
 
-    ctx.strokeStyle = '#444';
+    ctx.strokeStyle = "#444";
     ctx.strokeRect(barX, barY, barWidth, barHeight);
 
-    ctx.fillStyle = '#00ffff'; // Cyan for progress
+    ctx.fillStyle = "#00ffff"; // Cyan for progress
     ctx.fillRect(barX, barY, barWidth * this.animationFrameProgress, barHeight);
 
-    ctx.fillStyle = 'white';
-    ctx.fillText(`Frames Rendered: ${this.animationFrameCount}`, barX, barY - 5);
+    ctx.fillStyle = "white";
+    ctx.fillText(
+      `Frames Rendered: ${this.animationFrameCount}`,
+      barX,
+      barY - 5,
+    );
   }
 
   renderTabs(ctx: CanvasRenderingContext2D) {
@@ -379,44 +402,47 @@ export class Profiler extends HTMLCanvasElement {
     const tabWidth = this.width / 2;
     const tabY = 0;
 
-    ctx.font = '14px Arial';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
+    ctx.font = "14px Arial";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
 
     // Performance Tab
-    ctx.fillStyle = this._currentTab === 'performance' ? '#333' : '#1a1a1a';
+    ctx.fillStyle = this._currentTab === "performance" ? "#333" : "#1a1a1a";
     ctx.fillRect(0, tabY, tabWidth, tabHeight);
-    ctx.strokeStyle = '#555';
+    ctx.strokeStyle = "#555";
     ctx.strokeRect(0, tabY, tabWidth, tabHeight);
-    ctx.fillStyle = 'white';
-    ctx.fillText('Performance', tabWidth / 2, tabY + tabHeight / 2);
+    ctx.fillStyle = "white";
+    ctx.fillText("Performance", tabWidth / 2, tabY + tabHeight / 2);
 
     // Call Stack Tab
-    ctx.fillStyle = this._currentTab === 'callstack' ? '#333' : '#1a1a1a';
+    ctx.fillStyle = this._currentTab === "callstack" ? "#333" : "#1a1a1a";
     ctx.fillRect(tabWidth, tabY, tabWidth, tabHeight);
-    ctx.strokeStyle = '#555';
+    ctx.strokeStyle = "#555";
     ctx.strokeRect(tabWidth, tabY, tabWidth, tabHeight);
-    ctx.fillStyle = 'white';
-    ctx.fillText('Call Stack', tabWidth + tabWidth / 2, tabY + tabHeight / 2);
+    ctx.fillStyle = "white";
+    ctx.fillText("Call Stack", tabWidth + tabWidth / 2, tabY + tabHeight / 2);
   }
 
   renderCallStack(ctx: CanvasRenderingContext2D) {
     const contentRegionY = 0; // Relative to the translated context
     const contentRegionHeight = this.height - 30; // Available height for call stack content
 
-    ctx.fillStyle = 'black';
+    ctx.fillStyle = "black";
     ctx.fillRect(0, contentRegionY, this.width, contentRegionHeight);
 
-    ctx.fillStyle = 'white';
-    ctx.font = '12px Monospace';
-    ctx.textAlign = 'left';
+    ctx.fillStyle = "white";
+    ctx.font = "12px Monospace";
+    ctx.textAlign = "left";
 
     const lineHeight = 20;
     const totalContentHeight = this.callStackEvents.length * lineHeight;
 
     const maxScroll = Math.max(0, totalContentHeight - contentRegionHeight);
 
-    this.callStackScrollOffset = Math.min(this.callStackScrollOffset, maxScroll);
+    this.callStackScrollOffset = Math.min(
+      this.callStackScrollOffset,
+      maxScroll,
+    );
     this.callStackScrollOffset = Math.max(0, this.callStackScrollOffset);
 
     const lineIndexStart = Math.floor(this.callStackScrollOffset / lineHeight);
@@ -439,12 +465,14 @@ export class Profiler extends HTMLCanvasElement {
             return String(arg);
           }
         })
-        .join(', ');
+        .join(", ");
 
       const text = `[${displayTime}ms] ${event.type}(${argsString})`;
 
       const y =
-        (i - lineIndexStart) * lineHeight + lineHeight - (this.callStackScrollOffset % lineHeight);
+        (i - lineIndexStart) * lineHeight +
+        lineHeight -
+        (this.callStackScrollOffset % lineHeight);
       if (
         y >= contentRegionY &&
         y + lineHeight <= contentRegionY + contentRegionHeight + lineHeight
@@ -454,8 +482,8 @@ export class Profiler extends HTMLCanvasElement {
     }
 
     if (this.callStackEvents.length === 0) {
-      ctx.fillStyle = '#666';
-      ctx.fillText('No events recorded yet.', 10, contentRegionY + lineHeight);
+      ctx.fillStyle = "#666";
+      ctx.fillText("No events recorded yet.", 10, contentRegionY + lineHeight);
     }
 
     if (maxScroll > 0) {
@@ -464,8 +492,13 @@ export class Profiler extends HTMLCanvasElement {
       const scrollbarTrackHeight = contentRegionHeight - 10;
       const scrollbarTrackY = contentRegionY + 5;
 
-      ctx.fillStyle = '#333';
-      ctx.fillRect(scrollbarX, scrollbarTrackY, scrollbarWidth, scrollbarTrackHeight);
+      ctx.fillStyle = "#333";
+      ctx.fillRect(
+        scrollbarX,
+        scrollbarTrackY,
+        scrollbarWidth,
+        scrollbarTrackHeight,
+      );
 
       const thumbHeight = Math.max(
         20,
@@ -473,26 +506,31 @@ export class Profiler extends HTMLCanvasElement {
       );
       const thumbY =
         scrollbarTrackY +
-        (this.callStackScrollOffset / maxScroll) * (scrollbarTrackHeight - thumbHeight);
+        (this.callStackScrollOffset / maxScroll) *
+          (scrollbarTrackHeight - thumbHeight);
 
-      ctx.fillStyle = '#888';
+      ctx.fillStyle = "#888";
       ctx.fillRect(scrollbarX, thumbY, scrollbarWidth, thumbHeight);
     }
   }
 
   handleScroll(event: WheelEvent) {
-    if (this._currentTab === 'callstack') {
+    if (this._currentTab === "callstack") {
       event.preventDefault();
 
       const scrollSpeed = 20;
-      this.callStackScrollOffset += event.deltaY > 0 ? scrollSpeed : -scrollSpeed;
+      this.callStackScrollOffset +=
+        event.deltaY > 0 ? scrollSpeed : -scrollSpeed;
 
       const lineHeight = 20;
       const totalContentHeight = this.callStackEvents.length * lineHeight;
       const contentRegionHeight = this.height - 30;
       const maxScroll = Math.max(0, totalContentHeight - contentRegionHeight);
 
-      this.callStackScrollOffset = Math.min(this.callStackScrollOffset, maxScroll);
+      this.callStackScrollOffset = Math.min(
+        this.callStackScrollOffset,
+        maxScroll,
+      );
       this.callStackScrollOffset = Math.max(0, this.callStackScrollOffset);
 
       this.render();
@@ -505,7 +543,7 @@ export class Profiler extends HTMLCanvasElement {
     const ctx = this.ctx;
     ctx.clearRect(0, 0, this.width, this.height);
 
-    ctx.fillStyle = 'black';
+    ctx.fillStyle = "black";
     ctx.fillRect(0, 0, this.width, this.height);
 
     this.renderTabs(ctx);
@@ -514,31 +552,34 @@ export class Profiler extends HTMLCanvasElement {
     ctx.translate(0, tabContentStartY);
 
     switch (this._currentTab) {
-      case 'performance':
+      case "performance":
         this.renderFrameTimeGraph(ctx);
         this.renderMemoryUsageGraph(ctx);
         this.renderAnimationFrameVisualization(ctx);
         break;
-      case 'callstack':
+      case "callstack":
         this.renderCallStack(ctx);
         break;
     }
     ctx.restore();
 
-    ctx.fillStyle = this.paused ? 'gray' : 'white';
-    ctx.font = '14px Arial';
-    ctx.textAlign = 'right';
-    ctx.fillText(this.paused ? 'PAUSED' : 'RUNNING', this.width - 10, 20); // Still 20px from top
+    ctx.fillStyle = this.paused ? "gray" : "white";
+    ctx.font = "14px Arial";
+    ctx.textAlign = "right";
+    ctx.fillText(this.paused ? "PAUSED" : "RUNNING", this.width - 10, 20); // Still 20px from top
   }
 
-  switchTab(tab: 'performance' | 'callstack') {
+  switchTab(tab: "performance" | "callstack") {
     if (this._currentTab !== tab) {
       this._currentTab = tab;
-      if (tab === 'callstack') {
+      if (tab === "callstack") {
         const lineHeight = 20;
         const totalContentHeight = this.callStackEvents.length * lineHeight;
         const contentRegionHeight = this.height - 30;
-        this.callStackScrollOffset = Math.max(0, totalContentHeight - contentRegionHeight);
+        this.callStackScrollOffset = Math.max(
+          0,
+          totalContentHeight - contentRegionHeight,
+        );
       }
       this.render();
     }
@@ -564,4 +605,4 @@ export class Profiler extends HTMLCanvasElement {
   }
 }
 
-customElements.define('l-profiler', Profiler, { extends: 'canvas' });
+customElements.define("l-profiler", Profiler, { extends: "canvas" });

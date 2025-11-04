@@ -1,26 +1,26 @@
-import { mat4 } from 'gl-matrix';
-import OBJParser from './parsers/obj';
-import STLParser from './parsers/stl';
+import { mat4 } from "gl-matrix";
+import OBJParser from "./parsers/obj";
+import STLParser from "./parsers/stl";
 
-import { Model } from './types/scene.types';
-import { v4 as uuid } from 'uuid';
-import Camera from './camera';
+import { Model } from "./types/scene.types";
+import { v4 as uuid } from "uuid";
+import Camera from "./camera";
 import {
   createMaterialUniformBufferData,
   MATERIAL_UNIFORM_BUFFER_SIZE,
   MtlMaterial,
-} from './parsers/mtl';
-import { WebGPUFBXParser } from './parsers/fbx';
-import Gizmo from './gizmo';
-import RigidBody from './physics/RigidBody';
-import PhysicsSystem from './physics/PhysyicsSystem';
-import PhysicsDebugger from './physics/PhysicsDebugger';
-import { extractRotation } from './matrixMath';
+} from "./parsers/mtl";
+import { WebGPUFBXParser } from "./parsers/fbx";
+import Gizmo from "./gizmo";
+import RigidBody from "./physics/RigidBody";
+import PhysicsSystem from "./physics/PhysyicsSystem";
+import PhysicsDebugger from "./physics/PhysicsDebugger";
+import { extractRotation } from "./matrixMath";
 
 /** > Currently Supports static file definitions. */
 class Renderer3D {
   canvas?: HTMLCanvasElement;
-  contextType: 'webgpu' | 'webgl2' | null = null;
+  contextType: "webgpu" | "webgl2" | null = null;
   device: GPUDevice | null = null;
   context: GPUCanvasContext | WebGLRenderingContext | null = null;
   format: GPUTextureFormat | null = null;
@@ -52,38 +52,43 @@ class Renderer3D {
 
   enablePhysics(enable = true) {
     this.physicsEnabled = enable;
-    console.log(`[Renderer3D] Physics ${enable ? 'enabled' : 'disabled'}.`);
+    console.log(`[Renderer3D] Physics ${enable ? "enabled" : "disabled"}.`);
   }
 
   togglePhysicsDebug(enable: boolean) {
     this.showPhysicsDebug = enable;
-    console.log(`[Renderer3D] Physics debugger ${enable ? 'enabled' : 'disabled'}.`);
+    console.log(
+      `[Renderer3D] Physics debugger ${enable ? "enabled" : "disabled"}.`,
+    );
   }
 
   async init(fileName: string) {
-    if ('gpu' in navigator) {
-      console.log('Attempting WebGPU initialization....');
+    if ("gpu" in navigator) {
+      console.log("Attempting WebGPU initialization....");
       try {
         await this.initWebGPU(fileName);
-        this.contextType = 'webgpu';
+        this.contextType = "webgpu";
         return;
       } catch (err) {
-        console.warn('WebGPU initialization failed, falling back to webgl2', err);
+        console.warn(
+          "WebGPU initialization failed, falling back to webgl2",
+          err,
+        );
       }
     }
 
-    console.log('Using WebGL2 fallback.');
+    console.log("Using WebGL2 fallback.");
     this.initWebGL(fileName);
-    this.contextType = 'webgl2';
+    this.contextType = "webgl2";
   }
 
   private async initWebGPU(fileName: string): Promise<void> {
     const adapter = await navigator.gpu.requestAdapter();
-    if (!adapter) throw new Error('No WebGPU adapter found.');
+    if (!adapter) throw new Error("No WebGPU adapter found.");
     this.device = await adapter.requestDevice();
 
-    const gpuContext = this.canvas!.getContext('webgpu');
-    if (!gpuContext) throw new Error('Failed to create WebGPU context.');
+    const gpuContext = this.canvas!.getContext("webgpu");
+    if (!gpuContext) throw new Error("Failed to create WebGPU context.");
 
     this.context = gpuContext;
     this.format = navigator.gpu.getPreferredCanvasFormat();
@@ -92,7 +97,7 @@ class Renderer3D {
     const { width, height } = this.canvas!;
     this.depthTexture = this.device.createTexture({
       size: [width, height],
-      format: 'depth24plus',
+      format: "depth24plus",
       usage: GPUTextureUsage.RENDER_ATTACHMENT,
     });
 
@@ -107,20 +112,22 @@ class Renderer3D {
     this.physicsDebugger = new PhysicsDebugger(this.device, this.format!);
     await this.physicsDebugger.init();
 
-    console.log('[Renderer3D] WebGPU Initialized.');
+    console.log("[Renderer3D] WebGPU Initialized.");
 
     await this.loadSceneWebGPU(fileName);
 
-    this.canvas!.addEventListener('click', (e) => this.pickObject(e.offsetX, e.offsetY));
+    this.canvas!.addEventListener("click", (e) =>
+      this.pickObject(e.offsetX, e.offsetY),
+    );
   }
 
   private initWebGL(_fileName: string): void {
     const gl = this.getWebGL2ContextSafely(this.canvas!);
     if (!gl) {
-      console.error('WebGL2 context not supported.');
+      console.error("WebGL2 context not supported.");
       console.table({
         secureContext: window.isSecureContext,
-        hasGPU: 'gpu' in navigator,
+        hasGPU: "gpu" in navigator,
         ua: navigator.userAgent,
       });
       return;
@@ -132,13 +139,13 @@ class Renderer3D {
     gl.viewport(0, 0, this.canvas!.width, this.canvas!.height);
     gl.clearColor(0.1, 0.1, 0.1, 1.0);
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-    console.log('[Renderer3D] WebGL2 fallback initialized.');
+    console.log("[Renderer3D] WebGL2 fallback initialized.");
 
     this.render(() => gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT));
   }
 
   private async loadSceneWebGPU(fileName: string): Promise<void> {
-    if (!this.device) throw new Error('Device not initialized.');
+    if (!this.device) throw new Error("Device not initialized.");
 
     const viewMatrix = mat4.create();
     const projectionMatrix = mat4.create();
@@ -159,13 +166,13 @@ class Renderer3D {
 
     const ext = this.returnFileExt(fileName);
     switch (ext) {
-      case 'obj':
+      case "obj":
         await this.loadOBJScene(fileName, mvpMatrix);
         break;
-      case 'stl':
+      case "stl":
         await this.loadSTLScene(fileName, mvpMatrix);
         break;
-      case 'fbx':
+      case "fbx":
         await this.loadFBXScene(fileName, mvpMatrix);
         break;
       default:
@@ -176,7 +183,7 @@ class Renderer3D {
   private async loadFBXScene(fileName: string, mvpMatrix: Float32Array) {
     const device = this.device as GPUDevice;
     const context = this.context as GPUCanvasContext;
-    if (!device || !context) throw new Error('Renderer3D not initialized.');
+    if (!device || !context) throw new Error("Renderer3D not initialized.");
 
     const absURL = new URL(fileName, window.location.href).href;
     console.log(`[Renderer3D] Loading FBX scene from: ${absURL}`);
@@ -185,11 +192,14 @@ class Renderer3D {
     let arrayBuffer: ArrayBuffer;
     try {
       const response = await fetch(absURL);
-      if (!response.ok) throw new Error(`HTTP ${response.status} (${response.statusText})`);
+      if (!response.ok)
+        throw new Error(`HTTP ${response.status} (${response.statusText})`);
       arrayBuffer = await response.arrayBuffer();
     } catch (err) {
       console.error(`❌ Failed to fetch FBX '${fileName}':`, err);
-      console.warn('Tip: Make sure f.fbx is in your /public/ folder and accessible via /f.fbx');
+      console.warn(
+        "Tip: Make sure f.fbx is in your /public/ folder and accessible via /f.fbx",
+      );
       return;
     }
 
@@ -215,7 +225,7 @@ class Renderer3D {
     });
 
     const defaultMaterial: MtlMaterial = {
-      name: 'fbxDefault',
+      name: "fbxDefault",
       Ka: [0.2, 0.2, 0.2],
       Kd: [0.7, 0.7, 0.7],
       Ks: [0.8, 0.8, 0.8],
@@ -250,8 +260,13 @@ class Renderer3D {
     const matData = createMaterialUniformBufferData(defaultMaterial);
     device.queue.writeBuffer(materialUBO, 0, matData);
 
-    if (!this.format) throw new Error('Canvas format not resolved.');
-    await fbxParser.createPipeline(shaderModule, this.format, sceneUBO, materialUBO);
+    if (!this.format) throw new Error("Canvas format not resolved.");
+    await fbxParser.createPipeline(
+      shaderModule,
+      this.format,
+      sceneUBO,
+      materialUBO,
+    );
 
     const depthView = this.depthTexture!.createView();
     const renderFrame = () => {
@@ -261,15 +276,15 @@ class Renderer3D {
           {
             view: context.getCurrentTexture().createView(),
             clearValue: { r: 0.1, g: 0.1, b: 0.1, a: 1 },
-            loadOp: 'clear',
-            storeOp: 'store',
+            loadOp: "clear",
+            storeOp: "store",
           },
         ],
         depthStencilAttachment: {
           view: depthView,
           depthClearValue: 1,
-          depthLoadOp: 'clear',
-          depthStoreOp: 'store',
+          depthLoadOp: "clear",
+          depthStoreOp: "store",
         },
       });
 
@@ -285,7 +300,8 @@ class Renderer3D {
   private async loadOBJScene(fileName: string, mvpMatrix: Float32Array) {
     const device = this.device as GPUDevice;
     const context = this.context as GPUCanvasContext;
-    if (!device || !context) throw new Error('Renderer3D device/context not initialized.');
+    if (!device || !context)
+      throw new Error("Renderer3D device/context not initialized.");
 
     const index = this.models.length;
     const objParser = new OBJParser(device);
@@ -319,7 +335,7 @@ class Renderer3D {
     device.queue.writeBuffer(sceneUniformBuffer, 0, sceneData);
 
     const fallbackMaterial: MtlMaterial = {
-      name: 'default',
+      name: "default",
       Ka: [0.2, 0.2, 0.2],
       Kd: [0.8, 0.8, 0.8],
       Ks: [0.6, 0.6, 0.6],
@@ -360,27 +376,27 @@ class Renderer3D {
       materialUniformBuffer,
     );
 
-    this.fpsElement = document.createElement('div');
+    this.fpsElement = document.createElement("div");
     Object.assign(this.fpsElement.style, {
-      position: 'absolute',
-      top: '8px',
-      left: '8px',
-      color: '#00ff88',
-      fontFamily: 'monospace',
-      fontSize: '14px',
-      background: 'rgba(0, 0, 0, 0.4)',
-      padding: '2px 6px',
-      borderRadius: '4px',
-      zIndex: '999',
+      position: "absolute",
+      top: "8px",
+      left: "8px",
+      color: "#00ff88",
+      fontFamily: "monospace",
+      fontSize: "14px",
+      background: "rgba(0, 0, 0, 0.4)",
+      padding: "2px 6px",
+      borderRadius: "4px",
+      zIndex: "999",
     });
-    this.fpsElement.textContent = 'FPS: 0';
+    this.fpsElement.textContent = "FPS: 0";
     this.canvas!.parentElement?.appendChild(this.fpsElement);
 
     let body: RigidBody | null = null;
     // == Physics ==
     for (const [objName, objData] of Object.entries(objParser.objects)) {
       body = new RigidBody({
-        shape: 'box',
+        shape: "box",
         mass: 1.0,
         position: { x: 0, y: 3, z: 0 },
         restitution: 0.8,
@@ -449,15 +465,15 @@ class Renderer3D {
           {
             view: context.getCurrentTexture().createView(),
             clearValue: { r: 0.1, g: 0.1, b: 0.1, a: 1 },
-            loadOp: 'clear',
-            storeOp: 'store',
+            loadOp: "clear",
+            storeOp: "store",
           },
         ],
         depthStencilAttachment: {
           view: depthView,
           depthClearValue: 1.0,
-          depthLoadOp: 'clear',
-          depthStoreOp: 'store',
+          depthLoadOp: "clear",
+          depthStoreOp: "store",
         },
       });
 
@@ -486,7 +502,10 @@ class Renderer3D {
     console.log(`[Renderer3D] ✅ OBJ loaded: ${fileName}`);
   }
 
-  private async pickObject(mouseX: number, mouseY: number): Promise<Model | null> {
+  private async pickObject(
+    mouseX: number,
+    mouseY: number,
+  ): Promise<Model | null> {
     if (!this.device || !this.context) return null;
     if (!this.pickTexture || !this.pickTextureView) return null;
 
@@ -527,27 +546,27 @@ class Renderer3D {
     });
 
     const pickPipeline = device.createRenderPipeline({
-      layout: 'auto',
+      layout: "auto",
       vertex: {
         module: pickShader,
-        entryPoint: 'vs_main',
+        entryPoint: "vs_main",
         buffers: [
           {
             arrayStride: 8 * 4,
-            attributes: [{ shaderLocation: 0, offset: 0, format: 'float32x3' }],
+            attributes: [{ shaderLocation: 0, offset: 0, format: "float32x3" }],
           },
         ],
       },
       fragment: {
         module: pickShader,
-        entryPoint: 'fs_main',
+        entryPoint: "fs_main",
         targets: [{ format: this.format! }],
       },
-      primitive: { topology: 'triangle-list', cullMode: 'none' },
+      primitive: { topology: "triangle-list", cullMode: "none" },
       depthStencil: {
-        format: 'depth24plus',
+        format: "depth24plus",
         depthWriteEnabled: true,
-        depthCompare: 'less',
+        depthCompare: "less",
       },
     });
 
@@ -563,15 +582,15 @@ class Renderer3D {
         {
           view: this.pickTextureView!,
           clearValue: { r: 0, g: 0, b: 0, a: 1 },
-          loadOp: 'clear',
-          storeOp: 'store',
+          loadOp: "clear",
+          storeOp: "store",
         },
       ],
       depthStencilAttachment: {
         view: this.depthTexture!.createView(),
         depthClearValue: 1,
-        depthLoadOp: 'clear',
-        depthStoreOp: 'store',
+        depthLoadOp: "clear",
+        depthStoreOp: "store",
       },
     });
 
@@ -588,7 +607,12 @@ class Renderer3D {
 
     for (let i = 0; i < this.models.length; ++i) {
       const mdl = this.models[i];
-      const colorID = [((i + 1) & 0xff) / 255, (((i + 1) >> 8) & 0xff) / 255, 0, 1];
+      const colorID = [
+        ((i + 1) & 0xff) / 255,
+        (((i + 1) >> 8) & 0xff) / 255,
+        0,
+        1,
+      ];
       device.queue.writeBuffer(colorUBO, 0, new Float32Array(colorID));
       device.queue.writeBuffer(sceneUBO, 0, mdl.modelMatrix);
 
@@ -606,13 +630,16 @@ class Renderer3D {
 
       pass.setBindGroup(0, bindGroup);
       pass.setVertexBuffer(0, mdl.vertexBuffer);
-      pass.setIndexBuffer(mdl.indexBuffer, 'uint16');
+      pass.setIndexBuffer(mdl.indexBuffer, "uint16");
       pass.drawIndexed(mdl.indexBuffer.size / 2, 1, 0, 0, 0);
     }
     pass.end();
 
     encoder.copyTextureToBuffer(
-      { texture: this.pickTexture!, origin: { x: mouseX, y: height - mouseY - 1 } },
+      {
+        texture: this.pickTexture!,
+        origin: { x: mouseX, y: height - mouseY - 1 },
+      },
       { buffer: pixelBuffer, bytesPerRow: 256 },
       { width: 1, height: 1, depthOrArrayLayers: 1 },
     );
@@ -626,9 +653,11 @@ class Renderer3D {
     const id = color[0] + (color[1] << 8);
     const selected = this.models[id - 1] ?? null;
     if (selected) {
-      console.log(`[Renderer3D] 🎯 Picked model: ${selected.name} (index ${id - 1})`);
+      console.log(
+        `[Renderer3D] 🎯 Picked model: ${selected.name} (index ${id - 1})`,
+      );
     } else {
-      console.log('[Renderer3D] No object picked.');
+      console.log("[Renderer3D] No object picked.");
     }
 
     return selected;
@@ -659,15 +688,15 @@ class Renderer3D {
           {
             view: context.getCurrentTexture().createView(),
             clearValue: { r: 0.2, g: 0.2, b: 0.2, a: 1 },
-            loadOp: 'clear',
-            storeOp: 'store',
+            loadOp: "clear",
+            storeOp: "store",
           },
         ],
         depthStencilAttachment: {
           view: depthView,
           depthClearValue: 1.0,
-          depthLoadOp: 'clear',
-          depthStoreOp: 'store',
+          depthLoadOp: "clear",
+          depthStoreOp: "store",
         },
       });
 
@@ -680,29 +709,54 @@ class Renderer3D {
     renderFrame();
   }
 
-  private createModelScaleMatrix(scaleX: number, scaleY: number, scaleZ: number) {
-    return new Float32Array([scaleX, 0, 0, 0, 0, scaleY, 0, 0, 0, 0, scaleZ, 0, 0, 0, 0, 1]);
+  private createModelScaleMatrix(
+    scaleX: number,
+    scaleY: number,
+    scaleZ: number,
+  ) {
+    return new Float32Array([
+      scaleX,
+      0,
+      0,
+      0,
+      0,
+      scaleY,
+      0,
+      0,
+      0,
+      0,
+      scaleZ,
+      0,
+      0,
+      0,
+      0,
+      1,
+    ]);
   }
 
   private render(fn: () => void): void {
-    if (typeof fn === 'function') fn();
+    if (typeof fn === "function") fn();
   }
 
   private returnFileExt(fileName: string): string {
-    const parts = fileName.split('.');
-    return parts.length > 1 ? parts.pop()!.toLowerCase() : '';
+    const parts = fileName.split(".");
+    return parts.length > 1 ? parts.pop()!.toLowerCase() : "";
   }
 
-  private getWebGL2ContextSafely(canvas: HTMLCanvasElement): WebGL2RenderingContext | null {
+  private getWebGL2ContextSafely(
+    canvas: HTMLCanvasElement,
+  ): WebGL2RenderingContext | null {
     // If another context is already bound, create a fresh duplicate
-    if (canvas.getContext('webgpu')) {
-      console.warn('Canvas already has a WebGPU context — creating new canvas for WebGL fallback.');
+    if (canvas.getContext("webgpu")) {
+      console.warn(
+        "Canvas already has a WebGPU context — creating new canvas for WebGL fallback.",
+      );
       const newCanvas = canvas.cloneNode() as HTMLCanvasElement;
       canvas.replaceWith(newCanvas);
-      return newCanvas.getContext('webgl2');
+      return newCanvas.getContext("webgl2");
     }
 
-    return canvas.getContext('webgl2');
+    return canvas.getContext("webgl2");
   }
 
   setCamera(camera: Camera) {

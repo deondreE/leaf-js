@@ -1,11 +1,11 @@
-import type { SceneFactory } from './src/types/scene.types';
-import global from './src/types/global';
+import type { SceneFactory } from "./src/types/scene.types";
+import global from "./src/types/global";
 
 export const initScene: SceneFactory = () => ({
-  name: 'Demo Scene',
+  name: "Demo Scene",
 
   camera: {
-    type: 'orthographic',
+    type: "orthographic",
     FOV: 45,
     cameraBounds: 1.0,
     near: 0.1,
@@ -28,10 +28,10 @@ export const initScene: SceneFactory = () => ({
         sizeOverTime: {
           startSize: { w: 1, h: 1 },
           endSize: { w: 0.2, h: 0.2 },
-          interperlationType: 'linear',
+          interperlationType: "linear",
         },
       },
-      shape: 'sphere',
+      shape: "sphere",
     },
     particleCount: 5_000,
   },
@@ -41,7 +41,7 @@ export const initScene: SceneFactory = () => ({
     gravity: { x: 0, y: -9.81, z: 0 },
     rigidBodies: [
       {
-        shape: 'sphere',
+        shape: "sphere",
         mass: 1.0,
         position: { x: 0, y: 5, z: 0 },
         velocity: { x: 0, y: 0, z: 0 },
@@ -50,7 +50,7 @@ export const initScene: SceneFactory = () => ({
         radius: 1,
       },
       {
-        shape: 'plane',
+        shape: "plane",
         mass: 0,
         position: { x: 0, y: 0, z: 0 },
       },
@@ -62,8 +62,8 @@ export const initScene: SceneFactory = () => ({
     duration: 5.0,
     tracks: [
       {
-        target: 'camera',
-        property: 'position.z',
+        target: "camera",
+        property: "position.z",
         keyframes: [
           { time: 0, value: 10 },
           { time: 2.5, value: 5 },
@@ -72,8 +72,8 @@ export const initScene: SceneFactory = () => ({
         loop: true,
       },
       {
-        target: 'light',
-        property: 'rotation.y',
+        target: "light",
+        property: "rotation.y",
         keyframes: [
           { time: 0, value: 0 },
           { time: 5, value: 6.28 },

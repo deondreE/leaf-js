@@ -1,3 +1,3 @@
 onmessage = (e: Event) => {
-  console.log('Worker msg', e);
+  console.log("Worker msg", e);
 };

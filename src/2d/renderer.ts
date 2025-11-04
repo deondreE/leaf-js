@@ -1,5 +1,5 @@
-import { assert } from '../utils/util';
-import { Quad, RenderDrawFunction, RenderOptions } from './types';
+import { assert } from "../utils/util";
+import { Quad, RenderDrawFunction, RenderOptions } from "./types";
 
 /**
  * In 2d all this really does is clear the rect and redraw at a desired fps if possible.
@@ -17,14 +17,19 @@ export default class Renderer2d {
     draw: RenderDrawFunction,
     { context, size, fps = 64 }: RenderOptions = {},
   ) {
-    this.context = context ?? canvas.getContext('2d');
-    assert(this.context != null, 'Rendering context unavailable');
+    this.context = context ?? canvas.getContext("2d");
+    assert(this.context != null, "Rendering context unavailable");
     this.draw = draw;
     this.fps = 1e3 / fps;
 
     if (!size) {
       const bounding = canvas.getBoundingClientRect();
-      this.rect = [bounding.left, bounding.top, bounding.width, bounding.height];
+      this.rect = [
+        bounding.left,
+        bounding.top,
+        bounding.width,
+        bounding.height,
+      ];
     }
 
     this.render = this.render.bind(this);

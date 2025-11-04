@@ -40,16 +40,16 @@ export default class ParticleRenderer {
   async init() {
     const adapter = await navigator.gpu.requestAdapter();
     if (!adapter) {
-      console.error('No webgpu adpater found!');
+      console.error("No webgpu adpater found!");
       return;
     }
 
     this.device = await adapter.requestDevice();
-    this.context = this.canvas!.getContext('webgpu');
+    this.context = this.canvas!.getContext("webgpu");
     this.format = navigator.gpu.getPreferredCanvasFormat();
 
     if (!this.device || !this.context || !this.format) {
-      console.error('Failed to init WebGPU');
+      console.error("Failed to init WebGPU");
       return;
     }
 
@@ -70,8 +70,10 @@ export default class ParticleRenderer {
         particleData[i * 4] = x;
         particleData[i * 4 + 1] = y;
 
-        const vx = this.initialVelocityDirection.x * this.initialVelocityMagnitude;
-        const vy = this.initialVelocityDirection.y * this.initialVelocityMagnitude;
+        const vx =
+          this.initialVelocityDirection.x * this.initialVelocityMagnitude;
+        const vy =
+          this.initialVelocityDirection.y * this.initialVelocityMagnitude;
 
         particleData[i * 4 + 2] = vx;
         particleData[i * 4 + 3] = vy;
@@ -79,7 +81,10 @@ export default class ParticleRenderer {
 
       this.particleBuffer = this.device.createBuffer({
         size: particleData.byteLength,
-        usage: GPUBufferUsage.VERTEX | GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
+        usage:
+          GPUBufferUsage.VERTEX |
+          GPUBufferUsage.STORAGE |
+          GPUBufferUsage.COPY_DST,
         mappedAtCreation: true,
       });
       new Float32Array(this.particleBuffer.getMappedRange()).set(particleData);
@@ -94,10 +99,15 @@ export default class ParticleRenderer {
 
       this.particleBuffer = this.device.createBuffer({
         size: this.particleData.byteLength,
-        usage: GPUBufferUsage.VERTEX | GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
+        usage:
+          GPUBufferUsage.VERTEX |
+          GPUBufferUsage.STORAGE |
+          GPUBufferUsage.COPY_DST,
         mappedAtCreation: true,
       });
-      new Float32Array(this.particleBuffer.getMappedRange()).set(this.particleData);
+      new Float32Array(this.particleBuffer.getMappedRange()).set(
+        this.particleData,
+      );
       this.particleBuffer.unmap();
 
       this.uniformBuffer = this.device.createBuffer({
@@ -134,23 +144,25 @@ export default class ParticleRenderer {
       });
 
       this.pipeline = this.device.createRenderPipeline({
-        layout: 'auto',
+        layout: "auto",
         vertex: {
           module: shaderModule,
-          entryPoint: 'vs_main',
+          entryPoint: "vs_main",
           buffers: [
             {
               arrayStride: 16, // 2 vec2s (position, velocity)
-              attributes: [{ shaderLocation: 0, offset: 0, format: 'float32x2' }],
+              attributes: [
+                { shaderLocation: 0, offset: 0, format: "float32x2" },
+              ],
             },
           ],
         },
         fragment: {
           module: shaderModule,
-          entryPoint: 'fs_main',
-          targets: [{ format: 'bgra8unorm' }],
+          entryPoint: "fs_main",
+          targets: [{ format: "bgra8unorm" }],
         },
-        primitive: { topology: 'point-list' },
+        primitive: { topology: "point-list" },
       });
 
       this.bindGroup = this.device.createBindGroup({
@@ -187,26 +199,26 @@ export default class ParticleRenderer {
       });
 
       this.pipeline = this.device.createRenderPipeline({
-        layout: 'auto',
+        layout: "auto",
         vertex: {
           module: shaderModule,
-          entryPoint: 'vs_main',
+          entryPoint: "vs_main",
           buffers: [
             {
               arrayStride: 20,
               attributes: [
-                { shaderLocation: 0, offset: 0, format: 'float32x2' },
-                { shaderLocation: 1, offset: 8, format: 'float32' },
+                { shaderLocation: 0, offset: 0, format: "float32x2" },
+                { shaderLocation: 1, offset: 8, format: "float32" },
               ],
             },
           ],
         },
         fragment: {
           module: shaderModule,
-          entryPoint: 'fs_main',
-          targets: [{ format: 'bgra8unorm' }],
+          entryPoint: "fs_main",
+          targets: [{ format: "bgra8unorm" }],
         },
-        primitive: { topology: 'point-list' },
+        primitive: { topology: "point-list" },
       });
     }
   }
@@ -237,10 +249,10 @@ export default class ParticleRenderer {
       });
 
       this.computePipeline = this.device.createComputePipeline({
-        layout: 'auto',
+        layout: "auto",
         compute: {
           module: computeShaderModule,
-          entryPoint: 'cs_main',
+          entryPoint: "cs_main",
         },
       });
 
@@ -277,10 +289,10 @@ export default class ParticleRenderer {
       });
 
       this.computePipeline = this.device.createComputePipeline({
-        layout: 'auto',
+        layout: "auto",
         compute: {
           module: temp,
-          entryPoint: 'cs_main',
+          entryPoint: "cs_main",
         },
       });
 
@@ -304,8 +316,10 @@ export default class ParticleRenderer {
         const x = (Math.random() - 0.5) * this.emissionArea.width;
         const y = (Math.random() - 0.5) * this.emissionArea.height;
 
-        const vx = this.initialVelocityDirection.x * this.initialVelocityMagnitude;
-        const vy = this.initialVelocityDirection.y * this.initialVelocityMagnitude;
+        const vx =
+          this.initialVelocityDirection.x * this.initialVelocityMagnitude;
+        const vy =
+          this.initialVelocityDirection.y * this.initialVelocityMagnitude;
 
         this.particleData[index * 5] = x;
         this.particleData[index * 5 + 1] = y;
@@ -368,8 +382,8 @@ export default class ParticleRenderer {
         {
           view: this.context!.getCurrentTexture().createView(),
           loadValue: [0, 0, 0, 1],
-          storeOp: 'store',
-          loadOp: 'load',
+          storeOp: "store",
+          loadOp: "load",
         },
       ],
     };

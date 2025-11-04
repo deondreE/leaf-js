@@ -1,6 +1,6 @@
-import { assert } from '../../utils/util';
-import { LfPair } from '../types';
-import PsdView from './PsdView';
+import { assert } from "../../utils/util";
+import { LfPair } from "../types";
+import PsdView from "./PsdView";
 
 export default class Psd {
   size: LfPair;
@@ -16,7 +16,7 @@ export default class Psd {
     const sig = v.str(4);
     const ver = v.word(6);
 
-    assert(sig === '8BPS', 'Invalid file format');
+    assert(sig === "8BPS", "Invalid file format");
     assert(ver === 1, `File version mismatch ${ver}`);
 
     const channels = v.word();
@@ -26,7 +26,8 @@ export default class Psd {
 
     const colorData = v.dword();
     v.offset += colorData;
-    if (colorData) console.warn('Only rgb and rgba formats are supported at this time');
+    if (colorData)
+      console.warn("Only rgb and rgba formats are supported at this time");
 
     const lmEnd = v.offset + v.dword();
     const layersLength = v.dword();
@@ -35,12 +36,13 @@ export default class Psd {
 
     v.offset = lmEnd;
     const imgCompression = v.word();
-    if (imgCompression !== 0) throw new Error('Compression formats not yet supported');
+    if (imgCompression !== 0)
+      throw new Error("Compression formats not yet supported");
 
     if (channels === 3) {
-      console.log('Rendering rgb image');
+      console.log("Rendering rgb image");
       const bm = await v.rgb(...size);
-      console.log('got bitmap');
+      console.log("got bitmap");
       return new Psd(size, [bm]);
     }
     console.log(channels, size, depth, colorMode, colorData, imgCompression);

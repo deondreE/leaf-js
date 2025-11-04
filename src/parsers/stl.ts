@@ -31,7 +31,8 @@ class STLParser {
 
   // Load and parse the STL file (ASCII format)
   async loadSTL(stlData: string): Promise<boolean> {
-    const regex = /facet\s+normal\s+([-0-9.]+)\s+([-0-9.]+)\s+([-0-9.]+)\s+([\s\S]*?)\s+endfacet/g;
+    const regex =
+      /facet\s+normal\s+([-0-9.]+)\s+([-0-9.]+)\s+([-0-9.]+)\s+([\s\S]*?)\s+endfacet/g;
     let match;
     const vertices: Vertex[] = [];
     const indices: number[] = [];
@@ -115,7 +116,7 @@ class STLParser {
 
     // ***CRITICAL: Check if indexData has any data***
     if (indexData.length === 0) {
-      console.warn('Index data is empty. Skipping index buffer creation.');
+      console.warn("Index data is empty. Skipping index buffer creation.");
       return; // Or handle the error appropriately
     }
 
@@ -124,7 +125,9 @@ class STLParser {
       usage: GPUBufferUsage.INDEX | GPUBufferUsage.COPY_DST,
       mappedAtCreation: true,
     });
-    new (indexData.constructor as any)(this.indexBuffer.getMappedRange()).set(indexData);
+    new (indexData.constructor as any)(this.indexBuffer.getMappedRange()).set(
+      indexData,
+    );
     this.indexBuffer.unmap();
   }
 
@@ -139,7 +142,7 @@ class STLParser {
         {
           binding: 0,
           visibility: GPUShaderStage.VERTEX,
-          buffer: { type: 'uniform' },
+          buffer: { type: "uniform" },
         },
       ],
     });
@@ -152,28 +155,28 @@ class STLParser {
       layout: pipelineLayout,
       vertex: {
         module: shaderModule,
-        entryPoint: 'vs_main',
+        entryPoint: "vs_main",
         buffers: [
           {
             arrayStride: 8 * 4,
             attributes: [
-              { shaderLocation: 0, offset: 0, format: 'float32x3' }, // position
-              { shaderLocation: 1, offset: 3 * 4, format: 'float32x3' }, // normal
-              { shaderLocation: 2, offset: 6 * 4, format: 'float32x2' }, // texCoord
+              { shaderLocation: 0, offset: 0, format: "float32x3" }, // position
+              { shaderLocation: 1, offset: 3 * 4, format: "float32x3" }, // normal
+              { shaderLocation: 2, offset: 6 * 4, format: "float32x2" }, // texCoord
             ],
           },
         ],
       },
       fragment: {
         module: shaderModule,
-        entryPoint: 'fs_main',
+        entryPoint: "fs_main",
         targets: [{ format }],
       },
       primitive: {
-        topology: 'triangle-list',
-        cullMode: 'front',
+        topology: "triangle-list",
+        cullMode: "front",
         unclippedDepth: false,
-        frontFace: 'cw',
+        frontFace: "cw",
       },
     });
 
@@ -235,13 +238,15 @@ class STLParser {
 
     // Check if indexBuffer exists BEFORE using it
     if (!this.indexBuffer) {
-      console.warn('Index buffer is not initialized. Rendering without indices (drawArrays).');
+      console.warn(
+        "Index buffer is not initialized. Rendering without indices (drawArrays).",
+      );
       passEncoder.draw(this.vertices.length); // drawArrays
       return;
     }
 
     // Determine the correct index format based on the buffer size
-    const indexFormat = this.indexBuffer.size <= 65536 ? 'uint16' : 'uint32';
+    const indexFormat = this.indexBuffer.size <= 65536 ? "uint16" : "uint32";
     passEncoder.setIndexBuffer(this.indexBuffer, indexFormat);
 
     // Draw the correct number of indices

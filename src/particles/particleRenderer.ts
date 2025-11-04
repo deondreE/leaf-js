@@ -1,6 +1,6 @@
 // particleRenderer.ts
-import { ParticleConfig, ParticleUniform } from './particleTypes';
-import { standardShaders, simulationShaders } from './particleShaders';
+import { ParticleConfig, ParticleUniform } from "./particleTypes";
+import { standardShaders, simulationShaders } from "./particleShaders";
 
 const WORKGROUP_SIZE = 64;
 
@@ -48,10 +48,10 @@ export default class ParticleRenderer {
 
   private async init() {
     const adapter = await navigator.gpu.requestAdapter();
-    if (!adapter) throw new Error('No WebGPU adapter found!');
+    if (!adapter) throw new Error("No WebGPU adapter found!");
 
     this.device = await adapter.requestDevice();
-    this.context = this.canvas.getContext('webgpu')!;
+    this.context = this.canvas.getContext("webgpu")!;
     this.format = navigator.gpu.getPreferredCanvasFormat();
 
     this.context.configure({
@@ -68,11 +68,16 @@ export default class ParticleRenderer {
 
     this.particleBuffer = this.device.createBuffer({
       size: this.particleData.byteLength,
-      usage: GPUBufferUsage.VERTEX | GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
+      usage:
+        GPUBufferUsage.VERTEX |
+        GPUBufferUsage.STORAGE |
+        GPUBufferUsage.COPY_DST,
       mappedAtCreation: true,
     });
 
-    new Float32Array(this.particleBuffer.getMappedRange()).set(this.particleData);
+    new Float32Array(this.particleBuffer.getMappedRange()).set(
+      this.particleData,
+    );
     this.particleBuffer.unmap();
 
     this.uniformBuffer = this.device.createBuffer({
@@ -92,28 +97,28 @@ export default class ParticleRenderer {
     const renderModule = this.device.createShaderModule({ code: renderShader });
 
     this.pipeline = this.device.createRenderPipeline({
-      layout: 'auto',
+      layout: "auto",
       vertex: {
         module: renderModule,
-        entryPoint: 'vs_main',
+        entryPoint: "vs_main",
         buffers: [
           {
             arrayStride: simulation ? 16 : 20,
             attributes: simulation
-              ? [{ shaderLocation: 0, offset: 0, format: 'float32x2' }]
+              ? [{ shaderLocation: 0, offset: 0, format: "float32x2" }]
               : [
-                  { shaderLocation: 0, offset: 0, format: 'float32x2' },
-                  { shaderLocation: 1, offset: 8, format: 'float32' },
+                  { shaderLocation: 0, offset: 0, format: "float32x2" },
+                  { shaderLocation: 1, offset: 8, format: "float32" },
                 ],
           },
         ],
       },
       fragment: {
         module: renderModule,
-        entryPoint: 'fs_main',
+        entryPoint: "fs_main",
         targets: [{ format: this.format }],
       },
-      primitive: { topology: 'point-list' },
+      primitive: { topology: "point-list" },
     });
 
     // Compute pipeline
@@ -121,10 +126,12 @@ export default class ParticleRenderer {
       ? simulationShaders.compute(gravity)
       : standardShaders.compute(gravity);
 
-    const computeModule = this.device.createShaderModule({ code: computeShader });
+    const computeModule = this.device.createShaderModule({
+      code: computeShader,
+    });
     this.computePipeline = this.device.createComputePipeline({
-      layout: 'auto',
-      compute: { module: computeModule, entryPoint: 'cs_main' },
+      layout: "auto",
+      compute: { module: computeModule, entryPoint: "cs_main" },
     });
 
     // Bind groups
@@ -149,7 +156,11 @@ export default class ParticleRenderer {
     if (simulation) return;
 
     const emitCount = Math.floor(emissionRate * dt);
-    for (let i = 0; i < emitCount && this.aliveParticles < this.config.particleCount; i++) {
+    for (
+      let i = 0;
+      i < emitCount && this.aliveParticles < this.config.particleCount;
+      i++
+    ) {
       const index = this.aliveParticles++;
       const x = (Math.random() - 0.5) * emissionArea.width;
       const y = (Math.random() - 0.5) * emissionArea.height;
@@ -171,13 +182,19 @@ export default class ParticleRenderer {
     this.device.queue.writeBuffer(this.uniformBuffer, 0, tData);
 
     if (!this.config.simulation) this.emitParticles(dt);
-    this.device.queue.writeBuffer(this.particleBuffer, 0, this.particleData.buffer);
+    this.device.queue.writeBuffer(
+      this.particleBuffer,
+      0,
+      this.particleData.buffer,
+    );
 
     const encoder = this.device.createCommandEncoder();
     const pass = encoder.beginComputePass();
     pass.setPipeline(this.computePipeline);
     pass.setBindGroup(0, this.computeBindGroup);
-    pass.dispatchWorkgroups(Math.ceil(this.config.particleCount / WORKGROUP_SIZE));
+    pass.dispatchWorkgroups(
+      Math.ceil(this.config.particleCount / WORKGROUP_SIZE),
+    );
     pass.end();
     this.device.queue.submit([encoder.finish()]);
   }
@@ -188,8 +205,8 @@ export default class ParticleRenderer {
       colorAttachments: [
         {
           view: this.context.getCurrentTexture().createView(),
-          loadOp: 'clear',
-          storeOp: 'store',
+          loadOp: "clear",
+          storeOp: "store",
           clearValue: [0, 0, 0, 1],
         },
       ],

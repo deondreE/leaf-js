@@ -1,6 +1,6 @@
-import RigidBody from './RigidBody';
-import { PhysicsShape } from '../types/scene.types';
-import { mat3, quat, vec3 } from 'gl-matrix';
+import RigidBody from "./RigidBody";
+import { PhysicsShape } from "../types/scene.types";
+import { mat3, quat, vec3 } from "gl-matrix";
 
 /**
  * PhysicsSystem
@@ -75,12 +75,24 @@ export default class PhysicsSystem {
       const accel = vec3.scale(vec3.create(), body.force, 1 / body.mass);
 
       // Integrate velocity and position
-      vec3.add(body.velocity, body.velocity, vec3.scale(vec3.create(), accel, dt));
-      vec3.add(body.position, body.position, vec3.scale(vec3.create(), body.velocity, dt));
+      vec3.add(
+        body.velocity,
+        body.velocity,
+        vec3.scale(vec3.create(), accel, dt),
+      );
+      vec3.add(
+        body.position,
+        body.position,
+        vec3.scale(vec3.create(), body.velocity, dt),
+      );
 
       // --- ANGULAR FORCES ------------------------------------------------
       // Compute angular acceleration (α = I⁻¹ * τ)
-      const angularAcc = vec3.transformMat3(vec3.create(), body.torque, body.inverseInertiaTensor);
+      const angularAcc = vec3.transformMat3(
+        vec3.create(),
+        body.torque,
+        body.inverseInertiaTensor,
+      );
       vec3.add(
         body.angularVelocity,
         body.angularVelocity,
@@ -108,7 +120,11 @@ export default class PhysicsSystem {
 
       // --- DAMPING -------------------------------------------------------
       vec3.scale(body.velocity, body.velocity, this.linearDamping);
-      vec3.scale(body.angularVelocity, body.angularVelocity, this.angularDamping);
+      vec3.scale(
+        body.angularVelocity,
+        body.angularVelocity,
+        this.angularDamping,
+      );
 
       // --- CLEANUP -------------------------------------------------------
       body.clearAccumulators();
@@ -164,7 +180,7 @@ export default class PhysicsSystem {
    */
   private resolveGroundCollision(body: RigidBody) {
     switch (body.shape as PhysicsShape) {
-      case 'sphere': {
+      case "sphere": {
         const r = body.radius;
         const bottom = body.position[1] - r;
 
@@ -186,7 +202,7 @@ export default class PhysicsSystem {
         break;
       }
 
-      case 'box': {
+      case "box": {
         if (!body.size) return;
         const halfHeight = body.size[1];
         const bottom = body.position[1] - halfHeight;
@@ -219,7 +235,7 @@ export default class PhysicsSystem {
    */
   private handleGroundCollision(body: RigidBody) {
     switch (body.shape as PhysicsShape) {
-      case 'sphere': {
+      case "sphere": {
         const r = body.radius;
         const bottom = body.position[1] - r;
         if (bottom < this.groundY) {
@@ -227,7 +243,8 @@ export default class PhysicsSystem {
           body.position[1] = this.groundY + r;
 
           // Reverse upward momentum.
-          if (body.velocity[1] < 0) body.velocity[1] *= -(body.restitution ?? this.restitution);
+          if (body.velocity[1] < 0)
+            body.velocity[1] *= -(body.restitution ?? this.restitution);
 
           // Apply energy loss via damping and tangential friction.
           vec3.scale(body.velocity, body.velocity, body.damping);
@@ -236,12 +253,13 @@ export default class PhysicsSystem {
         break;
       }
 
-      case 'box': {
+      case "box": {
         const h = body.size?.[1] ?? 0.5;
         const bottom = body.position[1] - h;
         if (bottom < this.groundY) {
           body.position[1] = this.groundY + h;
-          if (body.velocity[1] < 0) body.velocity[1] *= -(body.restitution ?? this.restitution);
+          if (body.velocity[1] < 0)
+            body.velocity[1] *= -(body.restitution ?? this.restitution);
           vec3.scale(body.velocity, body.velocity, body.damping);
           vec3.scale(body.angularVelocity, body.angularVelocity, body.damping);
         }

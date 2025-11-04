@@ -1,4 +1,4 @@
-import { Mat4, mat4 } from 'wgpu-matrix';
+import { Mat4, mat4 } from "wgpu-matrix";
 
 function extractRotation(dst: Mat4, src: Mat4) {
   // Copy only rotation/scaling part

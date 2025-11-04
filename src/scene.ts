@@ -1,10 +1,10 @@
-import type { Model } from './types/scene.types';
-import EventDispatcher from './eventdispatcher';
-import Renderer3D from './renderer';
+import type { Model } from "./types/scene.types";
+import EventDispatcher from "./eventdispatcher";
+import Renderer3D from "./renderer";
 
 /** A Scene is defined as a collection of objects renderd in a single pass. */
 class Scene {
-  name: string | '' = '';
+  name: string | "" = "";
   canvas: HTMLCanvasElement | null = null;
   uData: any | null = null;
   children: Map<Model, string> = new Map<Model, string>();
@@ -22,15 +22,15 @@ class Scene {
   }
 
   awake(f: () => void) {
-    this.eventDispatcher?.on('onAwake', f);
+    this.eventDispatcher?.on("onAwake", f);
   }
 
   start(f: () => void) {
-    this.eventDispatcher?.on('onStart', f);
+    this.eventDispatcher?.on("onStart", f);
   }
 
   update(f: () => void) {
-    this.eventDispatcher?.on('onUpdate', f);
+    this.eventDispatcher?.on("onUpdate", f);
   }
 
   run() {
@@ -38,8 +38,8 @@ class Scene {
     this.isRunning = true;
     this.isPaused = false;
 
-    this.eventDispatcher?.emit('onAwake');
-    this.eventDispatcher?.emit('onStart');
+    this.eventDispatcher?.emit("onAwake");
+    this.eventDispatcher?.emit("onStart");
 
     const loop = () => {
       if (!this.isRunning || this.isPaused) return;
@@ -71,14 +71,14 @@ class Scene {
       cancelAnimationFrame(this.rafId);
       this.rafId = null;
     }
-    console.log('Scene stopped');
+    console.log("Scene stopped");
   }
 
   /**
    * Render is the "true" render call, this will trigger update inside of it.
    */
   render() {
-    console.log('Render');
+    console.log("Render");
     // rendering logic would go here
   }
 

@@ -1,4 +1,4 @@
-import { parse } from 'uuid';
+import { parse } from "uuid";
 
 /**
  * Interface to represent a single parsed material from an MTL file.
@@ -100,19 +100,19 @@ export function parseMtl(mtlContent: string): Map<string, MtlMaterial> {
   const materials = new Map<string, MtlMaterial>();
   let currentMaterial: MtlMaterial | null = null;
 
-  const lines = mtlContent.split('\n');
+  const lines = mtlContent.split("\n");
 
   for (const line of lines) {
     const trimmedLine = line.trim();
-    if (trimmedLine.length === 0 || trimmedLine.startsWith('#')) continue;
+    if (trimmedLine.length === 0 || trimmedLine.startsWith("#")) continue;
 
     const parts = trimmedLine.split(/\s+/);
     const command = parts[0];
     const args = parts.slice(1);
 
     switch (command) {
-      case 'newmtl':
-        const materialName = args.join(' ');
+      case "newmtl":
+        const materialName = args.join(" ");
         if (materialName) {
           currentMaterial = {
             name: materialName,
@@ -149,74 +149,77 @@ export function parseMtl(mtlContent: string): Map<string, MtlMaterial> {
           materials.set(materialName, currentMaterial);
         }
         break;
-      case 'Ka':
-      case 'Kd':
-      case 'Ks':
-      case 'Ke':
-      case 'Tf':
+      case "Ka":
+      case "Kd":
+      case "Ks":
+      case "Ke":
+      case "Tf":
         if (currentMaterial && args.length >= 3) {
           const color = args.map(parseFloat).slice(0, 3);
           (currentMaterial as any)[command] = color;
         }
         break;
-      case 'Ns': // Shininess
+      case "Ns": // Shininess
         if (currentMaterial && args.length >= 1) {
           currentMaterial.Ns = parseFloat(args[0]);
         }
         break;
-      case 'Ni':
-        if (currentMaterial && args.length >= 1) currentMaterial.Ni = parseFloat(args[0]);
+      case "Ni":
+        if (currentMaterial && args.length >= 1)
+          currentMaterial.Ni = parseFloat(args[0]);
         break;
-      case 'd':
+      case "d":
         if (currentMaterial && args.length >= 1) {
           currentMaterial.d = parseFloat(args[0]);
           currentMaterial.Tr = 1.0 - currentMaterial.d;
         }
         break;
-      case 'Tr': // Transparency (alternative to d)
+      case "Tr": // Transparency (alternative to d)
         if (currentMaterial && args.length >= 1) {
           const alpha = parseFloat(args[0]);
           currentMaterial.d = 1.0 - currentMaterial.Tr;
         }
         break;
-      case 'illum':
-        if (currentMaterial && args.length >= 1) currentMaterial.illum = parseInt(args[0]);
+      case "illum":
+        if (currentMaterial && args.length >= 1)
+          currentMaterial.illum = parseInt(args[0]);
         break;
 
-      case 'Pr':
-      case 'Pm':
-      case 'Ps':
-      case 'Pc':
-      case 'Pt':
-        if (currentMaterial) (currentMaterial as any)[command] = parseFloat(args[0]);
+      case "Pr":
+      case "Pm":
+      case "Ps":
+      case "Pc":
+      case "Pt":
+        if (currentMaterial)
+          (currentMaterial as any)[command] = parseFloat(args[0]);
         break;
 
-      case 'map_Ka':
-      case 'map_Kd':
-      case 'map_Ks':
-      case 'map_Ke':
-      case 'map_d':
-      case 'map_Ns':
-      case 'disp':
-      case 'decal':
-      case 'refl':
-      case 'map_Pr':
-      case 'map_Pm':
-      case 'map_Ps':
-      case 'map_Pc':
-      case 'map_Pt':
-        if (currentMaterial) (currentMaterial as any)[command] = args.join(' ');
+      case "map_Ka":
+      case "map_Kd":
+      case "map_Ks":
+      case "map_Ke":
+      case "map_d":
+      case "map_Ns":
+      case "disp":
+      case "decal":
+      case "refl":
+      case "map_Pr":
+      case "map_Pm":
+      case "map_Ps":
+      case "map_Pc":
+      case "map_Pt":
+        if (currentMaterial) (currentMaterial as any)[command] = args.join(" ");
         break;
 
-      case 'map_bump':
-      case 'bump':
+      case "map_bump":
+      case "bump":
         if (currentMaterial && args.length >= 1) {
-          const bmIndex = args.indexOf('-bm');
+          const bmIndex = args.indexOf("-bm");
           if (bmIndex >= 0 && bmIndex + 2 <= args.length) {
-            const filename = args.slice(bmIndex + 2).join(' ');
+            const filename = args.slice(bmIndex + 2).join(" ");
             currentMaterial.map_bump = filename;
           } else {
-            currentMaterial.map_bump = args.join(' ');
+            currentMaterial.map_bump = args.join(" ");
           }
         }
         break;
@@ -238,7 +241,9 @@ export const MATERIAL_UNIFORM_FLOAT_COUNT = 24;
  * @param material The MtlMaterial object.
  * @returns A Float32Array formatted for the MaterialUniforms WGSL struct.
  */
-export function createMaterialUniformBufferData(material: MtlMaterial): Float32Array {
+export function createMaterialUniformBufferData(
+  material: MtlMaterial,
+): Float32Array {
   const data = new Float32Array(MATERIAL_UNIFORM_FLOAT_COUNT);
 
   let offset = 0; // Offset in terms of Float32Array indices (not bytes)

@@ -1,14 +1,15 @@
-import { mat4, vec4 } from 'gl-matrix';
-import Camera from './camera';
+import { mat4, vec4 } from "gl-matrix";
+import Camera from "./camera";
 
-function generateArrowGeometry(axis: 'x' | 'y' | 'z'): Float32Array {
+function generateArrowGeometry(axis: "x" | "y" | "z"): Float32Array {
   const headLength = 0.2;
   const shaftLength = 0.8;
   const radius = 0.03;
   const radialSegments = 16;
 
   const verts: number[] = [];
-  const color = axis === 'x' ? [1, 0, 0, 1] : axis === 'y' ? [0, 1, 0, 1] : [0, 0, 1, 1];
+  const color =
+    axis === "x" ? [1, 0, 0, 1] : axis === "y" ? [0, 1, 0, 1] : [0, 0, 1, 1];
 
   // Shaft (cylinder sides)
   for (let i = 0; i < radialSegments; i++) {
@@ -20,20 +21,22 @@ function generateArrowGeometry(axis: 'x' | 'y' | 'z'): Float32Array {
     const c2 = Math.cos(t2) * radius;
     const s2 = Math.sin(t2) * radius;
 
-    const p0 = axis === 'x' ? [0, c1, s1] : axis === 'y' ? [c1, 0, s1] : [c1, s1, 0];
+    const p0 =
+      axis === "x" ? [0, c1, s1] : axis === "y" ? [c1, 0, s1] : [c1, s1, 0];
     const p1 =
-      axis === 'x'
+      axis === "x"
         ? [shaftLength, c1, s1]
-        : axis === 'y'
+        : axis === "y"
           ? [c1, shaftLength, s1]
           : [c1, s1, shaftLength];
     const p2 =
-      axis === 'x'
+      axis === "x"
         ? [shaftLength, c2, s2]
-        : axis === 'y'
+        : axis === "y"
           ? [c2, shaftLength, s2]
           : [c2, s2, shaftLength];
-    const p3 = axis === 'x' ? [0, c2, s2] : axis === 'y' ? [c2, 0, s2] : [c2, s2, 0];
+    const p3 =
+      axis === "x" ? [0, c2, s2] : axis === "y" ? [c2, 0, s2] : [c2, s2, 0];
 
     verts.push(...p0, ...color, ...p1, ...color, ...p2, ...color);
     verts.push(...p0, ...color, ...p2, ...color, ...p3, ...color);
@@ -41,9 +44,9 @@ function generateArrowGeometry(axis: 'x' | 'y' | 'z'): Float32Array {
 
   // Cone head
   const tip =
-    axis === 'x'
+    axis === "x"
       ? [shaftLength + headLength, 0, 0]
-      : axis === 'y'
+      : axis === "y"
         ? [0, shaftLength + headLength, 0]
         : [0, 0, shaftLength + headLength];
   const baseStart = shaftLength;
@@ -58,9 +61,17 @@ function generateArrowGeometry(axis: 'x' | 'y' | 'z'): Float32Array {
     const s2 = Math.sin(t2) * coneRadius;
 
     const b1 =
-      axis === 'x' ? [baseStart, c1, s1] : axis === 'y' ? [c1, baseStart, s1] : [c1, s1, baseStart];
+      axis === "x"
+        ? [baseStart, c1, s1]
+        : axis === "y"
+          ? [c1, baseStart, s1]
+          : [c1, s1, baseStart];
     const b2 =
-      axis === 'x' ? [baseStart, c2, s2] : axis === 'y' ? [c2, baseStart, s2] : [c2, s2, baseStart];
+      axis === "x"
+        ? [baseStart, c2, s2]
+        : axis === "y"
+          ? [c2, baseStart, s2]
+          : [c2, s2, baseStart];
 
     verts.push(...tip, ...color, ...b1, ...color, ...b2, ...color);
   }
@@ -68,7 +79,11 @@ function generateArrowGeometry(axis: 'x' | 'y' | 'z'): Float32Array {
   return new Float32Array(verts);
 }
 
-function distPointToSegment(p: [number, number], a: [number, number], b: [number, number]) {
+function distPointToSegment(
+  p: [number, number],
+  a: [number, number],
+  b: [number, number],
+) {
   if (isNaN(a[0]) || isNaN(a[1]) || isNaN(b[0]) || isNaN(b[1])) return Infinity;
 
   const px = p[0],
@@ -83,7 +98,10 @@ function distPointToSegment(p: [number, number], a: [number, number], b: [number
   const apx = px - ax;
   const apy = py - ay;
 
-  const t = Math.max(0, Math.min(1, (apx * abx + apy * aby) / (abx * abx + aby * aby)));
+  const t = Math.max(
+    0,
+    Math.min(1, (apx * abx + apy * aby) / (abx * abx + aby * aby)),
+  );
   const closestX = ax + abx * t;
   const closestY = ay + aby * t;
   return Math.hypot(px - closestX, py - closestY);
@@ -99,7 +117,7 @@ export default class Gizmo {
   vertexCount = 0;
 
   private canvas: HTMLCanvasElement | null = null;
-  private activeAxis: 'x' | 'y' | 'z' | null = null;
+  private activeAxis: "x" | "y" | "z" | null = null;
   private camera: Camera | null = null;
   private isDragging = false;
   private lastMouse: { x: number; y: number } = { x: 0, y: 0 };
@@ -112,9 +130,9 @@ export default class Gizmo {
   attachInteraction(canvas: HTMLCanvasElement, camera: any) {
     this.canvas = canvas;
     this.camera = camera;
-    canvas.addEventListener('mousedown', this.onMouseDown);
-    canvas.addEventListener('mousemove', this.onMouseMove);
-    canvas.addEventListener('mouseup', this.onMouseUp);
+    canvas.addEventListener("mousedown", this.onMouseDown);
+    canvas.addEventListener("mousemove", this.onMouseMove);
+    canvas.addEventListener("mouseup", this.onMouseUp);
   }
 
   private onMouseDown = (evt: MouseEvent) => {
@@ -132,10 +150,38 @@ export default class Gizmo {
     const { viewMatrix, pMatrix } = this.camera;
 
     // Project to screen (returns [xPx, yPx, ndcZ])
-    const o2 = this.projectToScreen(origin, viewMatrix, pMatrix, this.modelMatrix, width, height);
-    const x2 = this.projectToScreen(xEnd, viewMatrix, pMatrix, this.modelMatrix, width, height);
-    const y2 = this.projectToScreen(yEnd, viewMatrix, pMatrix, this.modelMatrix, width, height);
-    const z2 = this.projectToScreen(zEnd, viewMatrix, pMatrix, this.modelMatrix, width, height);
+    const o2 = this.projectToScreen(
+      origin,
+      viewMatrix,
+      pMatrix,
+      this.modelMatrix,
+      width,
+      height,
+    );
+    const x2 = this.projectToScreen(
+      xEnd,
+      viewMatrix,
+      pMatrix,
+      this.modelMatrix,
+      width,
+      height,
+    );
+    const y2 = this.projectToScreen(
+      yEnd,
+      viewMatrix,
+      pMatrix,
+      this.modelMatrix,
+      width,
+      height,
+    );
+    const z2 = this.projectToScreen(
+      zEnd,
+      viewMatrix,
+      pMatrix,
+      this.modelMatrix,
+      width,
+      height,
+    );
 
     const mouse: [number, number] = [evt.offsetX, evt.offsetY];
 
@@ -154,16 +200,16 @@ export default class Gizmo {
     }
 
     // Decide which axis is closest to click
-    if (distX <= distY && distX <= distZ) this.activeAxis = 'x';
-    else if (distY <= distZ) this.activeAxis = 'y';
-    else this.activeAxis = 'z';
+    if (distX <= distY && distX <= distZ) this.activeAxis = "x";
+    else if (distY <= distZ) this.activeAxis = "y";
+    else this.activeAxis = "z";
 
     this.isDragging = true;
     this.lastMouse = { x: evt.offsetX, y: evt.offsetY };
 
     console.log(
       `Picked axis: ${this.activeAxis}`,
-      'Distances:',
+      "Distances:",
       `X ${distX.toFixed(2)} Y ${distY.toFixed(2)} Z ${distZ.toFixed(2)}`,
     );
   };
@@ -204,7 +250,14 @@ export default class Gizmo {
 
   private onMouseMove = (evt: MouseEvent) => {
     if (this.isDragging && this.activeAxis)
-      console.log('Dragging', this.activeAxis, 'dx:', evt.movementX, 'dy:', evt.movementY);
+      console.log(
+        "Dragging",
+        this.activeAxis,
+        "dx:",
+        evt.movementX,
+        "dy:",
+        evt.movementY,
+      );
     if (!this.isDragging || !this.activeAxis || !this.camera) return;
 
     const dx = evt.movementX;
@@ -215,7 +268,11 @@ export default class Gizmo {
     const delta = (dx - dy) * speed;
 
     const dir =
-      this.activeAxis === 'x' ? [1, 0, 0] : this.activeAxis === 'y' ? [0, 1, 0] : [0, 0, 1];
+      this.activeAxis === "x"
+        ? [1, 0, 0]
+        : this.activeAxis === "y"
+          ? [0, 1, 0]
+          : [0, 0, 1];
 
     // Apply translation in world space
     mat4.translate(this.modelMatrix, this.modelMatrix, [
@@ -226,24 +283,26 @@ export default class Gizmo {
   };
 
   private onMouseUp = () => {
-    if (this.activeAxis) console.log('Released', this.activeAxis);
+    if (this.activeAxis) console.log("Released", this.activeAxis);
     this.isDragging = false;
     this.activeAxis = null;
   };
 
   async init(format: GPUTextureFormat) {
-    const vertsX = generateArrowGeometry('x');
-    const vertsY = generateArrowGeometry('y');
-    const vertsZ = generateArrowGeometry('z');
+    const vertsX = generateArrowGeometry("x");
+    const vertsY = generateArrowGeometry("y");
+    const vertsZ = generateArrowGeometry("z");
 
-    const allVerts = new Float32Array(vertsX.length + vertsY.length + vertsZ.length);
+    const allVerts = new Float32Array(
+      vertsX.length + vertsY.length + vertsZ.length,
+    );
     allVerts.set(vertsX);
     allVerts.set(vertsY, vertsX.length);
     allVerts.set(vertsZ, vertsX.length + vertsY.length);
 
     this.vertexCount = allVerts.length / 7;
 
-    console.log('Gizmo vertex count:', this.vertexCount);
+    console.log("Gizmo vertex count:", this.vertexCount);
 
     this.vertexBuffer = this.device.createBuffer({
       size: allVerts.byteLength,
@@ -264,7 +323,11 @@ export default class Gizmo {
 
     const layout = this.device.createBindGroupLayout({
       entries: [
-        { binding: 0, visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT, buffer: {} },
+        {
+          binding: 0,
+          visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
+          buffer: {},
+        },
       ],
     });
 
@@ -272,27 +335,27 @@ export default class Gizmo {
       layout: this.device.createPipelineLayout({ bindGroupLayouts: [layout] }),
       vertex: {
         module: shaderModule,
-        entryPoint: 'vs_main',
+        entryPoint: "vs_main",
         buffers: [
           {
             arrayStride: 7 * 4,
             attributes: [
-              { shaderLocation: 0, offset: 0, format: 'float32x3' },
-              { shaderLocation: 1, offset: 12, format: 'float32x4' },
+              { shaderLocation: 0, offset: 0, format: "float32x3" },
+              { shaderLocation: 1, offset: 12, format: "float32x4" },
             ],
           },
         ],
       },
       fragment: {
         module: shaderModule,
-        entryPoint: 'fs_main',
+        entryPoint: "fs_main",
         targets: [{ format }],
       },
-      primitive: { topology: 'triangle-list', cullMode: 'none' },
+      primitive: { topology: "triangle-list", cullMode: "none" },
       depthStencil: {
-        format: 'depth24plus',
+        format: "depth24plus",
         depthWriteEnabled: false,
-        depthCompare: 'always',
+        depthCompare: "always",
       },
     });
 

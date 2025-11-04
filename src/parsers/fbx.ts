@@ -1,6 +1,6 @@
 // © 2025 Deondre English
 
-import { MATERIAL_UNIFORM_BUFFER_SIZE, MtlMaterial } from './mtl';
+import { MATERIAL_UNIFORM_BUFFER_SIZE, MtlMaterial } from "./mtl";
 
 export interface FBXMesh {
   vertices: number[];
@@ -21,21 +21,23 @@ export async function parseFBX(data: ArrayBuffer | string): Promise<FBXMesh> {
   // Case 1: Already loaded binary data
   if (data instanceof ArrayBuffer) {
     const header = new TextDecoder().decode(data.slice(0, 27));
-    if (header.startsWith('Kaydara FBX Binary')) {
+    if (header.startsWith("Kaydara FBX Binary")) {
       return await parseBinaryFBX(data);
     }
     return parseASCIIFBX(new TextDecoder().decode(data));
   }
 
   // Case 2: Inline ASCII FBX text
-  if (typeof data === 'string' && data.startsWith('; FBX')) {
+  if (typeof data === "string" && data.startsWith("; FBX")) {
     return parseASCIIFBX(data);
   }
 
   // Case 3: Remote or local HTTP(S) URL
-  if (typeof data === 'string') {
-    if (data.startsWith('blob:')) {
-      throw new Error('Cannot fetch blob: URLs. Pass a pre-loaded ArrayBuffer instead.');
+  if (typeof data === "string") {
+    if (data.startsWith("blob:")) {
+      throw new Error(
+        "Cannot fetch blob: URLs. Pass a pre-loaded ArrayBuffer instead.",
+      );
     }
 
     try {
@@ -50,13 +52,13 @@ export async function parseFBX(data: ArrayBuffer | string): Promise<FBXMesh> {
     }
   }
 
-  throw new Error('Unrecognized FBX format or input type.');
+  throw new Error("Unrecognized FBX format or input type.");
 }
 
 /** Parse ASCII FBX */
 function parseASCIIFBX(text: string): FBXMesh {
   const extract = (key: string): number[] => {
-    const r = new RegExp(`${key}:\\s*\\*?\\d+\\s*\\{[^}]*a:(.*?)\\}`, 'ms');
+    const r = new RegExp(`${key}:\\s*\\*?\\d+\\s*\\{[^}]*a:(.*?)\\}`, "ms");
     const m = r.exec(text);
     if (!m) return [];
     return m[1]
@@ -65,10 +67,10 @@ function parseASCIIFBX(text: string): FBXMesh {
       .filter((v) => !isNaN(v));
   };
 
-  const verts = extract('Vertices');
-  const idx = extract('PolygonVertexIndex');
-  const normals = extract('Normals');
-  const uvs = extract('UV');
+  const verts = extract("Vertices");
+  const idx = extract("PolygonVertexIndex");
+  const normals = extract("Normals");
+  const uvs = extract("UV");
 
   // Triangulate
   const indices: number[] = [];
@@ -80,7 +82,8 @@ function parseASCIIFBX(text: string): FBXMesh {
     face.push(id);
     if (end) {
       if (face.length >= 3) {
-        for (let j = 1; j < face.length - 1; j++) indices.push(face[0], face[j], face[j + 1]);
+        for (let j = 1; j < face.length - 1; j++)
+          indices.push(face[0], face[j], face[j + 1]);
       }
       face = [];
     }
@@ -92,23 +95,26 @@ function parseASCIIFBX(text: string): FBXMesh {
 /** Zlib decompression cross-platform */
 async function decompressZlib(data: Uint8Array): Promise<ArrayBuffer> {
   // Browser-native streaming decompression
-  if (typeof DecompressionStream !== 'undefined') {
-    const ds = new DecompressionStream('deflate');
+  if (typeof DecompressionStream !== "undefined") {
+    const ds = new DecompressionStream("deflate");
     const stream = new Response(new Blob([data]).stream().pipeThrough(ds));
     return await stream.arrayBuffer();
   }
 
   // Node fallback
   try {
-    const { inflate } = await import('zlib');
+    const { inflate } = await import("zlib");
     return await new Promise<ArrayBuffer>((resolve, reject) =>
       inflate(data, (err: any, buf: Buffer) => {
         if (err) reject(err);
-        else resolve(buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength));
+        else
+          resolve(
+            buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength),
+          );
       }),
     );
   } catch {
-    throw new Error('No DEFLATE decompression available in this environment.');
+    throw new Error("No DEFLATE decompression available in this environment.");
   }
 }
 
@@ -119,8 +125,8 @@ async function parseBinaryFBX(buffer: ArrayBuffer): Promise<FBXMesh> {
 
   // Header check
   const header = decoder.decode(buffer.slice(0, 23));
-  if (!header.startsWith('Kaydara FBX Binary')) {
-    throw new Error('Invalid FBX binary header');
+  if (!header.startsWith("Kaydara FBX Binary")) {
+    throw new Error("Invalid FBX binary header");
   }
 
   const version = view.getUint32(23, true);
@@ -133,37 +139,37 @@ async function parseBinaryFBX(buffer: ArrayBuffer): Promise<FBXMesh> {
   const readProperty = async (): Promise<FBXValue> => {
     const t = String.fromCharCode(view.getUint8(cursor++));
     switch (t) {
-      case 'F': {
+      case "F": {
         const f = view.getFloat32(cursor, true);
         cursor += 4;
         return f;
       }
-      case 'D': {
+      case "D": {
         const d = view.getFloat64(cursor, true);
         cursor += 8;
         return d;
       }
-      case 'I': {
+      case "I": {
         const i = view.getInt32(cursor, true);
         cursor += 4;
         return i;
       }
-      case 'L': {
+      case "L": {
         const low = readU32(cursor);
         const high = readU32(cursor + 4);
         cursor += 8;
         return high * 0x100000000 + low;
       }
-      case 'S': {
+      case "S": {
         const len = readU32(cursor);
         cursor += 4;
         const str = decoder.decode(buffer.slice(cursor, cursor + len));
         cursor += len;
         return str;
       }
-      case 'f':
-      case 'd':
-      case 'i': {
+      case "f":
+      case "d":
+      case "i": {
         const length = readU32(cursor);
         const encoding = readU32(cursor + 4);
         const compLen = readU32(cursor + 8);
@@ -175,8 +181,8 @@ async function parseBinaryFBX(buffer: ArrayBuffer): Promise<FBXMesh> {
           bytes = await decompressZlib(new Uint8Array(bytes));
         }
 
-        if (t === 'f') return Array.from(new Float32Array(bytes));
-        if (t === 'd') return Array.from(new Float64Array(bytes));
+        if (t === "f") return Array.from(new Float32Array(bytes));
+        if (t === "d") return Array.from(new Float64Array(bytes));
         return Array.from(new Int32Array(bytes));
       }
       default:
@@ -227,20 +233,21 @@ async function parseBinaryFBX(buffer: ArrayBuffer): Promise<FBXMesh> {
 
   const traverse = (node: FBXNode) => {
     switch (node.name) {
-      case 'Vertices':
+      case "Vertices":
         vertices.push(...(node.props[0] as number[]));
         break;
-      case 'PolygonVertexIndex':
+      case "PolygonVertexIndex":
         polys.push(...(node.props[0] as number[]));
         break;
-      case 'LayerElementNormal': {
-        const c = node.children.find((n) => n.name === 'Normals');
+      case "LayerElementNormal": {
+        const c = node.children.find((n) => n.name === "Normals");
         if (c) normals.push(...(c.props[0] as number[]));
         break;
       }
-      case 'LayerElementUV': {
+      case "LayerElementUV": {
         const c =
-          node.children.find((n) => n.name === 'UV') || node.children.find((n) => n.name === 'UVs');
+          node.children.find((n) => n.name === "UV") ||
+          node.children.find((n) => n.name === "UVs");
         if (c) uvs.push(...(c.props[0] as number[]));
         break;
       }
@@ -258,7 +265,8 @@ async function parseBinaryFBX(buffer: ArrayBuffer): Promise<FBXMesh> {
     id = Math.abs(id) - 1;
     face.push(id);
     if (end) {
-      for (let j = 1; j < face.length - 1; j++) indices.push(face[0], face[j], face[j + 1]);
+      for (let j = 1; j < face.length - 1; j++)
+        indices.push(face[0], face[j], face[j + 1]);
       face = [];
     }
   }
@@ -278,7 +286,7 @@ export class WebGPUFBXParser {
   indexBuffer?: GPUBuffer;
   pipeline!: GPURenderPipeline;
   bindGroup!: GPUBindGroup;
-  shaderString = '';
+  shaderString = "";
 
   constructor(device: GPUDevice) {
     this.device = device;
@@ -394,12 +402,12 @@ export class WebGPUFBXParser {
         {
           binding: 0,
           visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
-          buffer: { type: 'uniform' },
+          buffer: { type: "uniform" },
         },
         {
           binding: 1,
           visibility: GPUShaderStage.FRAGMENT,
-          buffer: { type: 'uniform' },
+          buffer: { type: "uniform" },
         },
       ],
     });
@@ -412,28 +420,28 @@ export class WebGPUFBXParser {
       layout: pipelineLayout,
       vertex: {
         module: shader,
-        entryPoint: 'vs_main',
+        entryPoint: "vs_main",
         buffers: [
           {
             arrayStride: 8 * 4,
             attributes: [
-              { shaderLocation: 0, offset: 0, format: 'float32x3' },
-              { shaderLocation: 1, offset: 12, format: 'float32x3' },
-              { shaderLocation: 2, offset: 24, format: 'float32x2' },
+              { shaderLocation: 0, offset: 0, format: "float32x3" },
+              { shaderLocation: 1, offset: 12, format: "float32x3" },
+              { shaderLocation: 2, offset: 24, format: "float32x2" },
             ],
           },
         ],
       },
       fragment: {
         module: shader,
-        entryPoint: 'fs_main',
+        entryPoint: "fs_main",
         targets: [{ format }],
       },
-      primitive: { topology: 'triangle-list', cullMode: 'none' },
+      primitive: { topology: "triangle-list", cullMode: "none" },
       depthStencil: {
-        format: 'depth24plus',
+        format: "depth24plus",
         depthWriteEnabled: true,
-        depthCompare: 'less',
+        depthCompare: "less",
       },
     });
 
@@ -450,7 +458,7 @@ export class WebGPUFBXParser {
     pass.setPipeline(this.pipeline);
     pass.setBindGroup(0, this.bindGroup);
     pass.setVertexBuffer(0, this.vertexBuffer!);
-    pass.setIndexBuffer(this.indexBuffer!, 'uint32');
+    pass.setIndexBuffer(this.indexBuffer!, "uint32");
     pass.drawIndexed(this.indices.length);
   }
 }

@@ -1,5 +1,5 @@
-import RigidBody from './RigidBody';
-import { mat3, mat4, quat, vec3 } from 'gl-matrix';
+import RigidBody from "./RigidBody";
+import { mat3, mat4, quat, vec3 } from "gl-matrix";
 
 /**
  * Lightweight line renderer for visualizing physics shapes.
@@ -74,30 +74,30 @@ export default class PhysicsDebugger {
     });
 
     this.pipeline = this.device.createRenderPipeline({
-      layout: 'auto',
+      layout: "auto",
       vertex: {
         module: shaderModule,
-        entryPoint: 'vs_main',
+        entryPoint: "vs_main",
         buffers: [
           {
             arrayStride: 6 * 4,
             attributes: [
-              { shaderLocation: 0, format: 'float32x3', offset: 0 },
-              { shaderLocation: 1, format: 'float32x3', offset: 12 },
+              { shaderLocation: 0, format: "float32x3", offset: 0 },
+              { shaderLocation: 1, format: "float32x3", offset: 12 },
             ],
           },
         ],
       },
       fragment: {
         module: shaderModule,
-        entryPoint: 'fs_main',
+        entryPoint: "fs_main",
         targets: [{ format: this.format }],
       },
-      primitive: { topology: 'line-list' },
+      primitive: { topology: "line-list" },
       depthStencil: {
-        format: 'depth24plus',
+        format: "depth24plus",
         depthWriteEnabled: false,
-        depthCompare: 'less',
+        depthCompare: "less",
       },
     });
   }
@@ -127,7 +127,9 @@ export default class PhysicsDebugger {
         const r = b.radius;
         const q = b.orientation ?? quat.create();
 
-        const speed = Math.sqrt(b.velocity[0] ** 2 + b.velocity[1] ** 2 + b.velocity[2] ** 2);
+        const speed = Math.sqrt(
+          b.velocity[0] ** 2 + b.velocity[1] ** 2 + b.velocity[2] ** 2,
+        );
         const targetCol = this.velocityToColor(speed);
         const color = this.smoothColor(b, targetCol);
 
@@ -162,7 +164,16 @@ export default class PhysicsDebugger {
             vec3.add(w1, w1, b.position);
             vec3.add(w2, w2, b.position);
 
-            verts.push(w1[0], w1[1], w1[2], ...color, w2[0], w2[1], w2[2], ...color);
+            verts.push(
+              w1[0],
+              w1[1],
+              w1[2],
+              ...color,
+              w2[0],
+              w2[1],
+              w2[2],
+              ...color,
+            );
           }
         }
       }

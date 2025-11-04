@@ -1,4 +1,4 @@
-import { LfPair } from '../types';
+import { LfPair } from "../types";
 
 export type PSDHeader = {
   signature: string; // Should always === '8BPS' if not fail

@@ -2,8 +2,8 @@
  * Basic math helpers
  * ------------------------------------------------------------------- */
 
-import { Mat4 } from 'wgpu-matrix';
-import RigidBody from '../physics/RigidBody';
+import { Mat4 } from "wgpu-matrix";
+import RigidBody from "../physics/RigidBody";
 
 /** 3D Vector Structure. */
 export interface Vec3 {
@@ -34,7 +34,7 @@ export interface Vec4 {
 /** Describes how a camera should be inialized for the scene. */
 export interface CameraConfig {
   /** Camera projection type */
-  type: 'perspective' | 'orthographic';
+  type: "perspective" | "orthographic";
   /** Field of View in `degrees` (for perspective cameras). */
   FOV: number;
   /** Horizontal / vertical aspect ratio. */
@@ -66,12 +66,18 @@ export interface OverTimeEffects {
   sizeOverTime: {
     startSize: { w: number; h: number };
     endSize: { w: number; h: number };
-    interperlationType: 'linear' | 'noise';
+    interperlationType: "linear" | "noise";
   };
 }
 
 /** Supported emitter volume shapes. */
-export type EmitterShape = 'default' | 'cone' | 'sphere' | 'box' | 'point' | 'cylinder';
+export type EmitterShape =
+  | "default"
+  | "cone"
+  | "sphere"
+  | "box"
+  | "point"
+  | "cylinder";
 
 /** Configuration for a simple ParticleEmitter. */
 export interface ParticleEmitter {
@@ -102,7 +108,13 @@ export interface ParticleConfig {
 /** Built-in RigidBody shapes recognized by the physics engine.
  * @todo Implement this
  */
-export type PhysicsShape = 'none' | 'sphere' | 'box' | 'capsule' | 'plane' | 'mesh';
+export type PhysicsShape =
+  | "none"
+  | "sphere"
+  | "box"
+  | "capsule"
+  | "plane"
+  | "mesh";
 
 /** Definition of an individual physics object. */
 export interface RigidBodyConfig {

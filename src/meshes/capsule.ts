@@ -42,7 +42,10 @@ const addTriangle = (a: number, b: number, c: number) => {
 // ** Generate Cylinder Body **
 let startIndex = 0;
 for (let i = 0; i <= 1; i++) {
-  let y = i === 0 ? -capsuleHeight / 2 + capsuleRadius : capsuleHeight / 2 - capsuleRadius;
+  let y =
+    i === 0
+      ? -capsuleHeight / 2 + capsuleRadius
+      : capsuleHeight / 2 - capsuleRadius;
   for (let lon = 0; lon <= lonSegments; lon++) {
     let phi = (lon / lonSegments) * (2 * Math.PI);
     let sinPhi = Math.sin(phi);
@@ -64,7 +67,11 @@ for (let i = 0; i <= 1; i++) {
 }
 
 // ** Generate Hemisphere (top and bottom) **
-const generateHemisphere = (offsetY: number, flip: boolean, startIndex: number) => {
+const generateHemisphere = (
+  offsetY: number,
+  flip: boolean,
+  startIndex: number,
+) => {
   let hemisphereStartIndex = capsuleVertices.length / 10;
   for (let lat = 0; lat <= latSegments; lat++) {
     let theta = (lat / latSegments) * (Math.PI / 2);
@@ -98,8 +105,16 @@ const generateHemisphere = (offsetY: number, flip: boolean, startIndex: number) 
   }
 };
 
-generateHemisphere(capsuleHeight / 2 - capsuleRadius, false, startIndex + (lonSegments + 1) * 2);
-generateHemisphere(-capsuleHeight / 2 + capsuleRadius, true, startIndex + (lonSegments + 1) * 2);
+generateHemisphere(
+  capsuleHeight / 2 - capsuleRadius,
+  false,
+  startIndex + (lonSegments + 1) * 2,
+);
+generateHemisphere(
+  -capsuleHeight / 2 + capsuleRadius,
+  true,
+  startIndex + (lonSegments + 1) * 2,
+);
 
 export const capsuleVertexArray = new Float32Array(capsuleVertices);
 export const capsuleIndexArray = new Uint16Array(capsuleIndices);

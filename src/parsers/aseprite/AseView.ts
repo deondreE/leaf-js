@@ -1,7 +1,7 @@
-import { assert } from '../../utils/util';
-import LeafView from '../LeafView';
-import { LfQuad } from '../types';
-import { LEGACY_TYPES } from './constants';
+import { assert } from "../../utils/util";
+import LeafView from "../LeafView";
+import { LfQuad } from "../types";
+import { LEGACY_TYPES } from "./constants";
 import {
   AseCel,
   AseCelBase,
@@ -29,8 +29,8 @@ import {
   AseTags,
   AseTileset,
   AseUserData,
-} from './types';
-import pako from 'pako';
+} from "./types";
+import pako from "pako";
 
 export default class AseView extends LeafView {
   offset: number = 0;
@@ -44,7 +44,7 @@ export default class AseView extends LeafView {
     return pako.inflate(this.array(len, s));
   }
 
-  userData(): Omit<AseUserData, 'chunkType'> {
+  userData(): Omit<AseUserData, "chunkType"> {
     const flags = this.dword();
 
     return {
@@ -54,7 +54,9 @@ export default class AseView extends LeafView {
     };
   }
 
-  colorProfile(): Omit<AseColorProfile, 'chunkType'> | Omit<AseICCProfile, 'chunkType'> {
+  colorProfile():
+    | Omit<AseColorProfile, "chunkType">
+    | Omit<AseICCProfile, "chunkType"> {
     const profileType = this.word(2) as 0 | 1 | 2;
 
     return {
@@ -64,7 +66,7 @@ export default class AseView extends LeafView {
     };
   }
 
-  colorPalette(): Omit<AseColorPalette, 'chunkType'> {
+  colorPalette(): Omit<AseColorPalette, "chunkType"> {
     const len = this.dword();
     const firstIndex = this.dword();
     const lastIndex = this.dword(8);
@@ -72,13 +74,16 @@ export default class AseView extends LeafView {
 
     for (let i = 0; i < len; i++) {
       const hasName = this.word() === 1;
-      colors[i] = { color: this.quad(this.byte), name: hasName ? this.string() : undefined };
+      colors[i] = {
+        color: this.quad(this.byte),
+        name: hasName ? this.string() : undefined,
+      };
     }
 
     return { firstIndex, lastIndex, colors };
   }
 
-  readTags(): Omit<AseTags, 'chunkType'> {
+  readTags(): Omit<AseTags, "chunkType"> {
     const len = this.word(8);
     const tags = new Array<AseTag>(len).fill(null);
 
@@ -95,7 +100,7 @@ export default class AseView extends LeafView {
     return { tags };
   }
 
-  layer(): Omit<AseLayer, 'chunkType'> {
+  layer(): Omit<AseLayer, "chunkType"> {
     const flags = this.word();
     const layerType = this.word() as AseLayerType;
 
@@ -112,13 +117,18 @@ export default class AseView extends LeafView {
     };
   }
 
-  cel(chunkEnd: number): Omit<AseCel, 'chunkType'> {
+  cel(chunkEnd: number): Omit<AseCel, "chunkType"> {
     const layerIndex = this.word();
     const position = this.pair(this.word);
     const alpha = this.byte(); //a cel belongs to a layer in a way allowing a one to many relationship with a layer. layers also have an alpha I may need to combine the alpha as well.
     const celType = this.word() as 0 | 1 | 2 | 3;
     const zIndex = this.short(5);
-    const base: Omit<AseCelBase, 'chunkType'> = { layerIndex, position, alpha, zIndex };
+    const base: Omit<AseCelBase, "chunkType"> = {
+      layerIndex,
+      position,
+      alpha,
+      zIndex,
+    };
 
     switch (celType) {
       case 0:
@@ -151,14 +161,14 @@ export default class AseView extends LeafView {
         } as AseCelTilemap;
     }
   }
-  celExtra(): Omit<AseCelExtra, 'chunkType'> {
+  celExtra(): Omit<AseCelExtra, "chunkType"> {
     return {
       flags: this.dword(),
       preciseRect: this.quad(this.fixed, 16),
     };
   }
 
-  external(): Omit<AseExternalAssets, 'chunkType'> {
+  external(): Omit<AseExternalAssets, "chunkType"> {
     const len = this.dword(8);
     const assets = new Array<AseExternalAsset>(len).fill(null);
 
@@ -173,7 +183,7 @@ export default class AseView extends LeafView {
     return { assets };
   }
 
-  tags(): Omit<AseTags, 'chunkType'> {
+  tags(): Omit<AseTags, "chunkType"> {
     const len = this.word(8);
     const tags = new Array<AseTag>(len).fill(null);
 
@@ -190,7 +200,7 @@ export default class AseView extends LeafView {
     return { tags };
   }
 
-  slice(): Omit<AseSlice, 'chunkType'> {
+  slice(): Omit<AseSlice, "chunkType"> {
     const len = this.dword();
     const flags = this.dword(4);
     const name = this.string();
@@ -215,7 +225,7 @@ export default class AseView extends LeafView {
 
     return { flags, slices, name };
   }
-  tileset(): Omit<AseTileset, 'chunkType'> {
+  tileset(): Omit<AseTileset, "chunkType"> {
     const tilesetId = this.dword();
     const tilesetFlags = this.dword();
     const tilesLength = this.dword();
@@ -223,7 +233,7 @@ export default class AseView extends LeafView {
     const tilesetBaseIndex = this.short(14);
     const tilesetName = this.string();
 
-    const tileset: Omit<AseTileset, 'chunkType'> = {
+    const tileset: Omit<AseTileset, "chunkType"> = {
       tilesetId,
       tilesetBaseIndex,
       tilesetFlags,
@@ -242,7 +252,7 @@ export default class AseView extends LeafView {
     }
     return tileset;
   }
-  chunker(type: AseChunkType, end): Omit<AseChunk, 'chunkType'> {
+  chunker(type: AseChunkType, end): Omit<AseChunk, "chunkType"> {
     switch (type) {
       case 0x2004:
         return this.layer();
@@ -344,7 +354,7 @@ export default class AseView extends LeafView {
       case 0x0013:
         return this.uuid();
       default:
-        throw new Error('Prop type mismatch');
+        throw new Error("Prop type mismatch");
     }
   }
   propertyMap(): AsePropertyMap {

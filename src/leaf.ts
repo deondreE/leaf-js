@@ -1,10 +1,10 @@
-import Renderer from './renderer';
-import ParticleRenderer from './renderer.particle';
-import Scene from './scene';
-import Camera from './camera';
-import { assert } from './utils/util';
-import global from './types/global';
-import { SceneConfig, SceneFactory } from './types/scene.types';
+import Renderer from "./renderer";
+import ParticleRenderer from "./renderer.particle";
+import Scene from "./scene";
+import Camera from "./camera";
+import { assert } from "./utils/util";
+import global from "./types/global";
+import { SceneConfig, SceneFactory } from "./types/scene.types";
 
 /**
  * Global window augmentation for the Leaf engine.
@@ -31,32 +31,31 @@ import { SceneConfig, SceneFactory } from './types/scene.types';
 declare global {
   interface Window {
     /**
-      * Initializes and returns a Leaf {@link SceneFactory} configuration.
-      *
-      * @returns {SceneFactory}
-      * A `SceneFactory` object describing cameras, physics, animations,
-      * and render parameters for the current scene.
-      *
-      * @remarks
-      * This function is expected to be defined by user-land code
-      * and made available before `<leaf-canvas>` or `<canvas is="leaf-js">`
-      * elements initialize.
-      *
-      * The renderer calls this automatically when `src="initScene"` is detected.
-      */
+     * Initializes and returns a Leaf {@link SceneFactory} configuration.
+     *
+     * @returns {SceneFactory}
+     * A `SceneFactory` object describing cameras, physics, animations,
+     * and render parameters for the current scene.
+     *
+     * @remarks
+     * This function is expected to be defined by user-land code
+     * and made available before `<leaf-canvas>` or `<canvas is="leaf-js">`
+     * elements initialize.
+     *
+     * The renderer calls this automatically when `src="initScene"` is detected.
+     */
     leaf: {
       initScene?: () => SceneFactory;
       start?: () => void;
       stop?: () => void;
       awake?: () => void;
       update?: () => void;
-    }
+    };
   }
 }
 
-
 class Leaf extends HTMLCanvasElement {
-  static observedAttributes = ['src', 'particle', 'is3D', 'static'];
+  static observedAttributes = ["src", "particle", "is3D", "static"];
 
   private renderer: Renderer | ParticleRenderer | null = null;
   private scene: Scene | null = null;
@@ -71,11 +70,11 @@ class Leaf extends HTMLCanvasElement {
   }
 
   connectedCallback() {
-    this.is3D = this.getOptimisticBoolAttribute('is3D');
-    this.isStatic = this.getOptimisticBoolAttribute('static');
-    this.particleSim = this.getOptimisticBoolAttribute('particleSim');
+    this.is3D = this.getOptimisticBoolAttribute("is3D");
+    this.isStatic = this.getOptimisticBoolAttribute("static");
+    this.particleSim = this.getOptimisticBoolAttribute("particleSim");
 
-    const srcAttr = this.getAttribute('src');
+    const srcAttr = this.getAttribute("src");
     if (!srcAttr) {
       console.warn('[Leaf] Missing "src" attribute on canvas.');
       return;
@@ -93,22 +92,24 @@ class Leaf extends HTMLCanvasElement {
   private initializeDynamicScene(factoryName: string) {
     const sceneFactory = window.leaf?.initScene;
 
-    if (typeof sceneFactory !== 'function') {
-      console.error(`[Leaf] Scene factory "${factoryName}" not found on window.`);
+    if (typeof sceneFactory !== "function") {
+      console.error(
+        `[Leaf] Scene factory "${factoryName}" not found on window.`,
+      );
       return;
     }
 
     const config: any = sceneFactory();
     if (!config) {
-      console.error('[Leaf] Invalid SceneConfig returned by initScene().');
+      console.error("[Leaf] Invalid SceneConfig returned by initScene().");
       return;
     }
 
-    console.log('[Leaf] Dynamic Scene Config:', config);
+    console.log("[Leaf] Dynamic Scene Config:", config);
 
     // Set up camera
     const {
-      type = 'perspective',
+      type = "perspective",
       FOV = 45,
       cameraBounds = 1,
       near = 0.1,
@@ -125,9 +126,9 @@ class Leaf extends HTMLCanvasElement {
 
     // Launch scene
     this.scene = new Scene(config, this);
-    this.scene.awake(() => console.log('[Scene] awake'));
-    this.scene.start(() => console.log('[Scene] start'));
-    this.scene.update(() => console.log('[Scene] update'));
+    this.scene.awake(() => console.log("[Scene] awake"));
+    this.scene.start(() => console.log("[Scene] start"));
+    this.scene.update(() => console.log("[Scene] update"));
     this.scene.run();
   }
 
@@ -137,7 +138,7 @@ class Leaf extends HTMLCanvasElement {
     this.renderer = new Renderer(this);
 
     const aspect = this.width / this.height;
-    const camera = new Camera(45, aspect, 0.1, 100.0, 1.0, 'perspective');
+    const camera = new Camera(45, aspect, 0.1, 100.0, 1.0, "perspective");
     camera.setup();
 
     this.camera = camera;
@@ -146,21 +147,21 @@ class Leaf extends HTMLCanvasElement {
   }
 
   private createControls() {
-    const controls = document.createElement('div');
+    const controls = document.createElement("div");
     Object.assign(controls.style, {
-      display: 'flex',
-      gap: '0.5rem',
-      marginTop: '0.5rem',
-      position: 'absolute',
-      top: '0',
-      zIndex: '10',
+      display: "flex",
+      gap: "0.5rem",
+      marginTop: "0.5rem",
+      position: "absolute",
+      top: "0",
+      zIndex: "10",
     });
 
     const buttons = [
-      { label: 'Start', action: () => this.startScene() },
-      { label: 'Pause', action: () => this.resumeScene() },
-      { label: 'Resume', action: () => this.startScene() },
-      { label: 'Stop', action: () => this.startScene() },
+      { label: "Start", action: () => this.startScene() },
+      { label: "Pause", action: () => this.resumeScene() },
+      { label: "Resume", action: () => this.startScene() },
+      { label: "Stop", action: () => this.startScene() },
     ];
 
     buttons.forEach(({ label, action }) => {
@@ -168,16 +169,16 @@ class Leaf extends HTMLCanvasElement {
       controls.appendChild(btn);
     });
 
-    Object.assign(this, { position: 'relative' });
+    Object.assign(this, { position: "relative" });
     this.appendChild(controls);
   }
 
   private createButton(label: string, handler: () => void): HTMLButtonElement {
-    const btn = document.createElement('button');
+    const btn = document.createElement("button");
     Object.assign(btn.style, {
       padding: `0.5rem 1rem`,
-      fontSize: '1rem',
-      cursor: 'pointer',
+      fontSize: "1rem",
+      cursor: "pointer",
     });
 
     btn.onclick = handler;
@@ -201,40 +202,40 @@ class Leaf extends HTMLCanvasElement {
   }
 
   disconnectedCallback() {
-    console.log('[Leaf] Disconnected: cleanup logic here if needed.');
+    console.log("[Leaf] Disconnected: cleanup logic here if needed.");
   }
 
   adoptedCallback() {
-    console.log('Time to transfer context');
+    console.log("Time to transfer context");
   }
 
   /**
    * The requirements for this would be importing a static file, src="static_file.{supported_file_type}"
    * @internal Returns a file type */
   private checkFileType(possibleFile: string): boolean {
-    const parts = possibleFile.split('.');
+    const parts = possibleFile.split(".");
     if (parts.length < 2) {
-      console.warn('Not a valid file type');
+      console.warn("Not a valid file type");
       return false;
     }
 
-    const extension = parts.pop()?.toLowerCase() || '';
+    const extension = parts.pop()?.toLowerCase() || "";
 
     switch (extension) {
-      case 'obj':
-        console.log('Detected OBJ file');
+      case "obj":
+        console.log("Detected OBJ file");
         return true;
-      case 'ase':
-        console.log('Detected ASE file.');
+      case "ase":
+        console.log("Detected ASE file.");
         return true;
-      case 'fbx':
-        console.log('Detected FBX');
+      case "fbx":
+        console.log("Detected FBX");
         return true;
-      case 'stl':
-        console.log('Detected SDL');
+      case "stl":
+        console.log("Detected SDL");
         return true;
       default:
-        console.warn('Unsupported file type:', extension);
+        console.warn("Unsupported file type:", extension);
         return false;
     }
   }
@@ -247,7 +248,9 @@ class Leaf extends HTMLCanvasElement {
    * @param newValue
    */
   attributeChangedCallback(name: string, oldVal: unknown, newVal: unknown) {
-    console.log(`[Leaf] Attribute "${name}" changed from ${oldVal} to ${newVal}`);
+    console.log(
+      `[Leaf] Attribute "${name}" changed from ${oldVal} to ${newVal}`,
+    );
   }
 
   /**
@@ -256,7 +259,7 @@ class Leaf extends HTMLCanvasElement {
    */
   private getBoolAttribute(attrName: string): boolean {
     const attr = this.getAttribute(attrName);
-    return attr !== null && attr.toLowerCase() !== 'false';
+    return attr !== null && attr.toLowerCase() !== "false";
   }
 
   /**
@@ -265,8 +268,8 @@ class Leaf extends HTMLCanvasElement {
    * @returns
    */
   private getOptimisticBoolAttribute(attrName: string): boolean {
-    return this.getAttribute(attrName) !== 'false';
+    return this.getAttribute(attrName) !== "false";
   }
 }
 
-customElements.define('leaf-js', Leaf, { extends: 'canvas' });
+customElements.define("leaf-js", Leaf, { extends: "canvas" });

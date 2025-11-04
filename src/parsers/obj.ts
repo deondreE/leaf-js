@@ -1,4 +1,8 @@
-import { MtlMaterial, MATERIAL_UNIFORM_FLOAT_COUNT, createMaterialUniformBufferData } from './mtl';
+import {
+  MtlMaterial,
+  MATERIAL_UNIFORM_FLOAT_COUNT,
+  createMaterialUniformBufferData,
+} from "./mtl";
 
 interface Vec3 {
   x: number;
@@ -42,7 +46,7 @@ interface ObjVertex {
 export default class WebGPUOBJParser {
   vertices: Vertex[] = [];
   indices: number[] = [];
-  shaderString: string = '';
+  shaderString: string = "";
 
   device: GPUDevice;
   vertexBuffer!: GPUBuffer;
@@ -51,7 +55,8 @@ export default class WebGPUOBJParser {
   bindGroup!: GPUBindGroup;
   materialUniformBuffer!: GPUBuffer;
   objects: Record<string, { vertices: Vertex[]; indices: number[] }> = {};
-  private objectDrawRanges: { name: string; start: number; count: number }[] = [];
+  private objectDrawRanges: { name: string; start: number; count: number }[] =
+    [];
 
   constructor(device: GPUDevice) {
     this.device = device;
@@ -65,12 +70,12 @@ export default class WebGPUOBJParser {
     this.vertices = [];
     this.indices = [];
 
-    let currentObject = 'default';
+    let currentObject = "default";
     this.objects = { [currentObject]: { vertices: [], indices: [] } };
     const vertexMap = new Map<string, number>();
 
     try {
-      const lines = objData.split('\n');
+      const lines = objData.split("\n");
 
       for (const line of lines) {
         const trimmedLine = line.trim();
@@ -82,13 +87,14 @@ export default class WebGPUOBJParser {
         const prefix = parts[0];
 
         switch (prefix) {
-          case 'o': {
-            currentObject = parts[1] || `object_${Object.keys(this.objects).length}`;
+          case "o": {
+            currentObject =
+              parts[1] || `object_${Object.keys(this.objects).length}`;
             this.objects[currentObject] = { vertices: [], indices: [] };
             vertexMap.clear();
             break;
           }
-          case 'v': {
+          case "v": {
             positions.push({
               x: parseFloat(parts[1]),
               y: parseFloat(parts[2]),
@@ -96,14 +102,14 @@ export default class WebGPUOBJParser {
             });
             break;
           }
-          case 'vt': {
+          case "vt": {
             texCoords.push({
               u: parseFloat(parts[1]),
               v: parseFloat(parts[2]),
             });
             break;
           }
-          case 'vn': {
+          case "vn": {
             normals.push({
               x: parseFloat(parts[1]),
               y: parseFloat(parts[2]),
@@ -111,13 +117,13 @@ export default class WebGPUOBJParser {
             });
             break;
           }
-          case 'f': {
+          case "f": {
             const obj = this.objects[currentObject];
             const currentFaceVertexIndices: number[] = [];
 
             for (let i = 1; i < parts.length; ++i) {
               const facePart = parts[i];
-              const [vStr, tStr, nStr] = facePart.split('/');
+              const [vStr, tStr, nStr] = facePart.split("/");
 
               const vIdx = parseInt(vStr, 10) - 1;
               const tIdx = tStr ? parseInt(tStr, 10) - 1 : -1;
@@ -184,7 +190,7 @@ export default class WebGPUOBJParser {
       await this.createBuffers();
       return true;
     } catch (e) {
-      console.error('Error parsing OBJ:', e);
+      console.error("Error parsing OBJ:", e);
       return false;
     }
   }
@@ -211,16 +217,18 @@ export default class WebGPUOBJParser {
     new Float32Array(this.vertexBuffer.getMappedRange()).set(vertexData);
     this.vertexBuffer.unmap();
     console.log(
-      'Vertex buffer created with',
+      "Vertex buffer created with",
       vertexData.length,
-      'floats,',
+      "floats,",
       vertexData.byteLength,
-      'bytes.',
+      "bytes.",
     );
 
     const useUint32 = this.vertices.length > 65535; // Or simply always use Uint32 for robustness
 
-    const indexData = useUint32 ? new Uint32Array(this.indices) : new Uint16Array(this.indices);
+    const indexData = useUint32
+      ? new Uint32Array(this.indices)
+      : new Uint16Array(this.indices);
 
     this.indexBuffer = this.device.createBuffer({
       size: indexData.byteLength,
@@ -228,16 +236,18 @@ export default class WebGPUOBJParser {
       mappedAtCreation: true,
     });
 
-    new (useUint32 ? Uint32Array : Uint16Array)(this.indexBuffer.getMappedRange()).set(indexData);
+    new (useUint32 ? Uint32Array : Uint16Array)(
+      this.indexBuffer.getMappedRange(),
+    ).set(indexData);
     this.indexBuffer.unmap();
     console.log(
-      'Index buffer created with',
+      "Index buffer created with",
       indexData.length,
-      'indices,',
+      "indices,",
       indexData.byteLength,
-      'bytes. Using',
-      useUint32 ? 'Uint32' : 'Uint16',
-      'indices.',
+      "bytes. Using",
+      useUint32 ? "Uint32" : "Uint16",
+      "indices.",
     );
   }
 
@@ -252,12 +262,12 @@ export default class WebGPUOBJParser {
         {
           binding: 0, // For SceneUniforms
           visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
-          buffer: { type: 'uniform' },
+          buffer: { type: "uniform" },
         },
         {
           binding: 1, // For MaterialUniforms
           visibility: GPUShaderStage.FRAGMENT, // Material properties mostly affect fragment stage
-          buffer: { type: 'uniform' },
+          buffer: { type: "uniform" },
         },
       ],
     });
@@ -270,31 +280,31 @@ export default class WebGPUOBJParser {
       layout: pipelineLayout,
       vertex: {
         module: shaderModule,
-        entryPoint: 'vs_main',
+        entryPoint: "vs_main",
         buffers: [
           {
             arrayStride: 8 * 4,
             attributes: [
-              { shaderLocation: 0, offset: 0 * 4, format: 'float32x3' }, // position
-              { shaderLocation: 1, offset: 3 * 4, format: 'float32x3' }, // normal
-              { shaderLocation: 2, offset: 6 * 4, format: 'float32x2' }, // texCoord
+              { shaderLocation: 0, offset: 0 * 4, format: "float32x3" }, // position
+              { shaderLocation: 1, offset: 3 * 4, format: "float32x3" }, // normal
+              { shaderLocation: 2, offset: 6 * 4, format: "float32x2" }, // texCoord
             ],
           },
         ],
       },
       fragment: {
         module: shaderModule,
-        entryPoint: 'fs_main',
+        entryPoint: "fs_main",
         targets: [{ format }],
       },
       primitive: {
-        topology: 'triangle-list',
-        cullMode: 'none',
+        topology: "triangle-list",
+        cullMode: "none",
       },
       depthStencil: {
-        format: 'depth24plus',
+        format: "depth24plus",
         depthWriteEnabled: true,
-        depthCompare: 'less',
+        depthCompare: "less",
       },
     });
 
@@ -403,7 +413,7 @@ export default class WebGPUOBJParser {
     passEncoder.setPipeline(this.pipeline);
     passEncoder.setBindGroup(0, this.bindGroup);
     passEncoder.setVertexBuffer(0, this.vertexBuffer);
-    passEncoder.setIndexBuffer(this.indexBuffer, 'uint16');
+    passEncoder.setIndexBuffer(this.indexBuffer, "uint16");
 
     for (const obj of this.objectDrawRanges) {
       if (obj.count <= 0) continue;
