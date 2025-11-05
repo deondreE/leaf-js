@@ -7,6 +7,7 @@ import {
   GeometryBuffers,
   Vec4,
   PrimitiveModel,
+  CameraConfig,
 } from "./types/scene.types";
 import { v4 as uuid } from "uuid";
 import Camera from "./camera";
@@ -761,6 +762,7 @@ class Renderer3D {
     },
     pos: { x: number; y: number; z: number } = { x: 0, y: 0, z: 0 },
     rotation: { x: number; y: number; z: number } = { x: 0, y: 0, z: 0 },
+    camera?: CameraConfig,
   ) {
     if (!this.device || !this.context)
       throw new Error("Renderer not initialized");
@@ -1061,14 +1063,27 @@ class Renderer3D {
     });
     const depthView = this.depthTexture.createView();
 
+    // =================
+    //  Camera Config
+    // =================
     const modelMatrix = mat4.create();
     const projMatrix = mat4.create();
-    const fov = (60 * Math.PI) / 180;
+    let fov = 0;
     const aspect = this.canvas!.width / this.canvas!.height;
-    const near = 0.1;
-    const far = 2000.0;
-    mat4.perspective(projMatrix, fov, aspect, near, far);
-
+    let near = 0;
+    let far = 0;
+    if (camera) {
+      console.log(`[Renderer 3D]: ${camera}`);
+      fov = (camera.FOV! * Math.PI) / 180;
+      near = camera.near!;
+      far = camera.far!;
+      mat4.perspective(projMatrix, fov, aspect, near, far);
+    } else {
+      fov = (60 * Math.PI) / 180;
+      near = 0.1;
+      far = 2000.0;
+      mat4.perspective(projMatrix, fov, aspect, near, far);
+    }
     const viewMatrix = mat4.create();
     const camPos: [number, number, number] = [100, 25, 200];
     const target: [number, number, number] = [0, 0, 0];
@@ -1077,8 +1092,6 @@ class Renderer3D {
 
     const viewProj = mat4.create();
     mat4.multiply(viewProj, projMatrix, viewMatrix);
-    // const mvpMatrix = mat4.create();
-    // mat4.multiply(mvpMatrix, viewProj, modelMatrix);
 
     const lightDir = new Float32Array([0.4, 0.7, 0.3, 0.0]);
     const lightColor = new Float32Array([1.0, 1.0, 1.0, 0.0]);
@@ -1236,7 +1249,7 @@ class Renderer3D {
 
       device.queue.submit([encoder.finish()]);
       requestAnimationFrame(renderFrame);
-      console.log(`[Renderer3D] Drew: ${shape} primitive`);
+      // console.log(`[Renderer3D] Drew: ${shape} primitive`);
     };
     requestAnimationFrame(renderFrame);
   }

@@ -6,26 +6,29 @@
     <title>Worky</title>
   </head>
   <body>
+      <div id="body"></div>
     <canvas is="leaf-js" src="initScene" width="800" height="800" id="webgpu-canvas"> </canvas>
     <script type="module">
       window.leaf = window.leaf || {};
 
       window.leaf.createScene = () => ({
         name: 'Demo Scene',
-
         camera: {
-          type: 'orthographic',
-          FOV: 45,
+          type: 'perspective',
+          FOV: 60,
           cameraBounds: 1.0,
           near: 0.1,
-          far: 100.0,
+          far: 2000.0,
+          position: {
+            x: 100,
+            y: 25,
+            z: 200,
+          },
           zoom: 1.0,
         },
-
         particle: {
           enabled: false,
         },
-
         objects: [
           {
             name: 'testMesh',
@@ -93,11 +96,9 @@
             amount: 1,
           }
         ],
-
         physics: {
           enabled: false,
         },
-
         animations: {
           enabled: true,
           duration: 5.0,

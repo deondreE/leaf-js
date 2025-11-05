@@ -9,6 +9,7 @@ import {
   SceneFactory,
   SceneObject,
   RandomAnimationType,
+  CameraConfig,
 } from "./types/scene.types";
 import Renderer3D from "./renderer";
 
@@ -123,20 +124,26 @@ class Leaf extends HTMLCanvasElement {
       zoom = 1,
     } = config.camera || {};
 
-    const camera = new Camera(FOV, cameraBounds, near, far, zoom, type);
-    camera.setup();
-    this.camera = camera;
+    // const camera = new Camera(FOV, cameraBounds, near, far, zoom, type);
+    // camera.setup();
+    // this.camera = camera;
 
     // Pick renderer
     this.renderer = new Renderer(this);
-    this.renderer.setCamera(camera);
+    // this.renderer.setCamera(camera);
     await this.renderer.init("");
+    let camera: CameraConfig | null = null;
+
+    if (config.camera) {
+      console.log(config.camera);
+      camera = config.camera;
+    }
 
     if (config.objects && config.objects.length > 0) {
-      console.log("[Leaf] Instantianting scene objects...");
+      // console.log("[Leaf] Instantianting scene objects...");
       for (const obj of config.objects) {
-        console.log(obj);
-        this.createSceneObject(obj);
+        // console.log(obj);
+        this.createSceneObject(obj, camera!);
       }
     }
 
@@ -148,7 +155,7 @@ class Leaf extends HTMLCanvasElement {
     this.scene.run();
   }
 
-  private async createSceneObject(obj: SceneObject) {
+  private async createSceneObject(obj: SceneObject, camera: CameraConfig) {
     const count = obj.amount ?? 1;
 
     for (let i = 0; i < count; ++i) {
@@ -181,6 +188,7 @@ class Leaf extends HTMLCanvasElement {
             scale,
             pos,
             rotation,
+            camera,
           );
           break;
         case "sphere":
@@ -191,6 +199,7 @@ class Leaf extends HTMLCanvasElement {
             scale,
             pos,
             rotation,
+            camera,
           );
           break;
         case "torus":
@@ -201,6 +210,7 @@ class Leaf extends HTMLCanvasElement {
             scale,
             pos,
             rotation,
+            camera,
           );
           break;
         case "cone":
@@ -211,6 +221,7 @@ class Leaf extends HTMLCanvasElement {
             scale,
             pos,
             rotation,
+            camera,
           );
           break;
         case "plane":
@@ -221,6 +232,7 @@ class Leaf extends HTMLCanvasElement {
             scale,
             pos,
             rotation,
+            camera,
           );
           break;
         case "quad":
@@ -231,6 +243,7 @@ class Leaf extends HTMLCanvasElement {
             scale,
             pos,
             rotation,
+            camera,
           );
           break;
       }

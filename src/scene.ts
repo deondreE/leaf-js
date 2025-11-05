@@ -78,7 +78,7 @@ class Scene {
    * Render is the "true" render call, this will trigger update inside of it.
    */
   render() {
-    console.log("Render");
+    // console.log("Render");
     // rendering logic would go here
   }
 
