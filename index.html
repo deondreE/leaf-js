@@ -5,9 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Worky</title>
   </head>
+  <style>
+  * {
+    background-color: #FFF;
+  }
+  </style>
   <body>
-      <div id="body"></div>
-    <canvas is="leaf-js" src="initScene" width="800" height="800" id="webgpu-canvas"> </canvas>
+    <canvas is="leaf-js" src="initScene" width="800" height="800" id="webgpu-canvas" bgClearColor="{r:12, g:12, b:12, a:255}"> </canvas>
     <script type="module">
       window.leaf = window.leaf || {};
 
@@ -32,7 +36,7 @@
         objects: [
           {
             name: 'testMesh',
-            shape: 'torus',
+            shape: 'sphere',
             scale: {
               width: 3,
               height: 1,
@@ -41,6 +45,18 @@
             color: { r: 0, g: 0, b: 255, a: 255 },
             rotation: { x: 0, y: 45, z: 0 },
             pos: {x: 0, y: 0, z: 0, },
+            amount: 1,
+          }, 
+          {
+            name: 'testTorus',
+            shape: 'torus',
+            scale: {
+              width: 4,
+              height: 4,
+              depth: 4,
+            },
+            color: { r: 25, g: 54, b: 54, a: 255 },
+            rotation: { x: 0, y: 45,z: 45}, 
             amount: 1,
           },
           {
@@ -123,7 +139,7 @@
               loop: true,
             },
           ],
-        },
+        }
       });
     </script>
     <script type="module" src="/src/leaf.ts"></script>

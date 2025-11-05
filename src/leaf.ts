@@ -10,6 +10,7 @@ import {
   SceneObject,
   RandomAnimationType,
   CameraConfig,
+  Vec4,
 } from "./types/scene.types";
 import Renderer3D from "./renderer";
 
@@ -71,15 +72,43 @@ class Leaf extends HTMLCanvasElement {
   private is3D = false;
   private isStatic = false;
   private particleSim = false;
+  private clearColor!: Vec4;
+
+  private controlsContainer: HTMLDivElement | null = null;
 
   constructor() {
     super();
   }
 
+  private parseColor(input: string): Vec4 {
+    // "{r:0,g:0,b:0,a:0}"
+    const trimmed = input.trim().replace(/[{}]/g, "");
+    const parts = trimmed.split(",").map((part) => part.split(":"));
+
+    const color: any = [];
+    for (const [key, value] of parts) {
+      color[key.trim()] = parseFloat(value);
+    }
+
+    return {
+      r: color.r ?? 0,
+      g: color.g ?? 0,
+      b: color.b ?? 0,
+      a: color.a ?? 0,
+    };
+  }
+
   connectedCallback() {
+    if (this.renderer || this.scene) {
+      console.warn("[Leaf] Already initialized, skipping re-init.");
+      return;
+    }
+
     this.is3D = this.getOptimisticBoolAttribute("is3D");
     this.isStatic = this.getOptimisticBoolAttribute("static");
     this.particleSim = this.getOptimisticBoolAttribute("particleSim");
+    this.clearColor = this.parseColor(this.getAttribute("bgClearColor")!);
+    console.log(this.clearColor);
 
     const srcAttr = this.getAttribute("src");
     if (!srcAttr) {
@@ -138,12 +167,11 @@ class Leaf extends HTMLCanvasElement {
       console.log(config.camera);
       camera = config.camera;
     }
-
     if (config.objects && config.objects.length > 0) {
       // console.log("[Leaf] Instantianting scene objects...");
       for (const obj of config.objects) {
         // console.log(obj);
-        this.createSceneObject(obj, camera!);
+        this.createSceneObject(obj, camera!, this.clearColor);
       }
     }
 
@@ -155,7 +183,11 @@ class Leaf extends HTMLCanvasElement {
     this.scene.run();
   }
 
-  private async createSceneObject(obj: SceneObject, camera: CameraConfig) {
+  private async createSceneObject(
+    obj: SceneObject,
+    camera: CameraConfig,
+    clearColor: Vec4,
+  ) {
     const count = obj.amount ?? 1;
 
     for (let i = 0; i < count; ++i) {
@@ -189,6 +221,7 @@ class Leaf extends HTMLCanvasElement {
             pos,
             rotation,
             camera,
+            clearColor,
           );
           break;
         case "sphere":
@@ -200,6 +233,7 @@ class Leaf extends HTMLCanvasElement {
             pos,
             rotation,
             camera,
+            clearColor,
           );
           break;
         case "torus":
@@ -211,6 +245,7 @@ class Leaf extends HTMLCanvasElement {
             pos,
             rotation,
             camera,
+            clearColor,
           );
           break;
         case "cone":
@@ -222,6 +257,7 @@ class Leaf extends HTMLCanvasElement {
             pos,
             rotation,
             camera,
+            clearColor,
           );
           break;
         case "plane":
@@ -233,6 +269,7 @@ class Leaf extends HTMLCanvasElement {
             pos,
             rotation,
             camera,
+            clearColor,
           );
           break;
         case "quad":
@@ -244,6 +281,7 @@ class Leaf extends HTMLCanvasElement {
             pos,
             rotation,
             camera,
+            clearColor,
           );
           break;
       }
@@ -286,21 +324,20 @@ class Leaf extends HTMLCanvasElement {
   }
 
   private createControls() {
+    if (this.controlsContainer) return;
+
     const controls = document.createElement("div");
     Object.assign(controls.style, {
       display: "flex",
       gap: "0.5rem",
       marginTop: "0.5rem",
-      position: "absolute",
-      top: "0",
-      zIndex: "10",
     });
 
     const buttons = [
       { label: "Start", action: () => this.startScene() },
-      { label: "Pause", action: () => this.resumeScene() },
-      { label: "Resume", action: () => this.startScene() },
-      { label: "Stop", action: () => this.startScene() },
+      { label: "Pause", action: () => this.pauseScene() },
+      { label: "Resume", action: () => this.resumeScene() },
+      { label: "Stop", action: () => this.stopScene() },
     ];
 
     buttons.forEach(({ label, action }) => {
@@ -308,8 +345,8 @@ class Leaf extends HTMLCanvasElement {
       controls.appendChild(btn);
     });
 
-    Object.assign(this, { position: "relative" });
-    this.appendChild(controls);
+    this.insertAdjacentElement("afterend", controls);
+    this.controlsContainer = controls;
   }
 
   private createButton(label: string, handler: () => void): HTMLButtonElement {
@@ -320,6 +357,7 @@ class Leaf extends HTMLCanvasElement {
       cursor: "pointer",
     });
 
+    btn.textContent = label;
     btn.onclick = handler;
     return btn;
   }

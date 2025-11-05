@@ -763,11 +763,13 @@ class Renderer3D {
     pos: { x: number; y: number; z: number } = { x: 0, y: 0, z: 0 },
     rotation: { x: number; y: number; z: number } = { x: 0, y: 0, z: 0 },
     camera?: CameraConfig,
+    clearColor?: Vec4,
   ) {
     if (!this.device || !this.context)
       throw new Error("Renderer not initialized");
 
     const colorArray = normalizeColor(color);
+    const clearColorArray = normalizeColor(clearColor!);
 
     const sampleCount = 4;
     const device = this.device as GPUDevice;
@@ -1227,7 +1229,12 @@ class Renderer3D {
             resolveTarget: ctx.getCurrentTexture().createView(),
             loadOp: "clear",
             storeOp: "store",
-            clearValue: { r: 0.05, g: 0.05, b: 0.1, a: 1 },
+            clearValue: {
+              r: clearColorArray[0],
+              g: clearColorArray[1],
+              b: clearColorArray[2],
+              a: clearColorArray[3],
+            },
           },
         ],
         depthStencilAttachment: {
