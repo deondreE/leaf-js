@@ -306,6 +306,21 @@ export interface Model {
   modelMatrix: Mat4;
 }
 
+export type PrimitiveModel = {
+  key: string;
+  shape: "box" | "sphere" | "plane" | "torus" | "cone" | "quad";
+  indexCount: number;
+  instanceCount: number;
+  vertexBuffer: GPUBuffer;
+  indexBuffer: GPUBuffer;
+  instanceBuffer: GPUBuffer;
+  baseColor: Vec4;
+  shaderKey: string;
+  rigidBodies?: RigidBody[];
+  modelMatrix?: Mat4;
+  static?: boolean;
+};
+
 export type GeometryBuffers = {
   vertexBuffer: GPUBuffer;
   indexBuffer: GPUBuffer;

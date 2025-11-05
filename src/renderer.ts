@@ -2,7 +2,12 @@ import { mat4, ReadonlyVec3 } from "gl-matrix";
 import OBJParser from "./parsers/obj";
 import STLParser from "./parsers/stl";
 
-import { Model, GeometryBuffers, Vec4 } from "./types/scene.types";
+import {
+  Model,
+  GeometryBuffers,
+  Vec4,
+  PrimitiveModel,
+} from "./types/scene.types";
 import { v4 as uuid } from "uuid";
 import Camera from "./camera";
 import {
@@ -45,6 +50,7 @@ class Renderer3D {
   private lastTime = 0;
   private viewMatrix: any;
   private geometries: Map<string, GeometryBuffers> = new Map();
+  private primitiveMap: Map<string, PrimitiveModel> = new Map();
 
   private fpsElement: HTMLDivElement | null = null;
   private frames: number = 0;
@@ -1172,6 +1178,20 @@ class Renderer3D {
       entries: [{ binding: 0, resource: { buffer: uniformBuffer } }],
     });
 
+    const primtiveKey = `${shape}_${this.primitiveMap.size}`;
+    const entry: PrimitiveModel = {
+      key: primtiveKey,
+      shape,
+      indexCount: indices.length,
+      instanceCount,
+      vertexBuffer: vbuf,
+      indexBuffer: ibuf,
+      instanceBuffer,
+      baseColor: color,
+      shaderKey: "default",
+    };
+    this.primitiveMap.set(primtiveKey, entry);
+
     let prev = 0;
     const renderFrame = (now: number) => {
       const encoder = device.createCommandEncoder();
@@ -1195,10 +1215,16 @@ class Renderer3D {
       });
       pass.setPipeline(pipeline);
       pass.setBindGroup(0, bindGroup);
-      pass.setVertexBuffer(0, vbuf);
-      pass.setVertexBuffer(1, instanceBuffer);
-      pass.setIndexBuffer(ibuf, "uint16");
-      pass.drawIndexed(indices.length, instanceCount);
+      for (const [, p] of this.primitiveMap) {
+        pass.setVertexBuffer(0, p.vertexBuffer);
+        pass.setVertexBuffer(1, p.instanceBuffer);
+        pass.setIndexBuffer(p.indexBuffer, "uint16");
+        pass.drawIndexed(p.indexCount, p.instanceCount);
+      }
+      // pass.setVertexBuffer(0, vbuf);
+      // pass.setVertexBuffer(1, instanceBuffer);
+      // pass.setIndexBuffer(ibuf, "uint16");
+      // pass.drawIndexed(indices.length, instanceCount);
       pass.end();
 
       device.queue.submit([encoder.finish()]);
