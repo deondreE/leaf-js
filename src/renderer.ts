@@ -759,6 +759,7 @@ class Renderer3D {
       height: 1,
       depth: 1,
     },
+    pos: { x: number; y: number; z: number } = { x: 0, y: 0, z: 0 },
     rotation: { x: number; y: number; z: number } = { x: 0, y: 0, z: 0 },
   ) {
     if (!this.device || !this.context)
@@ -1016,16 +1017,22 @@ class Renderer3D {
       for (let y = 0; y < gridSize && index < instanceCount; ++y) {
         for (let z = 0; z < gridSize && index < instanceCount; ++z) {
           const model = mat4.create();
-          mat4.translate(model, model, [
-            (x - gridSize / 2) * spacing,
-            (y - gridSize / 2) * spacing,
-            (z - gridSize / 2) * spacing,
-          ]);
+          let tx = pos.x;
+          let ty = pos.y;
+          let tz = pos.z;
+
+          if (instanceCount > 1) {
+            // build a centered grid and offset by pos
+            tx += (x - gridSize / 2) * spacing;
+            ty += (y - gridSize / 2) * spacing;
+            tz += (z - gridSize / 2) * spacing;
+          }
+
           mat4.rotateX(model, model, (rotation.x * Math.PI) / 180);
           mat4.rotateY(model, model, (rotation.y * Math.PI) / 180);
           mat4.rotateZ(model, model, (rotation.z * Math.PI) / 180);
-          let scaleNums = [scale.width, scale.height, scale.depth];
-          mat4.scale(model, model, new Float32Array(scaleNums));
+          mat4.scale(model, model, [scale.width, scale.height, scale.depth]);
+          mat4.translate(model, model, [tx, ty, tz]);
 
           instanceArray.push(...model, ...colorArray);
           ++index;
@@ -1055,19 +1062,23 @@ class Renderer3D {
     const depthView = this.depthTexture.createView();
 
     const modelMatrix = mat4.create();
-    const viewMatrix = mat4.create();
     const projMatrix = mat4.create();
-    mat4.lookAt(viewMatrix, [0, 10, 100], [0, 0, 0], [0, 1, 0]);
-    mat4.perspective(
-      projMatrix,
-      Math.PI / 4,
-      this.canvas!.width / this.canvas!.height,
-      0.1,
-      1000,
-    );
-    const mvpMatrix = mat4.create();
-    mat4.multiply(mvpMatrix, projMatrix, viewMatrix);
-    mat4.multiply(mvpMatrix, mvpMatrix, modelMatrix);
+    const fov = (60 * Math.PI) / 180;
+    const aspect = this.canvas!.width / this.canvas!.height;
+    const near = 0.1;
+    const far = 2000.0;
+    mat4.perspective(projMatrix, fov, aspect, near, far);
+
+    const viewMatrix = mat4.create();
+    const camPos: [number, number, number] = [100, 25, 200];
+    const target: [number, number, number] = [0, 0, 0];
+    const up: [number, number, number] = [0, 1, 0];
+    mat4.lookAt(viewMatrix, camPos, target, up);
+
+    const viewProj = mat4.create();
+    mat4.multiply(viewProj, projMatrix, viewMatrix);
+    // const mvpMatrix = mat4.create();
+    // mat4.multiply(mvpMatrix, viewProj, modelMatrix);
 
     const lightDir = new Float32Array([0.4, 0.7, 0.3, 0.0]);
     const lightColor = new Float32Array([1.0, 1.0, 1.0, 0.0]);
@@ -1077,7 +1088,7 @@ class Renderer3D {
       size: uniformSize,
       usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
     });
-    device.queue.writeBuffer(uniformBuffer, 0, mvpMatrix as Float32Array);
+    device.queue.writeBuffer(uniformBuffer, 0, viewProj as Float32Array);
     device.queue.writeBuffer(uniformBuffer, 64, new Float32Array(colorArray));
     device.queue.writeBuffer(uniformBuffer, 80, lightDir);
     device.queue.writeBuffer(uniformBuffer, 96, lightColor);
@@ -1085,7 +1096,7 @@ class Renderer3D {
     const shader = device.createShaderModule({
       code: `
         struct SceneUniforms {
-          mvpMatrix: mat4x4<f32>,
+          viewProj: mat4x4<f32>,
           baseColor: vec4<f32>,
           lightDir: vec4<f32>,
           lightColor: vec4<f32>,
@@ -1110,7 +1121,7 @@ class Renderer3D {
         fn vs_main(@location(0) pos: vec3<f32>, @location(1) norm: vec3<f32>, inst: InstanceInput) -> VSOut {
           var model = mat4x4<f32>(inst.mat0, inst.mat1, inst.mat2, inst.mat3); 
           var out: VSOut;
-          out.Position = scene.mvpMatrix * model * vec4<f32>(pos, 1.0);
+          out.Position = scene.viewProj * model * vec4<f32>(pos, 1.0);
           out.normal = normalize(norm);
           out.vColor = inst.color;
           return out;
@@ -1125,7 +1136,7 @@ class Renderer3D {
             let ambient = 0.15;
             let brightness = ambient + diff;
             
-            let rgb = input.vColor.rbg * scene.lightColor.rgb * brightness;
+            let rgb = input.vColor.rgb * scene.lightColor.rgb * brightness;
             return vec4<f32>(rgb, scene.baseColor.a);
          }`,
     });
@@ -1221,10 +1232,6 @@ class Renderer3D {
         pass.setIndexBuffer(p.indexBuffer, "uint16");
         pass.drawIndexed(p.indexCount, p.instanceCount);
       }
-      // pass.setVertexBuffer(0, vbuf);
-      // pass.setVertexBuffer(1, instanceBuffer);
-      // pass.setIndexBuffer(ibuf, "uint16");
-      // pass.drawIndexed(indices.length, instanceCount);
       pass.end();
 
       device.queue.submit([encoder.finish()]);

@@ -242,7 +242,7 @@ export interface SceneObject {
     height: number;
     depth: number;
   };
-  startPos?: Vec3;
+  pos?: Vec3;
   rotation?: Vec3;
   color?: Vec4;
   random_spawn_pos?: boolean;

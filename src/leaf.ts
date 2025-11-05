@@ -154,13 +154,11 @@ class Leaf extends HTMLCanvasElement {
     for (let i = 0; i < count; ++i) {
       const x = obj.random_spawn_pos
         ? (Math.random() - 0.5) * 100
-        : (obj.startPos?.x ?? 0);
-      const y = obj.random_spawn_pos
-        ? Math.random() * 50
-        : (obj.startPos?.y ?? 0);
+        : (obj.pos?.x ?? 0);
+      const y = obj.random_spawn_pos ? Math.random() * 50 : (obj.pos?.y ?? 0);
       const z = obj.random_spawn_pos
         ? (Math.random() - 0.5) * 100
-        : (obj.startPos?.z ?? 0);
+        : (obj.pos?.z ?? 0);
 
       const color = obj.color_random
         ? { r: Math.random(), g: Math.random(), b: Math.random(), a: 1 }
@@ -171,6 +169,7 @@ class Leaf extends HTMLCanvasElement {
       const rotation = obj.rotation ? obj.rotation : { x: 0, y: 0, z: 0 };
 
       const scale = obj.scale ? obj.scale : { width: 1, height: 1, depth: 1 };
+      const pos = obj.pos ? obj.pos : { x: 0, y: 0, z: 0 };
 
       // Object Type
       switch (obj.shape) {
@@ -180,6 +179,7 @@ class Leaf extends HTMLCanvasElement {
             color,
             amount,
             scale,
+            pos,
             rotation,
           );
           break;
@@ -189,6 +189,7 @@ class Leaf extends HTMLCanvasElement {
             color,
             amount,
             scale,
+            pos,
             rotation,
           );
           break;
@@ -198,6 +199,7 @@ class Leaf extends HTMLCanvasElement {
             color,
             amount,
             scale,
+            pos,
             rotation,
           );
           break;
@@ -207,6 +209,7 @@ class Leaf extends HTMLCanvasElement {
             color,
             amount,
             scale,
+            pos,
             rotation,
           );
           break;
@@ -216,6 +219,7 @@ class Leaf extends HTMLCanvasElement {
             color,
             amount,
             scale,
+            pos,
             rotation,
           );
           break;
@@ -225,6 +229,7 @@ class Leaf extends HTMLCanvasElement {
             color,
             amount,
             scale,
+            pos,
             rotation,
           );
           break;
