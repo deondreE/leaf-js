@@ -1,6 +1,6 @@
 {
   "name": "leaf",
-  "version": "2.1.0",
+  "version": "2.1.1",
   "description": "A performant 3D JavaScript library built for WebGPU and WebGL2.",
   "type": "module",
   "source": "src/index.ts",
