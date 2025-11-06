@@ -1,6 +1,7 @@
-import type { Model } from "./types/scene.types";
+import type { Model, SceneConfig } from "./types/scene.types";
 import EventDispatcher from "./eventdispatcher";
 import Renderer3D from "./renderer";
+import AnimationSystem from "./animation/AnimationSystem";
 
 /** A Scene is defined as a collection of objects renderd in a single pass. */
 class Scene {
@@ -10,13 +11,18 @@ class Scene {
   children: Map<Model, string> = new Map<Model, string>();
   renderer: Renderer3D | null = null;
   eventDispatcher: EventDispatcher | null = null;
-
+  
+  private animationSystem: AnimationSystem | null = null;
+  private lastFrameTime = 0;
   private rafId: number | null = null;
   private isRunning: boolean = false;
   private isPaused: boolean = false;
 
-  constructor(uData: any, canvas: HTMLCanvasElement) {
+  constructor(uData: SceneConfig, canvas: HTMLCanvasElement) {
     this.uData = uData;
+    if (uData.animations && uData.animations.enabled) {
+      this.animationSystem = new AnimationSystem(uData.animations);
+    }
     this.canvas = canvas;
     this.eventDispatcher = new EventDispatcher();
   }
