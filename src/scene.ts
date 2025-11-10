@@ -11,7 +11,7 @@ class Scene {
   children: Map<Model, string> = new Map<Model, string>();
   renderer: Renderer3D | null = null;
   eventDispatcher: EventDispatcher | null = null;
-  
+
   private animationSystem: AnimationSystem | null = null;
   private lastFrameTime = 0;
   private rafId: number | null = null;
